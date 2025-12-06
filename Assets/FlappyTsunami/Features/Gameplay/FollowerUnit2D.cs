@@ -1,4 +1,5 @@
 using System.Collections;
+using hp55games.FlappyTsunami.Configs;
 using UnityEngine;
 
 namespace hp55games.FlappyTsunami.Features.Gameplay
@@ -8,12 +9,16 @@ namespace hp55games.FlappyTsunami.Features.Gameplay
     {
         [Header("Swarm")]
         [SerializeField] private PlayerSwarmController2D swarm;
+        
+        [Header("followerConfig")]
+        [SerializeField] private FollowerConfig followerConfig;
 
         [Header("Movement")]
         [SerializeField] private float verticalImpulseMultiplier = 1f;
-        [SerializeField] private float tapDelay = 0f;
+        [SerializeField] private float tapDelay;
 
         private Rigidbody2D _rb;
+        private SpriteRenderer _sr;
         private float _baseGravityScale;
         private bool _isAlive = true;
 
@@ -23,6 +28,32 @@ namespace hp55games.FlappyTsunami.Features.Gameplay
         {
             _rb = GetComponent<Rigidbody2D>();
             _baseGravityScale = _rb.gravityScale;
+            
+            if (followerConfig != null)
+            {
+                ApplyFollowerConfig();
+            }
+        }
+        
+        private void ApplyFollowerConfig()
+        {
+            // Movement
+            _rb.gravityScale = followerConfig.gravityScale;
+            _baseGravityScale = followerConfig.gravityScale;
+
+            verticalImpulseMultiplier = followerConfig.verticalImpulseMultiplier;
+            tapDelay = followerConfig.tapDelay;
+
+            // Visual
+            if (followerConfig.sprite != null)
+            {
+                _sr.sprite = followerConfig.sprite;
+            }
+
+            _sr.color = followerConfig.color;
+            transform.localScale = followerConfig.localScale;
+
+            // TODO: se un giorno aggiungo trail o VFX, li aggancio qui
         }
 
         /// <summary>
