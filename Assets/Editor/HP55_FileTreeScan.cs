@@ -11,6 +11,9 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
+namespace hp55games.Editor.Tools
+{
+
 public static class HP55_FileTreeScan
 {
     // Cartelle da ignorare nella root del progetto
@@ -128,8 +131,9 @@ public static class HP55_FileTreeScan
 
     private static bool IsIgnored(DirectoryInfo dir)
     {
-        // Ignora solo se è una delle cartelle specifiche nella root del progetto
         var name = dir.Name;
         return IgnoredFolders.Any(f => string.Equals(f, name, StringComparison.OrdinalIgnoreCase));
     }
+}
+
 }

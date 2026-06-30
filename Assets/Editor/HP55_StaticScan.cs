@@ -1,8 +1,3 @@
-// Assets/Editor/HP55_StaticScan.cs
-// Static scan di pattern rischiosi nei .cs (runtime). Genera StaticScan.md in root.
-// Cerca: FindObjectOfType in Update, Resources.Load runtime, public fields esposti,
-// async void, catch(Exception) vuoti, DestroyImmediate runtime, Singleton hard, PlayerPrefs raw,
-// LoadScene senza Additive.
 using System;
 using System.IO;
 using System.Linq;
@@ -10,6 +5,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+
+namespace hp55games.Editor.Tools
+{
 
 public static class HP55_StaticScan
 {
@@ -76,10 +74,18 @@ public static class HP55_StaticScan
         sb.AppendLine();
 
         // Scenes list
-        var scenes = Directory.GetFiles(Path.Combine(Application.dataPath, "Scenes"), "*.unity", SearchOption.AllDirectories);
+        var scenesDir = Path.Combine(Application.dataPath, "Scenes");
         sb.AppendLine("## Scenes found");
-        if (scenes.Length == 0) sb.AppendLine("- (none)");
-        foreach (var s in scenes.OrderBy(x => x)) sb.AppendLine($"- {Pretty(s)}");
+        if (!Directory.Exists(scenesDir))
+        {
+            sb.AppendLine("- (Scenes folder not found)");
+        }
+        else
+        {
+            var scenes = Directory.GetFiles(scenesDir, "*.unity", SearchOption.AllDirectories);
+            if (scenes.Length == 0) sb.AppendLine("- (none)");
+            foreach (var s in scenes.OrderBy(x => x)) sb.AppendLine($"- {Pretty(s)}");
+        }
         sb.AppendLine();
 
         File.WriteAllText(outPath, sb.ToString(), Encoding.UTF8);
@@ -95,3 +101,4 @@ public static class HP55_StaticScan
     }
 }
 
+}
