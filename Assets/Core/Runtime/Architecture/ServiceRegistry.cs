@@ -4,7 +4,7 @@ using hp55games.Mobile.Core.Architecture.States;
 using hp55games.Mobile.Core.Localization;
 using hp55games.Mobile.Core.Pooling;
 using hp55games.Mobile.Core.UI;
-using hp55games.Mobile.Core.Time;
+using hp55games.Mobile.Core.Timing;
 using hp55games.Mobile.Core.InputSystem;
 using hp55games.Mobile.Core.Context;
 
@@ -16,7 +16,7 @@ namespace hp55games.Mobile.Core.Architecture
 
         public static void InstallDefaults()
         {
-            Register<ILog>(new UnityLog());
+            Register<ILog>(new CustomUnityLog());
             
             Register<IEventBus>(new EventBus());
             
@@ -42,7 +42,6 @@ namespace hp55games.Mobile.Core.Architecture
             
             Register<IInputService>(new InputService());
         }
-
 
         public static void Register<T>(T instance) => _map[typeof(T)] = instance!;
         public static T Resolve<T>() => (T)_map[typeof(T)];

@@ -38,8 +38,13 @@ namespace hp55games.Mobile.UI
 
         public void Refresh()
         {
-            if (_label == null || _loc == null || string.IsNullOrEmpty(localizationKey))
+            if (_label == null || _loc == null)
                 return;
+
+            if (string.IsNullOrEmpty(localizationKey))
+            {
+                _label.text = prefix + suffix;
+            }
 
             _label.text = prefix + _loc.Get(localizationKey) + suffix;
         }

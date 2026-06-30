@@ -4,6 +4,7 @@ using TMPro;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Localization;
 using hp55games.Mobile.Core.UI;
+using hp55games.Mobile.Core.Save;
 
 namespace hp55games.Mobile.UI
 {
@@ -25,15 +26,22 @@ namespace hp55games.Mobile.UI
         [SerializeField] private Button resetButton;   // Ripristina default
         [SerializeField] private Toggle musicMuteToggle;
         [SerializeField] private Toggle sfxMuteToggle;
+        
+        [Header("Data Reset")]
+        [SerializeField] private Button resetDataButton;  // Reset record e progressi
+        [SerializeField] private TMP_Text bestScoreText;  // Mostra il record attuale
 
         private IUIOptionsService _opt;
         private IUINavigationService _navigation;
+        private ISaveService _save;
         private bool _isApplying;
 
         void Awake()
         {
             _opt = ServiceRegistry.Resolve<IUIOptionsService>();
-            _opt.Load(); // assicura stato pronto
+            _opt.Load();
+            
+            _save = ServiceRegistry.Resolve<ISaveService>();
             
             if (!ServiceRegistry.TryResolve<IUINavigationService>(out _navigation))
             {
@@ -51,6 +59,11 @@ namespace hp55games.Mobile.UI
                     _opt.Save();
                     RefreshUIFromModel();
                 });
+            }
+            
+            if (resetDataButton)
+            {
+                resetDataButton.onClick.AddListener(ResetProgressData);
             }
             
             if (backButton != null)
@@ -80,6 +93,7 @@ namespace hp55games.Mobile.UI
         {
             _opt.Changed += RefreshUIFromModel;
             RefreshUIFromModel();
+            UpdateBestScoreDisplay();
         }
 
         void OnDisable()
@@ -163,6 +177,30 @@ namespace hp55games.Mobile.UI
             }
 
             await _navigation.PopAsync();
+        }
+        
+        private void ResetProgressData()
+        {
+            if (_save == null)
+            {
+                Debug.LogError("[UIOptionsPage] ISaveService is null.");
+                return;
+            }
+
+            _save.Data.progress = new PlayerProgressData();
+            _save.Save();
+            
+            UpdateBestScoreDisplay();
+            
+            Debug.Log("[UIOptionsPage] Progress data reset successfully.");
+        }
+        
+        private void UpdateBestScoreDisplay()
+        {
+            if (bestScoreText == null || _save == null) return;
+            
+            int bestScore = _save.Data.progress.bestScore;
+            bestScoreText.text = $"Record: {bestScore}";
         }
     }
 }

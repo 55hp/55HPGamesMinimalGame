@@ -12,33 +12,33 @@ namespace hp55games.Mobile.Core.Architecture.States
     /// </summary>
     public sealed class GameplayState : IGameState
     {
+        private readonly bool _isResuming;
         private IMusicService _music;
+
+        public GameplayState(bool isResuming = false)
+        {
+            _isResuming = isResuming;
+        }
 
         public async Task EnterAsync(CancellationToken ct)
         {
-            Debug.Log("[GameplayState] Enter");
+            Debug.Log($"[GameplayState] Enter (isResuming: {_isResuming})");
 
-            // Optional: BGM setup
-            if (ServiceRegistry.TryResolve<IMusicService>(out _music))
+            if (!_isResuming)
             {
-                await _music.CrossfadeToAsync(Addr.Content.Audio.Bgm.GameTheme, 0.5f);
+                // Prima volta: setup completo
+                if (ServiceRegistry.TryResolve<IMusicService>(out _music))
+                {
+                    await _music.CrossfadeToAsync(Addr.Content.Audio.Bgm.GameTheme, 0.5f);
+                }
+
+                IGameContextService context = null;
+                ServiceRegistry.TryResolve(out context);
+                context?.ResetRun();
+
+                var navigation = ServiceRegistry.Resolve<IUINavigationService>();
+                await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
             }
-
-            // 1) Inizializza il contesto di gioco (score e vite)
-            IGameContextService context = null;
-            ServiceRegistry.TryResolve(out context);
-
-            if (context != null)
-            {
-                // Valori di default generici per il template
-                context.Score = 0;
-                context.Lives = 3; // Usa -1 se il gioco non usa vite
-            }
-
-            // 2) Mostra l'HUD di gameplay tramite il Navigation Service
-            var navigation = ServiceRegistry.Resolve<IUINavigationService>();
-
-            await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
             
             await Task.Yield();
         }

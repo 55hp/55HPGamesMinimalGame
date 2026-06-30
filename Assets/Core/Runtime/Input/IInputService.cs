@@ -10,6 +10,11 @@ namespace hp55games.Mobile.Core.InputSystem
     public interface IInputService
     {
         /// <summary>
+        /// Returns true if the input service has been ticked at least once and is ready to process input.
+        /// </summary>
+        bool IsReady { get; }
+
+        /// <summary>
         /// Fired when the pointer is pressed down (finger down / mouse down).
         /// </summary>
         event Action<Vector2> PointerDown;

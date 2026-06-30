@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.UI;
-using hp55games.Ui; // UIRoot
+using hp55games.Ui;
 
 namespace hp55games.Mobile.UI
 {
