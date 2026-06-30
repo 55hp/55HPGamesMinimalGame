@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: FlappyTsunami
+  m_EditorClassIdentifier: 
+  m_GroupName: FlappyTsunami
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 9466c662825d26941ae177c1f7c91263
+  m_SerializeEntries:
+  - m_GUID: 0535680f2bc3c5a469a299237a4123c4
+    m_Address: flappytsunami/content/followerConfigs/one
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 425cfae9b5a93b640a4fc6d08af9effe
+    m_Address: flappytsunami/content/followerConfigs/zero
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d5dcb77c2b08fc245b2f060a2cac2ddf
+    m_Address: flappytsunamy/content/followers/main_prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eca87ebe44eccfb44ab12f3bca63ecc3
+    m_Address: flappytsunami/content/followerConfigs/two
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: d47609f78f9d79048af22e29efe0bf34, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: b95359a2e3f69e649943a3ac2a75a1af, type: 2}
+    - {fileID: 11400000, guid: 5e54015fe5a57384790785c4b1dfb6a6, type: 2}
