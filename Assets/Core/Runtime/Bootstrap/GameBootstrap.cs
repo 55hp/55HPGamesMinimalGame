@@ -1,7 +1,10 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using hp55games.Mobile.Core.Architecture;
+using hp55games.Mobile.Core.SceneFlow;
 
 namespace hp55games.Mobile.Core.Bootstrap
 {
@@ -22,16 +25,33 @@ namespace hp55games.Mobile.Core.Bootstrap
 
         private IEnumerator BootstrapSequence()
         {
-            // 1) Servizi core (compreso Save + Time)
+            // 1) Core services (Save, Time, EventBus, etc.)
             ServiceRegistry.InstallDefaults();
 
-            // 2) Systems Audio
+            // 2) SceneFlowConfig — must be registered before any scene with a
+            //    SceneFlowServiceInstaller loads, so SceneFlowService can resolve it.
+            var configHandle = Addressables.LoadAssetAsync<SceneFlowConfig>(
+                hp55games.Addr.Config.SceneFlowConfig);
+            yield return configHandle;
+
+            if (configHandle.Status == AsyncOperationStatus.Succeeded)
+            {
+                ServiceRegistry.Register<ISceneFlowConfig>(configHandle.Result);
+                Debug.Log("[GameBootstrap] SceneFlowConfig registered.");
+            }
+            else
+            {
+                Debug.LogError("[GameBootstrap] Failed to load SceneFlowConfig. " +
+                               "Scene flow will fall back to hardcoded scene names.");
+            }
+
+            // 3) Systems Audio
             yield return LoadSceneAdditiveCoroutine("Assets/Scenes/Additive/90_Systems_Audio.unity");
 
-            // 3) UI Root
+            // 4) UI Root
             yield return LoadSceneAdditiveCoroutine("Assets/Scenes/Additive/91_UI_Root.unity");
 
-            // 4) Scena di menu
+            // 5) Menu scene
             yield return LoadSceneAdditiveCoroutine("Assets/Scenes/01_Menu.unity");
 
             var menuScene = SceneManager.GetSceneByPath("Assets/Scenes/01_Menu.unity");

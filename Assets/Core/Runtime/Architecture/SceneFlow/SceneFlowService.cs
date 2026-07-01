@@ -11,23 +11,21 @@ namespace hp55games.Mobile.Game.SceneFlow
 {
     public sealed class SceneFlowService : ISceneFlowService
     {
-        private const string MenuSceneName     = "01_Menu";
-        private const string GameplaySceneName = "02_Gameplay";
-        private const string ResultsSceneName  = "03_Results";
-        private const float FadeDuration = 0.25f;
-        private const int OverlayTimeoutMs = 1000;
+        private const float FadeDuration    = 0.25f;
+        private const int OverlayTimeoutMs  = 1000;
 
-        private readonly IGameStateMachine _fsm;
-        private readonly IUIOverlayService _overlay;
+        private readonly IGameStateMachine  _fsm;
+        private readonly IUIOverlayService  _overlay;
+        private readonly ISceneFlowConfig   _config;
         private bool _isTransitioning;
         private AsyncOperation _gameplayPreload;
 
-        private static readonly string[] ContentScenes =
-        {
-            MenuSceneName,
-            GameplaySceneName,
-            ResultsSceneName
-        };
+        private string MenuSceneName     => _config?.MenuScene     ?? "01_Menu";
+        private string GameplaySceneName => _config?.GameplayScene  ?? "02_Gameplay";
+        private string ResultsSceneName  => _config?.ResultsScene   ?? "03_Results";
+
+        private string[] ContentScenes =>
+            new[] { MenuSceneName, GameplaySceneName, ResultsSceneName };
 
         public SceneFlowService()
         {
@@ -36,6 +34,9 @@ namespace hp55games.Mobile.Game.SceneFlow
 
             if (!ServiceRegistry.TryResolve<IUIOverlayService>(out _overlay))
                 Debug.LogWarning("[SceneFlowService] IUIOverlayService not available. Overlay transitions will be skipped.");
+
+            if (!ServiceRegistry.TryResolve<ISceneFlowConfig>(out _config))
+                Debug.LogWarning("[SceneFlowService] ISceneFlowConfig not available. Falling back to hardcoded scene names.");
         }
 
         public void StartGameplayPreload()

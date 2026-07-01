@@ -8,7 +8,8 @@ namespace hp55games
     {
         public static class Config
         {
-            public const string Main = "config/main";
+            public const string Main            = "config/main";
+            public const string SceneFlowConfig = "config/scene_flow_config";
         }
 
         public static class Content

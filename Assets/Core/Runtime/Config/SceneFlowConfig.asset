@@ -9,11 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dea69d41f90c6ea4fa55c27c1d60c145, type: 3}
-  m_Name: AddressableAssetGroupSortSettings
+  m_Script: {fileID: 11500000, guid: 909ca85a337741348b055c385ea1efdb, type: 3}
+  m_Name: SceneFlowConfig
   m_EditorClassIdentifier: 
-  sortOrder:
-  - 2492296b92e2eb1468614ff3ec60462a
-  - c945e8931ff2cd04fa9ee9b18182fe30
-  - c5157e5990b28d04b85f19d4a544afc8
-  - 799d2b8034f53f04fbec152138789a58
+  _bootstrapScene: 00_Bootstrap
+  _menuScene: 01_Menu
+  _gameplayScene: 02_Gameplay
+  _resultsScene: 03_Results
