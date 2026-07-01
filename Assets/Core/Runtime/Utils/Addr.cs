@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace hp55games
 {
     /// <summary>
@@ -56,30 +54,6 @@ namespace hp55games
                     public const string GameTheme = "content/audio/bgm/game_theme";
                 }
                 
-            }
-        }
-
-        public static class FlappyTsunami
-        {
-            public static class Prefabs
-            {
-                public const string Follower_prefab = "flappytsunamy/content/followers/main_prefab";
-            }
-
-            public static class FollowerConfigs
-            {
-                public const string Follower0 = "flappytsunami/content/followerConfigs/zero";
-                public const string Follower1 = "flappytsunami/content/followerConfigs/one";
-                public const string Follower2 = "flappytsunami/content/followerConfigs/two";
-
-                public static List<string> GetAllFollowers()
-                {
-                    List<string> results = new List<string>();
-                    results.Add(Follower0);
-                    results.Add(Follower1);
-                    results.Add(Follower2);
-                    return results;
-                }
             }
         }
     }
