@@ -1,0 +1,120 @@
+using System.Collections;
+using hp55games.FlappyTsunami.Configs;
+using UnityEngine;
+
+namespace hp55games.FlappyTsunami.Features.Gameplay
+{
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class FollowerUnit2D : MonoBehaviour
+    {
+        [Header("Swarm")]
+        [SerializeField] private PlayerSwarmController2D swarm;
+        
+        [Header("followerConfig")]
+        [SerializeField] private FollowerConfig followerConfig;
+
+        [Header("Movement")]
+        [SerializeField] private float verticalImpulseMultiplier = 1f;
+        [SerializeField] private float tapDelay;
+
+        private Rigidbody2D _rb;
+        private SpriteRenderer _sr;
+        private float _baseGravityScale;
+        private bool _isAlive = true;
+
+        public bool IsAlive => _isAlive;
+
+        private void Awake()
+        {
+            _rb = GetComponent<Rigidbody2D>();
+            _baseGravityScale = _rb.gravityScale;
+            
+            if (followerConfig != null)
+            {
+                ApplyFollowerConfig();
+            }
+        }
+        
+        private void ApplyFollowerConfig()
+        {
+            // Movement
+            _rb.gravityScale = followerConfig.gravityScale;
+            _baseGravityScale = followerConfig.gravityScale;
+
+            verticalImpulseMultiplier = followerConfig.verticalImpulseMultiplier;
+            tapDelay = followerConfig.tapDelay;
+
+            // Visual
+            if (followerConfig.sprite != null)
+            {
+                _sr.sprite = followerConfig.sprite;
+            }
+
+            _sr.color = followerConfig.color;
+            transform.localScale = followerConfig.localScale;
+
+            // TODO: se un giorno aggiungo trail o VFX, li aggancio qui
+        }
+
+        /// <summary>
+        /// Chiamato dallo swarm quando il giocatore fa TAP.
+        /// </summary>
+        public void OnSwarmTap(Vector2 baseImpulse)
+        {
+            if (!_isAlive)
+                return;
+
+            StartCoroutine(ApplyTapDelayed(baseImpulse));
+        }
+
+        private IEnumerator ApplyTapDelayed(Vector2 baseImpulse)
+        {
+            if (tapDelay > 0f)
+                yield return new WaitForSeconds(tapDelay);
+
+            // Reset componente verticale prima di applicare l’impulso
+            Vector2 velocity = _rb.velocity;
+            velocity.y = 0f;
+            _rb.velocity = velocity;
+
+            _rb.AddForce(baseImpulse * verticalImpulseMultiplier, ForceMode2D.Impulse);
+        }
+
+        /// <summary>
+        /// Da chiamare quando questo follower "muore" (collisione, ecc.).
+        /// </summary>
+        public void Kill()
+        {
+            if (!_isAlive)
+                return;
+
+            _isAlive = false;
+
+            // Notifica allo swarm che questo follower è morto.
+            if (swarm != null)
+            {
+                swarm.NotifyFollowerDied(this);
+            }
+
+            // Per ora semplicemente lo disattiviamo.
+            gameObject.SetActive(false);
+        }
+
+        // Utility per settare lo swarm via script (se non fatto da Inspector).
+        public void SetSwarm(PlayerSwarmController2D newSwarm)
+        {
+            swarm = newSwarm;
+        }
+        
+        public void SetGravityEnabled(bool enabled)
+        {
+            if (_rb == null)
+            {
+                _rb = GetComponent<Rigidbody2D>();
+                _baseGravityScale = _rb.gravityScale;
+            }
+
+            _rb.gravityScale = enabled ? _baseGravityScale : 0f;
+        }
+    }
+}
