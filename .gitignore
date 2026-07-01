@@ -36,3 +36,6 @@ DerivedData/
 # OS
 .DS_Store
 Thumbs.db
+
+# Bezi AI plugin
+/Packages/com.bezi.sidekick/

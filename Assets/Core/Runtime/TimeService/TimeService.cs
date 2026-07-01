@@ -5,7 +5,7 @@ using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Save;
 
-namespace hp55games.Mobile.Core.Time
+namespace hp55games.Mobile.Core.Timing
 {
     /// <summary>
     /// TimeService livello "Mobile Standard":
@@ -33,8 +33,8 @@ namespace hp55games.Mobile.Core.Time
         public DateTime UtcNow => DateTime.UtcNow;
         public DateTime LocalNow => DateTime.Now;
 
-        public double UnscaledGameTime => UnityEngine.Time.unscaledTime;
-        public double MonotonicSeconds => UnityEngine.Time.realtimeSinceStartupAsDouble;
+        public double UnscaledGameTime => Time.unscaledTime;
+        public double MonotonicSeconds => Time.realtimeSinceStartupAsDouble;
 
         public bool IsClockSuspicious => _clockSuspicious;
 
@@ -105,7 +105,7 @@ namespace hp55games.Mobile.Core.Time
         private void CheckClock()
         {
             var nowUtc  = DateTime.UtcNow;
-            var nowMono = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            var nowMono = Time.realtimeSinceStartupAsDouble;
 
             if (!string.IsNullOrEmpty(_data.lastUtcIso))
             {

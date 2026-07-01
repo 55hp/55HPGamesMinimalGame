@@ -1,6 +1,6 @@
 using System;
 
-namespace hp55games.Mobile.Core.Time
+namespace hp55games.Mobile.Core.Timing
 {
     public interface ITimeService
     {

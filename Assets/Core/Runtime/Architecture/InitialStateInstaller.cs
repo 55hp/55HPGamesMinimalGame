@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Architecture.States;
-using hp55games.Mobile.Core.Time;
+using hp55games.Mobile.Core.Timing;
 
 public class InitialStateInstaller : MonoBehaviour
 {

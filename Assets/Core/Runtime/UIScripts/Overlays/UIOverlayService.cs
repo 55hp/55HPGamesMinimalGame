@@ -139,6 +139,7 @@ namespace hp55games.Mobile.UI
             float t = 0f;
             while (t < duration)
             {
+                if (cg == null) return;
                 t += Time.unscaledDeltaTime;
                 cg.alpha = Mathf.Lerp(start, target, Mathf.Clamp01(t / duration));
                 await Task.Yield();

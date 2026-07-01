@@ -8,6 +8,8 @@ namespace hp55games.Mobile.Core.SceneFlow
         Task GoToGameplayAsync(string levelId = null);
         Task GoToResultsAsync();
         Task GoToPauseAsync();
+        Task ResumeFromPauseAsync();
+        void StartGameplayPreload();
     }
 }
 

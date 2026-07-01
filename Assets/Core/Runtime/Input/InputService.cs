@@ -16,10 +16,12 @@ namespace hp55games.Mobile.Core.InputSystem
         public event Action<Vector2, Vector2> Swipe;
         public event Action<Vector2> Hold;
 
-        // Tunable thresholds
-        const float TapMaxDuration      = 0.25f; // seconds
-        const float TapMaxDistanceSqr  = 25f;   // pixels^2 (5 px)
-        const float HoldMinDuration    = 0.5f;  // seconds
+        public bool IsReady { get; private set; }
+
+        // Tunable thresholds (increased for better tap detection)
+        const float TapMaxDuration      = 0.35f; // seconds (increased from 0.25f)
+        const float TapMaxDistanceSqr  = 100f;   // pixels^2 (10 px, increased from 5 px)
+        const float HoldMinDuration    = 0.5f;   // seconds
         const float SwipeMinDistanceSqr = 1600f; // pixels^2 (40 px)
 
         bool   _isDown;
@@ -30,6 +32,8 @@ namespace hp55games.Mobile.Core.InputSystem
 
         public void Tick(float deltaTime)
         {
+            IsReady = true;
+
             // Single-pointer abstraction:
             // - If touch is supported -> use first touch
             // - Else -> use mouse left button as pointer
@@ -57,7 +61,7 @@ namespace hp55games.Mobile.Core.InputSystem
                     // Pointer just pressed
                     _isDown    = true;
                     _holdFired = false;
-                    _downTime  = UnityEngine.Time.unscaledTime;
+                    _downTime  = Time.unscaledTime;
                     _downPos   = currentPos;
                     _lastPos   = currentPos;
 
@@ -68,7 +72,7 @@ namespace hp55games.Mobile.Core.InputSystem
                     // Pointer is held
                     _lastPos = currentPos;
 
-                    var heldFor = UnityEngine.Time.unscaledTime - _downTime;
+                    var heldFor = Time.unscaledTime - _downTime;
                     var distSqr = (currentPos - _downPos).sqrMagnitude;
 
                     if (!_holdFired && heldFor >= HoldMinDuration && distSqr <= TapMaxDistanceSqr)
@@ -86,16 +90,22 @@ namespace hp55games.Mobile.Core.InputSystem
                     _isDown = false;
                     PointerUp?.Invoke(_lastPos);
 
-                    var totalTime   = UnityEngine.Time.unscaledTime - _downTime;
+                    var totalTime   = Time.unscaledTime - _downTime;
                     var distanceSqr = (_lastPos - _downPos).sqrMagnitude;
 
                     if (distanceSqr <= TapMaxDistanceSqr && totalTime <= TapMaxDuration)
                     {
                         Tap?.Invoke(_lastPos);
+                        Debug.Log($"[InputService] TAP detected at {_lastPos}, duration: {totalTime:F3}s, distance: {Mathf.Sqrt(distanceSqr):F1}px");
                     }
                     else if (distanceSqr >= SwipeMinDistanceSqr)
                     {
                         Swipe?.Invoke(_downPos, _lastPos);
+                        Debug.Log($"[InputService] SWIPE detected, distance: {Mathf.Sqrt(distanceSqr):F1}px");
+                    }
+                    else
+                    {
+                        Debug.Log($"[InputService] Input IGNORED - duration: {totalTime:F3}s (max {TapMaxDuration}s), distance: {Mathf.Sqrt(distanceSqr):F1}px (max {Mathf.Sqrt(TapMaxDistanceSqr):F1}px for tap, min {Mathf.Sqrt(SwipeMinDistanceSqr):F1}px for swipe)");
                     }
                 }
             }

@@ -18,17 +18,37 @@ namespace hp55games.Mobile.Core.Architecture.States
         {
             if (next == null) throw new ArgumentNullException(nameof(next));
 
-            lock (_lock)
+            CancellationTokenSource myCts;
+
+            // Try to acquire the right to run a transition.
+            // If another transition is in progress, request its cancellation and wait.
+            while (true)
             {
-                if (_isTransitioning) throw new InvalidOperationException("State transition already in progress.");
-                _isTransitioning = true;
-                _cts?.Cancel();
-                _cts = new CancellationTokenSource();
+                lock (_lock)
+                {
+                    if (!_isTransitioning)
+                    {
+                        _isTransitioning = true;
+                        // cancel any previous CTS reference (defensive)
+                        _cts?.Cancel();
+                        _cts = new CancellationTokenSource();
+                        myCts = _cts;
+                        break;
+                    }
+                    else
+                    {
+                        // ask the current transition to cancel; then yield and retry acquiring the lock
+                        _cts?.Cancel();
+                    }
+                }
+
+                // Give the running transition a chance to observe cancellation and finish.
+                await Task.Yield();
             }
 
             try
             {
-                var ct = _cts.Token;
+                var ct = myCts.Token;
 
                 if (_current != null)
                 {
