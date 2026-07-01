@@ -1,6 +1,7 @@
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Context;
 using hp55games.Mobile.Core.SceneFlow;
+using hp55games.Mobile.Core;
 using hp55games.Mobile.UI;
 using TMPro;
 using UnityEngine;
@@ -74,7 +75,7 @@ namespace hp55games.Mobile.Game.UI
                 _menuButton.onClick.RemoveListener(OnMenuClicked);
         }
 
-        private async void OnRetryClicked()
+        private void OnRetryClicked()
         {
             if (_sceneFlow == null)
             {
@@ -82,10 +83,10 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            await _sceneFlow.GoToGameplayAsync();
+            AsyncUtils.FireAndForget(_sceneFlow.GoToGameplayAsync(), context: nameof(UIResultsPage));
         }
 
-        private async void OnMenuClicked()
+        private void OnMenuClicked()
         {
             if (_sceneFlow == null)
             {
@@ -93,7 +94,7 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            await _sceneFlow.GoToMenuAsync();
+            AsyncUtils.FireAndForget(_sceneFlow.GoToMenuAsync(), context: nameof(UIResultsPage));
         }
     }
 }

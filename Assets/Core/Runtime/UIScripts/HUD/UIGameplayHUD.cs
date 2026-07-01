@@ -5,6 +5,7 @@ using hp55games.Mobile.Core.Gameplay.Events;
 using hp55games.Mobile.Core.Juice;
 using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.UI;
+using hp55games.Mobile.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -43,9 +44,8 @@ namespace hp55games.Mobile.Game.UI
 
         private void Start()
         {
-            // IFeedbackService risolto in Start() — allineato con FlappyTsunami_HUDController.
-            // FeedbackService.Awake() potrebbe non essere ancora eseguito al momento
-            // di questo Awake() se entrambi vivono nella stessa scena.
+            // IFeedbackService resolved in Start() to avoid ordering issues:
+            // FeedbackService.Awake() may not have run yet if both live in the same scene.
             ServiceRegistry.TryResolve<IFeedbackService>(out _feedbackService);
 
             Init();
@@ -102,15 +102,15 @@ namespace hp55games.Mobile.Game.UI
                 _livesLabel.Refresh();
             }
 
-            _feedbackService?.Play("followers_changed");
+            _feedbackService?.Play("hp_changed");
         }
 
-        private async void OnPauseClicked()
+        private void OnPauseClicked()
         {
             if (_sceneFlow == null)
                 return;
 
-            await _sceneFlow.GoToPauseAsync();
+            AsyncUtils.FireAndForget(_sceneFlow.GoToPauseAsync(), context: nameof(UIGameplayHUD));
         }
     }
 }

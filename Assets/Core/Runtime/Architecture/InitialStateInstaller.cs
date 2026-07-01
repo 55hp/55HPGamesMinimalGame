@@ -3,6 +3,7 @@ using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Architecture.States;
 using hp55games.Mobile.Core.Timing;
+using hp55games.Mobile.Core;
 
 public class InitialStateInstaller : MonoBehaviour
 {
@@ -10,7 +11,12 @@ public class InitialStateInstaller : MonoBehaviour
     /// Avvia lo stato iniziale (MainMenuState) una volta che la scena 01_Menu è attiva.
     /// Qui calcoliamo anche da quanto tempo manca l'ultima sessione.
     /// </summary>
-    private async void Start()
+    private void Start()
+    {
+        AsyncUtils.FireAndForget(StartAsync(), context: nameof(InitialStateInstaller));
+    }
+
+    private async Task StartAsync()
     {
         var fsm  = ServiceRegistry.Resolve<IGameStateMachine>();
         var time = ServiceRegistry.Resolve<ITimeService>();

@@ -10,7 +10,7 @@ namespace hp55games.Mobile.Core.Save
     public class PlayerProgressData
     {
         /// <summary>
-        /// Global best score across runs (used by FlappyTest, but generic).
+        /// Global best score across all runs.
         /// </summary>
         public int bestScore = 0;
 

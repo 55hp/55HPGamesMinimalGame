@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.Core.UI;
+using hp55games.Mobile.Core;
 
 namespace hp55games.Mobile.Game.UI
 {
@@ -50,7 +51,7 @@ namespace hp55games.Mobile.Game.UI
                 _leaveButton.onClick.RemoveListener(OnLeaveClicked);
         }
 
-        private async void OnResumeClicked()
+        private void OnResumeClicked()
         {
             if (_sceneFlow == null)
             {
@@ -58,7 +59,7 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            await _sceneFlow.ResumeFromPauseAsync();
+            AsyncUtils.FireAndForget(_sceneFlow.ResumeFromPauseAsync(), context: nameof(UIPopup_Pause));
         }
 
         private void OnOptionsClicked()
@@ -72,7 +73,7 @@ namespace hp55games.Mobile.Game.UI
             _optionsPanel.SetActive(true);
         }
 
-        private async void OnLeaveClicked()
+        private void OnLeaveClicked()
         {
             if (_sceneFlow == null)
             {
@@ -80,7 +81,7 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            await _sceneFlow.GoToResultsAsync();
+            AsyncUtils.FireAndForget(_sceneFlow.GoToResultsAsync(), context: nameof(UIPopup_Pause));
         }
     }
 }
