@@ -26,15 +26,15 @@ namespace hp55games.Mobile.Core.Bootstrap
             ServiceRegistry.InstallDefaults();
 
             // 2) Systems Audio
-            yield return LoadSceneAdditiveCoroutine("Scenes/Additive/90_Systems_Audio");
+            yield return LoadSceneAdditiveCoroutine("Assets/Scenes/Additive/90_Systems_Audio.unity");
 
             // 3) UI Root
-            yield return LoadSceneAdditiveCoroutine("Scenes/Additive/91_UI_Root");
+            yield return LoadSceneAdditiveCoroutine("Assets/Scenes/Additive/91_UI_Root.unity");
 
             // 4) Scena di menu
-            yield return LoadSceneAdditiveCoroutine("Scenes/01_Menu");
+            yield return LoadSceneAdditiveCoroutine("Assets/Scenes/01_Menu.unity");
 
-            var menuScene = SceneManager.GetSceneByPath("Scenes/01_Menu");
+            var menuScene = SceneManager.GetSceneByPath("Assets/Scenes/01_Menu.unity");
             if (menuScene.IsValid())
                 SceneManager.SetActiveScene(menuScene);
         }

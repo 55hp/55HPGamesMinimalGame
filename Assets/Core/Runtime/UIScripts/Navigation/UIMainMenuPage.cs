@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.Core.UI;
+using hp55games.Mobile.Core;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -60,7 +61,7 @@ namespace hp55games.Mobile.Game.UI
                 exitButton.onClick.AddListener(OnExitClicked);
         }
 
-        private async void OnPlayClicked()
+        private void OnPlayClicked()
         {
             if (_sceneFlow == null)
             {
@@ -68,6 +69,11 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
+            AsyncUtils.FireAndForget(OnPlayClickedAsync(), context: nameof(UIMainMenuPage));
+        }
+
+        private async Task OnPlayClickedAsync()
+        {
             // 1) Chiudi la pagina del menu se hai un navigation service
             if (_navigation != null)
             {
@@ -78,7 +84,7 @@ namespace hp55games.Mobile.Game.UI
             await _sceneFlow.GoToGameplayAsync();
         }
 
-        private async void OnOptionsClicked()
+        private void OnOptionsClicked()
         {
             if (_navigation == null)
             {
@@ -92,10 +98,10 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            await _navigation.PushAsync(optionsPageAddress);
+            AsyncUtils.FireAndForget(_navigation.PushAsync(optionsPageAddress), context: nameof(UIMainMenuPage));
         }
 
-        private async void OnCreditsClicked()
+        private void OnCreditsClicked()
         {
             if (_navigation == null)
             {
@@ -108,8 +114,8 @@ namespace hp55games.Mobile.Game.UI
                 Debug.LogWarning("[UIMainMenuPage] Credits clicked but creditsPageAddress is empty.");
                 return;
             }
-            
-            await _navigation.PushAsync(creditsPageAddress);
+
+            AsyncUtils.FireAndForget(_navigation.PushAsync(creditsPageAddress), context: nameof(UIMainMenuPage));
         }
 
         private void OnExitClicked()

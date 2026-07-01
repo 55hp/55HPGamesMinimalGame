@@ -5,6 +5,7 @@ using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Localization;
 using hp55games.Mobile.Core.UI;
 using hp55games.Mobile.Core.Save;
+using hp55games.Mobile.Core;
 
 namespace hp55games.Mobile.UI
 {
@@ -168,7 +169,7 @@ namespace hp55games.Mobile.UI
         }
 
         
-        private async void OnBackClicked()
+        private void OnBackClicked()
         {
             if (_navigation == null)
             {
@@ -176,7 +177,7 @@ namespace hp55games.Mobile.UI
                 return;
             }
 
-            await _navigation.PopAsync();
+            AsyncUtils.FireAndForget(_navigation.PopAsync(), context: nameof(UIOptionsPage));
         }
         
         private void ResetProgressData()
