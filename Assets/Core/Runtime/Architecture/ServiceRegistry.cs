@@ -16,7 +16,7 @@ namespace hp55games.Mobile.Core.Architecture
 
         public static void InstallDefaults()
         {
-            Register<ILog>(new CustomUnityLog());
+            Register<ILog>(new UnityLog());
             
             Register<IEventBus>(new EventBus());
             
