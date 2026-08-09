@@ -1,0 +1,18 @@
+{
+    "name": "Core.Config.Catalog.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f9dbec4797cb6a444bc43ada0759966b"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

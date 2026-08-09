@@ -20,7 +20,7 @@ namespace hp55games.Mobile.Game.UI
     /// Addresses are plain strings so you can plug your Addressable keys
     /// (e.g. "content/ui/pages/options_page").
     /// </summary>
-    public sealed class UIMainMenuPage : MonoBehaviour
+    public sealed class UIMainMenuPage : UIPageBase
     {
         [Header("UI References")]
         [SerializeField] private TMP_Text titleLabel;
@@ -47,18 +47,10 @@ namespace hp55games.Mobile.Game.UI
                 Debug.LogWarning("[UIMainMenuPage] IUINavigationService not available. Options/Credits will do nothing.");
             }
 
-            // Wire buttons
-            if (playButton != null)
-                playButton.onClick.AddListener(OnPlayClicked);
-
-            if (optionsButton != null)
-                optionsButton.onClick.AddListener(OnOptionsClicked);
-
-            if (creditsButton != null)
-                creditsButton.onClick.AddListener(OnCreditsClicked);
-
-            if (exitButton != null)
-                exitButton.onClick.AddListener(OnExitClicked);
+            Bind(playButton, OnPlayClicked);
+            Bind(optionsButton, OnOptionsClicked);
+            Bind(creditsButton, OnCreditsClicked);
+            Bind(exitButton, OnExitClicked);
         }
 
         private void OnPlayClicked()

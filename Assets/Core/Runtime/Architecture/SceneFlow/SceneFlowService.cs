@@ -289,6 +289,14 @@ namespace hp55games.Mobile.Game.SceneFlow
             }
 
             _isTransitioning = true;
+
+            // The fade overlay does not block input by itself (its CanvasGroup keeps
+            // blocksRaycasts = false so it never eats clicks meant for UI on top of it).
+            // Without this, a tap during fade-in/scene-switch/fade-out can still reach
+            // whatever is underneath (outgoing or incoming scene) even though the screen
+            // reads as covered. BlockInput raises a dedicated raycast-blocking layer for
+            // the whole transition, not just the fade animation itself.
+            _overlay?.BlockInput(true);
             try
             {
                 if (_overlay != null) await SafeFadeInAsync();
@@ -307,6 +315,7 @@ namespace hp55games.Mobile.Game.SceneFlow
             }
             finally
             {
+                _overlay?.BlockInput(false);
                 _isTransitioning = false;
             }
         }

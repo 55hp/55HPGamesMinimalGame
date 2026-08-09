@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 using hp55games.Mobile.Core.Architecture;
@@ -8,7 +7,7 @@ using hp55games.Mobile.Core;
 
 namespace hp55games.Mobile.Game.UI
 {
-    public sealed class UIPopup_Pause : MonoBehaviour
+    public sealed class UIPopup_Pause : UIPopupBase
     {
         [Header("Buttons")]
         [SerializeField] private Button _resumeButton;
@@ -19,36 +18,19 @@ namespace hp55games.Mobile.Game.UI
         [SerializeField] private GameObject _optionsPanel;
 
         private ISceneFlowService _sceneFlow;
-        private IUIPopupService _popupService;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+
             _sceneFlow = ServiceRegistry.Resolve<ISceneFlowService>();
-            _popupService = ServiceRegistry.Resolve<IUIPopupService>();
 
-            if (_resumeButton != null)
-                _resumeButton.onClick.AddListener(OnResumeClicked);
+            Bind(_resumeButton, OnResumeClicked);
+            Bind(_optionsButton, OnOptionsClicked);
+            Bind(_leaveButton, OnLeaveClicked);
 
-            if (_optionsButton != null)
-                _optionsButton.onClick.AddListener(OnOptionsClicked);
-
-            if (_leaveButton != null)
-                _leaveButton.onClick.AddListener(OnLeaveClicked);
-
-            if(_optionsPanel != null)
+            if (_optionsPanel != null)
                 _optionsPanel.SetActive(false);
-        }
-
-        private void OnDestroy()
-        {
-            if (_resumeButton != null)
-                _resumeButton.onClick.RemoveListener(OnResumeClicked);
-
-            if (_optionsButton != null)
-                _optionsButton.onClick.RemoveListener(OnOptionsClicked);
-
-            if (_leaveButton != null)
-                _leaveButton.onClick.RemoveListener(OnLeaveClicked);
         }
 
         private void OnResumeClicked()

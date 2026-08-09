@@ -1,25 +1,25 @@
+// Assets/Editor/HP55_Mesh3DToCollider2DTool.cs
+// Extracts the 2D silhouette from the central Z-plane of a 3D polygonal mesh
+// and generates a prefab with a Rigidbody2D and matching PolygonCollider2D.
+//
+// Algorithm:
+//   1. For each triangle: compute intersection with the Z = sliceZ plane.
+//   2. Collect intersection segments.
+//   3. Chain segments into one or more closed loops.
+//   4. Select the longest loop (ignores minor holes).
+//   5. Ramer-Douglas-Peucker simplification.
+//   6. Create and save the prefab.
+//
+// Open via: hp55games Tools/Mesh 3D → Collider 2D
+
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace hp55games.Mobile.Core.Editor.Tools
+namespace hp55games.Editor.Tools
 {
-    /// <summary>
-    /// Estrae la silhouette 2D dalla sezione centrale (piano Z) di una mesh 3D poligonale
-    /// e genera un prefab con Rigidbody2D e PolygonCollider2D corrispondente.
-    ///
-    /// Algoritmo:
-    ///   1. Per ogni triangolo della mesh: calcolo intersezione col piano Z=sliceZ.
-    ///   2. Raccolta di segmenti di intersezione.
-    ///   3. Chaining dei segmenti in uno o più loop chiusi.
-    ///   4. Selezione del loop più lungo (esclude buchi minori).
-    ///   5. Simplificazione Ramer-Douglas-Peucker.
-    ///   6. Creazione e salvataggio del prefab.
-    ///
-    /// Open via: Tools → Mesh 3D → Collider 2D
-    /// </summary>
-    public class Mesh3DToCollider2DTool : EditorWindow
+    public class HP55_Mesh3DToCollider2DTool : EditorWindow
     {
         // ── fields ────────────────────────────────────────────────────────────
         [SerializeField] private GameObject _sourceObject;     // accetta scene GO o prefab
@@ -43,7 +43,7 @@ namespace hp55games.Mobile.Core.Editor.Tools
         [MenuItem("hp55games Tools/Mesh 3D → Collider 2D")]
         private static void Open()
         {
-            var w = GetWindow<Mesh3DToCollider2DTool>("Mesh → Collider 2D");
+            var w = GetWindow<HP55_Mesh3DToCollider2DTool>("Mesh → Collider 2D");
             w.minSize = new Vector2(360, 500);
         }
 
