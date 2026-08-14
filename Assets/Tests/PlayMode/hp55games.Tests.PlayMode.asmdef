@@ -5,7 +5,8 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Core.Runtime",
-        "UI.Runtime"
+        "UI.Runtime",
+        "Game.Features"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
