@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Polycubes.Shapes;
+using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay.Events;
 
 namespace hp55games.Blockout.Gameplay
@@ -20,6 +21,7 @@ namespace hp55games.Blockout.Gameplay
 
         private StepState _state;
         private float _stateTimer;
+        private BlockoutFallCurveConfig _fallCurve;
         private IEventBus _eventBus;
 
         private void Awake()
@@ -27,12 +29,15 @@ namespace hp55games.Blockout.Gameplay
             ServiceRegistry.TryResolve(out _eventBus);
         }
 
-        public void Initialize(PolycubeShape shape, Vector3Int startPosition)
+        // fallCurve is passed in rather than resolved here so the tick/phase logic stays testable
+        // without needing IConfigCatalogService wired up (see PieceControllerTests).
+        public void Initialize(PolycubeShape shape, Vector3Int startPosition, BlockoutFallCurveConfig fallCurve)
         {
             Shape = shape;
             GridPosition = startPosition;
+            _fallCurve = fallCurve;
             PhaseIndex = 0;
-            CurrentInterval = BlockoutFallCurve.IntervalForPhase(PhaseIndex);
+            CurrentInterval = _fallCurve.IntervalForPhase(PhaseIndex);
             _state = StepState.Waiting;
             _stateTimer = 0f;
         }
@@ -61,9 +66,9 @@ namespace hp55games.Blockout.Gameplay
                     break;
 
                 case StepState.Stepping:
-                    if (_stateTimer >= BlockoutFallCurve.StepDuration)
+                    if (_stateTimer >= _fallCurve.StepDuration)
                     {
-                        _stateTimer -= BlockoutFallCurve.StepDuration;
+                        _stateTimer -= _fallCurve.StepDuration;
                         _state = StepState.Waiting;
                         AdvancePhase();
                     }
@@ -74,7 +79,7 @@ namespace hp55games.Blockout.Gameplay
         private void AdvancePhase()
         {
             PhaseIndex++;
-            float newInterval = BlockoutFallCurve.IntervalForPhase(PhaseIndex);
+            float newInterval = _fallCurve.IntervalForPhase(PhaseIndex);
             bool changed = !Mathf.Approximately(newInterval, CurrentInterval);
             CurrentInterval = newInterval;
 

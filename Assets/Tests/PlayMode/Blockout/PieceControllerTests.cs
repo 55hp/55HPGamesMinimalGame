@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay;
 using hp55games.Polycubes.Shapes;
 
@@ -7,11 +8,25 @@ namespace hp55games.Blockout.Tests
 {
     public class PieceControllerTests
     {
-        private static PieceController CreateController()
+        private BlockoutFallCurveConfig _fallCurve;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_fallCurve);
+        }
+
+        private PieceController CreateController()
         {
             var go = new GameObject(nameof(PieceControllerTests));
             var controller = go.AddComponent<PieceController>();
-            controller.Initialize(new PolycubeShape(new[] { Vector3Int.zero }), Vector3Int.zero);
+            controller.Initialize(new PolycubeShape(new[] { Vector3Int.zero }), Vector3Int.zero, _fallCurve);
             return controller;
         }
 
@@ -40,7 +55,7 @@ namespace hp55games.Blockout.Tests
 
             // Cross Waiting (3.0s) then Stepping (0.3s) in many small per-frame-sized ticks: if the
             // controller published once per frame instead of once per transition, this would be >> 1.
-            float fullCycle = BlockoutFallCurve.IntervalForPhase(0) + BlockoutFallCurve.StepDuration;
+            float fullCycle = _fallCurve.IntervalForPhase(0) + _fallCurve.StepDuration;
             AdvanceBy(controller, fullCycle + 0.001f);
 
             Assert.AreEqual(1, raiseCount);
