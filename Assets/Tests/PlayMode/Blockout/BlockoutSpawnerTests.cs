@@ -3,8 +3,10 @@ using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay;
+using hp55games.Blockout.InputSystem;
 using hp55games.Polycubes.Grid;
 using hp55games.Polycubes.Shapes;
 
@@ -67,6 +69,42 @@ namespace hp55games.Blockout.Tests
             Assert.IsNotNull(spawner.CurrentPiece);
             Assert.IsFalse(spawner.CurrentPiece.IsLocked);
 
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void HardDrop_SyncsCubePositions_ToFinalLockedGridPosition()
+        {
+            // Regression test: BlockoutSpawner used to only sync cube transforms to GridPosition
+            // in Update() while the piece was still unlocked. Locking-and-respawning is fully
+            // synchronous (no frame boundary in between), so Update() never got a chance to see
+            // the piece's final resting position once IsLocked flipped mid-hard-drop - the cubes
+            // were left wherever they were on the last regular frame, looking frozen mid-air.
+            var grid = new VoxelGrid(3, 5, 3);
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+
+            spawner.Initialize(grid, _fallCurve, new List<PolycubeShape> { SingleCellShape() }, 3, 5, 3);
+
+            var lockedController = spawner.CurrentPiece;
+            var lockedCubes = new List<Transform>(spawner.CurrentPieceCubes);
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            // Destroy() defers to end of frame, so the just-locked controller and the cube
+            // references captured above are still valid to inspect here.
+            Assert.IsTrue(lockedController.IsLocked);
+            Assert.AreEqual((Vector3)lockedController.GridPosition, lockedCubes[0].position);
+
+            // Cleanup: the spawner's pieces/cubes are independent root GameObjects, not children
+            // of `go`, so the old (locked) and new (respawned) ones need tearing down explicitly.
+            foreach (var cube in lockedCubes) Object.DestroyImmediate(cube.gameObject);
+            Object.DestroyImmediate(lockedController.gameObject);
+            foreach (var cube in spawner.CurrentPieceCubes) Object.DestroyImmediate(cube.gameObject);
+            Object.DestroyImmediate(spawner.CurrentPiece.gameObject);
             Object.DestroyImmediate(go);
         }
     }

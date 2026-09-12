@@ -44,6 +44,7 @@ namespace hp55games.Blockout.Gameplay
         // job (out of scope). Public so PlayMode tests can assert this instead of a silent lock.
         public bool SpawnBlockedWellFull { get; private set; }
         public PieceController CurrentPiece => _controller;
+        public IReadOnlyList<Transform> CurrentPieceCubes => _cellCubes;
 
         private void Start()
         {
@@ -85,8 +86,12 @@ namespace hp55games.Blockout.Gameplay
 
         private void Update()
         {
-            if (_controller == null || _controller.IsLocked) return;
+            if (_controller == null) return;
+            SyncCubesToCurrentGridPosition();
+        }
 
+        private void SyncCubesToCurrentGridPosition()
+        {
             for (int i = 0; i < _cellCubes.Length; i++)
             {
                 _cellCubes[i].position = (Vector3)(_controller.GridPosition + _cellOffsets[i]);
@@ -147,9 +152,17 @@ namespace hp55games.Blockout.Gameplay
         private void OnPieceLocked()
         {
             _controller.Locked -= OnPieceLocked;
+
+            // Locking and respawning below are fully synchronous (no frame boundary in between),
+            // so Update() never gets a chance to observe this controller's final GridPosition
+            // before _controller is reassigned to the next piece - sync here instead, or these
+            // cubes are left wherever they were on the last regular frame (looks frozen mid-air
+            // after a hard drop in particular, since that can skip several cells in one go).
+            SyncCubesToCurrentGridPosition();
             LockCurrentPieceColor();
-            // Don't touch _cellCubes any further - leaving them where they are IS the locked placeholder.
-            // Only the (invisible) controller object is discarded; it has nothing left to do.
+
+            // Don't touch _cellCubes any further after this - leaving them where they are IS the
+            // locked placeholder. Only the (invisible) controller object is discarded.
             Destroy(_controller.gameObject);
             _controller = null;
             SpawnNext();
