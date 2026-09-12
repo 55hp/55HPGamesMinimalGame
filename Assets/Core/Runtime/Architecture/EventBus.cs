@@ -15,8 +15,10 @@ namespace hp55games.Mobile.Core.Architecture {
 
 
         public void Publish<T>(T evt) where T : IEvent {
+            // Snapshot before iterating: a handler may Subscribe/Dispose (e.g. spawning a new
+            // listener) during dispatch, which would otherwise mutate this list mid-enumeration.
             if (_subs.TryGetValue(typeof(T), out var list))
-                foreach (var del in list) ((Action<T>)del).Invoke(evt);
+                foreach (var del in list.ToArray()) ((Action<T>)del).Invoke(evt);
         }
 
 
