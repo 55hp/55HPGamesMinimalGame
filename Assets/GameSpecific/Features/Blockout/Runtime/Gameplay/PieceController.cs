@@ -2,8 +2,10 @@ using System;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Polycubes.Shapes;
+using hp55games.Polycubes.Grid;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay.Events;
+using hp55games.Blockout.InputSystem;
 
 namespace hp55games.Blockout.Gameplay
 {
@@ -11,35 +13,62 @@ namespace hp55games.Blockout.Gameplay
     {
         private enum StepState { Waiting, Stepping }
 
+        // Which actual PolycubeShape axis AxisA/AxisB (from swipe left/right vs up/down) drive
+        // is arbitrary until Franci judges what feels natural once this is running - swap these
+        // two constants to change it (Technical Doc Phase 3, open question 3).
+        private enum PhysicalRotationAxis { X, Y, Z }
+        private const PhysicalRotationAxis AxisAMapsTo = PhysicalRotationAxis.Y;
+        private const PhysicalRotationAxis AxisBMapsTo = PhysicalRotationAxis.X;
+
         public PolycubeShape Shape { get; private set; }
         public Vector3Int GridPosition { get; private set; }
         public int PhaseIndex { get; private set; }
         public float CurrentInterval { get; private set; }
+        public bool IsLocked { get; private set; }
 
         // Testable without going through Unity's frame loop or the event bus registration required by Awake().
         public event Action<float> FallIntervalChanged;
+        public event Action Locked;
 
         private StepState _state;
         private float _stateTimer;
         private BlockoutFallCurveConfig _fallCurve;
+        private VoxelGrid _grid;
         private IEventBus _eventBus;
+        private IDisposable _moveSubscription;
+        private IDisposable _rotateSubscription;
+        private IDisposable _hardDropSubscription;
 
         private void Awake()
         {
-            ServiceRegistry.TryResolve(out _eventBus);
+            if (ServiceRegistry.TryResolve(out _eventBus))
+            {
+                _moveSubscription = _eventBus.Subscribe<PieceMoveRequestedEvent>(HandleMoveRequested);
+                _rotateSubscription = _eventBus.Subscribe<PieceRotateRequestedEvent>(HandleRotateRequested);
+                _hardDropSubscription = _eventBus.Subscribe<HardDropRequestedEvent>(HandleHardDropRequested);
+            }
         }
 
-        // fallCurve is passed in rather than resolved here so the tick/phase logic stays testable
-        // without needing IConfigCatalogService wired up (see PieceControllerTests).
-        public void Initialize(PolycubeShape shape, Vector3Int startPosition, BlockoutFallCurveConfig fallCurve)
+        private void OnDestroy()
+        {
+            _moveSubscription?.Dispose();
+            _rotateSubscription?.Dispose();
+            _hardDropSubscription?.Dispose();
+        }
+
+        // fallCurve/grid are passed in rather than resolved here so the tick/phase/locking logic
+        // stays testable without needing IConfigCatalogService wired up (see PieceControllerTests).
+        public void Initialize(PolycubeShape shape, Vector3Int startPosition, BlockoutFallCurveConfig fallCurve, VoxelGrid grid)
         {
             Shape = shape;
             GridPosition = startPosition;
             _fallCurve = fallCurve;
+            _grid = grid;
             PhaseIndex = 0;
             CurrentInterval = _fallCurve.IntervalForPhase(PhaseIndex);
             _state = StepState.Waiting;
             _stateTimer = 0f;
+            IsLocked = false;
         }
 
         private void Update()
@@ -48,8 +77,11 @@ namespace hp55games.Blockout.Gameplay
         }
 
         // Advances the Waiting -> Stepping -> Waiting loop by dt seconds of simulated time.
+        // No-ops once locked: a locked piece is done, the spawner owns what happens next.
         public void Tick(float deltaTime)
         {
+            if (IsLocked) return;
+
             _stateTimer += deltaTime;
 
             switch (_state)
@@ -58,10 +90,19 @@ namespace hp55games.Blockout.Gameplay
                     if (_stateTimer >= CurrentInterval)
                     {
                         _stateTimer -= CurrentInterval;
-                        _state = StepState.Stepping;
-                        // Logical grid position updates at the START of Stepping, not at the end —
-                        // avoids ambiguous state during the visual transition.
-                        GridPosition += Vector3Int.down;
+
+                        var nextPosition = GridPosition + Vector3Int.down;
+                        if (PlacementRules.CanPlaceAt(_grid, Shape, nextPosition))
+                        {
+                            _state = StepState.Stepping;
+                            // Logical grid position updates at the START of Stepping, not at the end —
+                            // avoids ambiguous state during the visual transition.
+                            GridPosition = nextPosition;
+                        }
+                        else
+                        {
+                            Lock();
+                        }
                     }
                     break;
 
@@ -76,6 +117,17 @@ namespace hp55games.Blockout.Gameplay
             }
         }
 
+        // The floor or a stacked cell blocked the next step down: write the shape into the grid
+        // at its current (last valid) position and stop ticking. The spawner listens for this to
+        // spawn the next piece.
+        private void Lock()
+        {
+            PlacementRules.LockInto(_grid, Shape, GridPosition);
+            IsLocked = true;
+            Locked?.Invoke();
+            _eventBus?.Publish(new PieceLockedEvent { GridPosition = GridPosition });
+        }
+
         private void AdvancePhase()
         {
             PhaseIndex++;
@@ -87,6 +139,69 @@ namespace hp55games.Blockout.Gameplay
             {
                 FallIntervalChanged?.Invoke(CurrentInterval);
                 _eventBus?.Publish(new FallIntervalChangedEvent { NewInterval = CurrentInterval });
+            }
+        }
+
+        // Same discrete-check pattern as the fall step: attempt via CanPlaceAt, only commit if valid.
+        private void HandleMoveRequested(PieceMoveRequestedEvent evt)
+        {
+            if (IsLocked) return;
+
+            var candidate = GridPosition + DeltaFor(evt.Direction);
+            if (PlacementRules.CanPlaceAt(_grid, Shape, candidate))
+            {
+                GridPosition = candidate;
+            }
+        }
+
+        private void HandleRotateRequested(PieceRotateRequestedEvent evt)
+        {
+            if (IsLocked) return;
+
+            var axis = evt.Axis == RotateAxis.AxisA ? AxisAMapsTo : AxisBMapsTo;
+            var rotated = Rotate(Shape, axis, evt.Steps90);
+            if (PlacementRules.CanPlaceAt(_grid, rotated, GridPosition))
+            {
+                Shape = rotated;
+            }
+        }
+
+        // Repeats the downward step immediately (no Waiting/Stepping animation) until the next
+        // step would be invalid, then locks at the last valid position - same rule as a normal
+        // fall step, just without waiting for the interval.
+        private void HandleHardDropRequested(HardDropRequestedEvent evt)
+        {
+            if (IsLocked) return;
+
+            while (true)
+            {
+                var next = GridPosition + Vector3Int.down;
+                if (!PlacementRules.CanPlaceAt(_grid, Shape, next)) break;
+                GridPosition = next;
+            }
+
+            Lock();
+        }
+
+        private static Vector3Int DeltaFor(MoveDirection direction)
+        {
+            switch (direction)
+            {
+                case MoveDirection.Left: return new Vector3Int(-1, 0, 0);
+                case MoveDirection.Right: return new Vector3Int(1, 0, 0);
+                case MoveDirection.Forward: return new Vector3Int(0, 0, 1);
+                case MoveDirection.Back: return new Vector3Int(0, 0, -1);
+                default: return Vector3Int.zero;
+            }
+        }
+
+        private static PolycubeShape Rotate(PolycubeShape shape, PhysicalRotationAxis axis, int steps90)
+        {
+            switch (axis)
+            {
+                case PhysicalRotationAxis.X: return shape.RotatedX(steps90);
+                case PhysicalRotationAxis.Y: return shape.RotatedY(steps90);
+                default: return shape.RotatedZ(steps90);
             }
         }
     }

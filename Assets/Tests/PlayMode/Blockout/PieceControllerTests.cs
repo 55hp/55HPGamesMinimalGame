@@ -1,7 +1,10 @@
 using NUnit.Framework;
 using UnityEngine;
+using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay;
+using hp55games.Blockout.InputSystem;
+using hp55games.Polycubes.Grid;
 using hp55games.Polycubes.Shapes;
 
 namespace hp55games.Blockout.Tests
@@ -9,11 +12,17 @@ namespace hp55games.Blockout.Tests
     public class PieceControllerTests
     {
         private BlockoutFallCurveConfig _fallCurve;
+        private IEventBus _eventBus;
 
         [SetUp]
         public void SetUp()
         {
             _fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
+            // A fresh bus per test: PieceController.Awake() subscribes to it, and tests below
+            // publish requests directly (gesture recognition itself is out of scope here - only
+            // the resulting piece-state logic is under test).
+            _eventBus = new EventBus();
+            ServiceRegistry.Register(_eventBus);
         }
 
         [TearDown]
@@ -22,11 +31,35 @@ namespace hp55games.Blockout.Tests
             Object.DestroyImmediate(_fallCurve);
         }
 
-        private PieceController CreateController()
+        private static PolycubeShape SingleCellShape() => new PolycubeShape(new[] { Vector3Int.zero });
+
+        private static PolycubeShape TwoCellShape() => new PolycubeShape(new[]
+        {
+            Vector3Int.zero,
+            new Vector3Int(1, 0, 0),
+        });
+
+        // Bent in two dimensions (X and Z) so no single-axis rotation (X, Y, or Z) leaves it
+        // unchanged - unlike a straight line, which is invariant under rotation about its own
+        // axis. Used to test rotation rejection independent of which physical axis AxisA/AxisB
+        // currently map to (PieceController.AxisAMapsTo / AxisBMapsTo).
+        private static PolycubeShape LShape() => new PolycubeShape(new[]
+        {
+            Vector3Int.zero,
+            new Vector3Int(1, 0, 0),
+            new Vector3Int(1, 0, 1),
+        });
+
+        // Spacious grid and a start position far from any wall: used by the timing tests below,
+        // which only care about phase/interval behavior and must never lock mid-test.
+        private PieceController CreateController() =>
+            CreateController(SingleCellShape(), new Vector3Int(1, 5, 1), new VoxelGrid(3, 10, 3));
+
+        private PieceController CreateController(PolycubeShape shape, Vector3Int start, VoxelGrid grid)
         {
             var go = new GameObject(nameof(PieceControllerTests));
             var controller = go.AddComponent<PieceController>();
-            controller.Initialize(new PolycubeShape(new[] { Vector3Int.zero }), Vector3Int.zero, _fallCurve);
+            controller.Initialize(shape, start, _fallCurve, grid);
             return controller;
         }
 
@@ -60,6 +93,132 @@ namespace hp55games.Blockout.Tests
 
             Assert.AreEqual(1, raiseCount);
             Assert.AreEqual(1, controller.PhaseIndex);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Tick_LocksPiece_WhenNextStepWouldGoBelowWellFloor()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            var start = new Vector3Int(1, 0, 1); // already resting on the floor (y = 0)
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.AreEqual(start, controller.GridPosition); // never moved below the floor
+            Assert.IsTrue(grid.IsOccupied(1, 0, 1));
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Tick_LocksPiece_WhenNextStepWouldOverlapAlreadyLockedCell()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            grid.SetOccupied(1, 0, 1, true); // stand-in for a previously locked piece
+
+            var start = new Vector3Int(1, 1, 1);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.AreEqual(start, controller.GridPosition); // never moved into the occupied cell
+            Assert.IsTrue(grid.IsOccupied(1, 1, 1));
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Tick_WritesEveryShapeCellIntoGrid_WhenLocked()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            var start = new Vector3Int(0, 0, 1); // resting on the floor
+            var controller = CreateController(TwoCellShape(), start, grid);
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.IsTrue(grid.IsOccupied(0, 0, 1));
+            Assert.IsTrue(grid.IsOccupied(1, 0, 1));
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleMoveRequested_DoesNotMove_WhenTargetCellIsAlreadyLocked()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            grid.SetOccupied(2, 1, 1, true); // stand-in for a previously locked piece
+
+            var start = new Vector3Int(1, 1, 1);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = MoveDirection.Right });
+
+            Assert.AreEqual(start, controller.GridPosition); // rejected, never moved into the occupied cell
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleMoveRequested_Moves_WhenTargetCellIsFree()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            var start = new Vector3Int(1, 1, 1);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = MoveDirection.Left });
+
+            Assert.AreEqual(new Vector3Int(0, 1, 1), controller.GridPosition);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitGridBounds()
+        {
+            // Shape's bounding box exactly fills this grid unrotated; any 90-degree turn about
+            // any axis needs a dimension the grid doesn't have.
+            var grid = new VoxelGrid(2, 1, 2);
+            var shape = LShape();
+            var controller = CreateController(shape, Vector3Int.zero, grid);
+
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreSame(shape, controller.Shape); // rejected - still the exact original instance
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleRotateRequested_Rotates_WhenTargetOrientationFits()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            var shape = SingleCellShape();
+            var controller = CreateController(shape, new Vector3Int(1, 1, 1), grid);
+
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreNotSame(shape, controller.Shape); // committed - a new (rotated) shape instance
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleHardDropRequested_DropsToFloorImmediately_AndLocks()
+        {
+            var grid = new VoxelGrid(3, 5, 3);
+            var start = new Vector3Int(1, 4, 1);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            _eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.AreEqual(new Vector3Int(1, 0, 1), controller.GridPosition);
+            Assert.IsTrue(grid.IsOccupied(1, 0, 1));
 
             Object.DestroyImmediate(controller.gameObject);
         }
