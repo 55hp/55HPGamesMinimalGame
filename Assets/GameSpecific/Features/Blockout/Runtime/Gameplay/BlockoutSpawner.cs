@@ -29,13 +29,38 @@ namespace hp55games.Blockout.Gameplay
         private Renderer[] _cellRenderers;
         private Vector3Int[] _cellOffsets;
 
+        // Every cube's Renderer.material access up above instantiates a unique Material that
+        // Unity never destroys on its own. Locked cubes are never despawned (no layer-clear/
+        // pooling yet), so there's no per-cube destroy point - tracked here instead and released
+        // in OnDestroy, the only point where cleanup doesn't break a still-visible locked cell.
+        private readonly List<Material> _spawnedMaterials = new();
+
         private bool _spawningStopped;
 
-        // Active pieces are bright/saturated; locked cells are dimmed to the same hue at lock
+        // Fixed per-shape palette (indexed by the shape's position in the set passed to
+        // Initialize - wraps if there are ever more shapes than colors): the same shape always
+        // gets the same color, every run. Distinct from each other and from the wireframe's green
+        // (BlockoutWellWireframe). Editable here rather than hardcoded so Franci can retune it
+        // without recompiling. Locked cells are dimmed from whichever of these was used, at lock
         // time (LockCurrentPieceColor), reusing the cube's existing material instance rather than
         // creating a new one or a separate render system.
-        private const float ActiveSaturation = 0.85f;
-        private const float ActiveValue = 1f;
+        [SerializeField]
+        private Color[] _pieceColors =
+        {
+            new Color(0.902f, 0.098f, 0.294f), // red
+            new Color(0.961f, 0.510f, 0.192f), // orange
+            new Color(1.000f, 0.882f, 0.098f), // yellow
+            new Color(0.263f, 0.388f, 0.847f), // blue
+            new Color(0.569f, 0.118f, 0.706f), // purple
+            new Color(0.275f, 0.941f, 0.941f), // cyan
+            new Color(0.941f, 0.196f, 0.902f), // magenta
+            new Color(0.980f, 0.745f, 0.831f), // pink
+            new Color(0.604f, 0.388f, 0.141f), // brown
+            new Color(0.502f, 0.000f, 0.000f), // maroon
+            new Color(0.000f, 0.000f, 0.459f), // navy
+            new Color(0.863f, 0.745f, 1.000f), // lavender
+        };
+
         private const float LockedSaturationFactor = 0.35f;
         private const float LockedValueFactor = 0.55f;
 
@@ -90,6 +115,17 @@ namespace hp55games.Blockout.Gameplay
             SyncCubesToCurrentGridPosition();
         }
 
+        // Locked cubes stay visible for the rest of the session (no layer-clear/pooling yet), so
+        // their materials can only be released once the spawner itself goes away - scene unload
+        // or leaving Play mode. There's no earlier safe point without also making cells disappear.
+        private void OnDestroy()
+        {
+            foreach (var material in _spawnedMaterials)
+            {
+                if (material != null) Destroy(material);
+            }
+        }
+
         private void SyncCubesToCurrentGridPosition()
         {
             for (int i = 0; i < _cellCubes.Length; i++)
@@ -102,7 +138,8 @@ namespace hp55games.Blockout.Gameplay
         {
             if (_spawningStopped) return;
 
-            var shape = _shapes[_nextShapeIndex];
+            var shapeIndex = _nextShapeIndex;
+            var shape = _shapes[shapeIndex];
             _nextShapeIndex = (_nextShapeIndex + 1) % _shapes.Count;
 
             var startPosition = CenteredTopStart(shape);
@@ -124,7 +161,9 @@ namespace hp55games.Blockout.Gameplay
             // material/renderer service. Once the piece locks, LockCurrentPieceColor dims these
             // same cubes in place - that's the "locked cell" placeholder, so stacking is visible.
             // Replace with WellCellRenderer once that lands.
-            var color = Color.HSVToRGB(Random.value, ActiveSaturation, ActiveValue);
+            var color = _pieceColors != null && _pieceColors.Length > 0
+                ? _pieceColors[shapeIndex % _pieceColors.Length]
+                : Color.white;
             _cellOffsets = new Vector3Int[cells.Count];
             _cellCubes = new Transform[cells.Count];
             _cellRenderers = new Renderer[cells.Count];
@@ -141,6 +180,7 @@ namespace hp55games.Blockout.Gameplay
 
                 _cellCubes[i] = cube.transform;
                 _cellRenderers[i] = renderer;
+                _spawnedMaterials.Add(renderer.material);
             }
 
             var pieceObject = new GameObject("BlockoutPieceController (TEMP)");

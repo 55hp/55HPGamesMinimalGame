@@ -73,6 +73,60 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
+        public void SpawnedPieceColor_IsDeterministic_ForSameShapeIndex()
+        {
+            // Regression test: color used to come from an unseeded Random.value, so this would
+            // fail intermittently before the fixed-palette change.
+            var shapes = new List<PolycubeShape> { SingleCellShape() };
+
+            var go1 = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner1 = go1.AddComponent<BlockoutSpawner>();
+            spawner1.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, shapes, 5, 10, 5);
+            var color1 = spawner1.CurrentPieceCubes[0].GetComponent<Renderer>().material.color;
+
+            var go2 = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner2 = go2.AddComponent<BlockoutSpawner>();
+            spawner2.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, shapes, 5, 10, 5);
+            var color2 = spawner2.CurrentPieceCubes[0].GetComponent<Renderer>().material.color;
+
+            Assert.AreEqual(color1, color2); // shape index 0 in both -> same color every run
+
+            Object.DestroyImmediate(spawner1.CurrentPieceCubes[0].gameObject);
+            Object.DestroyImmediate(spawner1.CurrentPiece.gameObject);
+            Object.DestroyImmediate(go1);
+            Object.DestroyImmediate(spawner2.CurrentPieceCubes[0].gameObject);
+            Object.DestroyImmediate(spawner2.CurrentPiece.gameObject);
+            Object.DestroyImmediate(go2);
+        }
+
+        [Test]
+        public void OnDestroy_DestroysTrackedMaterialInstances()
+        {
+            // Regression test: Renderer.material always instantiates a unique Material that Unity
+            // never destroys on its own. Locked cubes are never despawned, so the only safe
+            // cleanup point is the spawner's own OnDestroy - this confirms it actually runs.
+            var grid = new VoxelGrid(3, 3, 3);
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+
+            spawner.Initialize(grid, _fallCurve, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3);
+
+            var cubeGameObject = spawner.CurrentPieceCubes[0].gameObject;
+            var material = cubeGameObject.GetComponent<Renderer>().material;
+            var controllerGameObject = spawner.CurrentPiece.gameObject;
+            Assert.IsNotNull(material);
+
+            Object.DestroyImmediate(go); // triggers BlockoutSpawner.OnDestroy()
+
+            Assert.IsTrue(material == null); // Unity's overridden == treats a destroyed Object as null
+
+            // Cleanup: the spawner's cube/controller are independent root GameObjects, not
+            // children of `go`, so destroying the spawner doesn't remove them.
+            Object.DestroyImmediate(cubeGameObject);
+            Object.DestroyImmediate(controllerGameObject);
+        }
+
+        [Test]
         public void HardDrop_SyncsCubePositions_ToFinalLockedGridPosition()
         {
             // Regression test: BlockoutSpawner used to only sync cube transforms to GridPosition
