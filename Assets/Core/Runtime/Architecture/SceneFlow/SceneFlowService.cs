@@ -46,6 +46,15 @@ namespace hp55games.Mobile.Game.SceneFlow
             _gameplayPreload.allowSceneActivation = false;
         }
 
+        // Lets a specific game (e.g. Blockout) supply its own IGameplayState for the FSM's
+        // "gameplay" slot via a registered IGameplayStateFactory, without this class ever
+        // depending on that game's assembly. Falls back to the template's own GameplayState if
+        // no factory is registered.
+        private static IGameplayState CreateGameplayState(bool isResuming) =>
+            ServiceRegistry.TryResolve<IGameplayStateFactory>(out var factory)
+                ? factory.Create(isResuming)
+                : new GameplayState(isResuming);
+
         private async Task SwitchContentSceneAsync(string targetScene)
         {
             Debug.Log($"[SceneFlowService] Switching content scene to: {targetScene}");
@@ -190,7 +199,7 @@ namespace hp55games.Mobile.Game.SceneFlow
 
                 if (_fsm != null)
                 {
-                    try { await _fsm.ChangeStateAsync(new GameplayState()); }
+                    try { await _fsm.ChangeStateAsync(CreateGameplayState(isResuming: false)); }
                     catch (Exception ex) { Debug.LogError($"[SceneFlowService] FSM transition error in GoToGameplayAsync: {ex}"); }
                 }
             });
@@ -258,10 +267,10 @@ namespace hp55games.Mobile.Game.SceneFlow
             try
             {
                 var previousState = pauseState.GetPreviousState();
-                
-                if (previousState is GameplayState)
+
+                if (previousState is IGameplayState)
                 {
-                    try { await _fsm.ChangeStateAsync(new GameplayState(isResuming: true)); }
+                    try { await _fsm.ChangeStateAsync(CreateGameplayState(isResuming: true)); }
                     catch (Exception ex) { Debug.LogError($"[SceneFlowService] FSM transition error in ResumeFromPauseAsync: {ex}"); }
                 }
                 else if (previousState != null)

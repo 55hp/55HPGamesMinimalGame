@@ -47,10 +47,14 @@ namespace hp55games.Blockout.Tests
 
             LogAssert.Expect(LogType.Error, new Regex("well is full", RegexOptions.IgnoreCase));
 
+            bool wellFullFired = false;
+            spawner.WellFull += () => wellFullFired = true;
+
             spawner.Initialize(grid, _fallCurve, new List<PolycubeShape> { SingleCellShape() }, 2, 2, 2);
 
             Assert.IsTrue(spawner.SpawnBlockedWellFull);
             Assert.IsNull(spawner.CurrentPiece); // detected and reported, not a piece silently locked in place
+            Assert.IsTrue(wellFullFired); // BlockoutGameplayState listens for this to trigger game over
 
             Object.DestroyImmediate(go);
         }

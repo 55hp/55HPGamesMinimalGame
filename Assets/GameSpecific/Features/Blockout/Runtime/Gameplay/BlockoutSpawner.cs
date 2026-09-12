@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
@@ -7,10 +8,10 @@ using hp55games.Polycubes.Shapes;
 
 namespace hp55games.Blockout.Gameplay
 {
-    // Standalone wiring for a first visual test of PieceController's fall + lock behavior:
-    // resolves its own config, owns the well's VoxelGrid, and keeps spawning pieces into it as
-    // each one locks. Not driven by BlockoutGameplayState or the FSM - delete once the real game
-    // state owns spawning, well placement, and rendering.
+    // Owns the well's VoxelGrid and keeps spawning pieces into it as each one locks. Driven by
+    // BlockoutGameplayState.EnterAsync (Phase 4), which calls Initialize(...) the way this used
+    // to self-start in Start() - see Initialize. Still standalone in the sense that it doesn't
+    // know about the FSM/game-over UI itself; it just spawns and reports WellFull.
     public sealed class BlockoutSpawner : MonoBehaviour
     {
         private VoxelGrid _grid;
@@ -65,35 +66,21 @@ namespace hp55games.Blockout.Gameplay
         private const float LockedValueFactor = 0.55f;
 
         // True once SpawnNext refused to spawn because the well is already full at the computed
-        // spawn position (see SpawnNext). Not recovered from here - that's BlockoutGameplayState's
-        // job (out of scope). Public so PlayMode tests can assert this instead of a silent lock.
+        // spawn position (see SpawnNext). Public so PlayMode tests (and BlockoutDebugOverlay) can
+        // read this instead of a silent lock.
         public bool SpawnBlockedWellFull { get; private set; }
         public PieceController CurrentPiece => _controller;
         public IReadOnlyList<Transform> CurrentPieceCubes => _cellCubes;
 
-        private void Start()
-        {
-            if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService))
-            {
-                Debug.LogError("[BlockoutSpawner] IConfigCatalogService is not registered - add a ConfigCatalogInstaller (with a populated ConfigCatalog) to the scene.", this);
-                return;
-            }
-
-            var fallCurve = catalogService.Get<BlockoutFallCurveConfig>();
-            var wellConfig = catalogService.Get<BlockoutWellConfig>();
-            if (fallCurve == null || wellConfig == null)
-            {
-                Debug.LogError("[BlockoutSpawner] Missing BlockoutFallCurveConfig or BlockoutWellConfig in the catalog.", this);
-                return;
-            }
-
-            var well = new BlockoutWell(wellConfig);
-            Initialize(well.Grid, fallCurve, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth);
-        }
+        // Fired once, the moment SpawnNext refuses to spawn because the well is full - see
+        // SpawnBlockedWellFull. BlockoutGameplayState listens for this to publish
+        // BlockoutGameOverEvent and drive the FSM to ResultState; no recovery happens here.
+        public event Action WellFull;
 
         // grid/fallCurve/shapes/dimensions are passed in rather than resolved here so the spawn
         // validation logic stays testable without needing IConfigCatalogService wired up (mirrors
-        // PieceController.Initialize).
+        // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is now
+        // the sole entry point - this class no longer self-starts in Start().
         public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
         {
             _grid = grid;
@@ -144,14 +131,14 @@ namespace hp55games.Blockout.Gameplay
 
             var startPosition = CenteredTopStart(shape);
 
-            // The stack may have grown all the way up to the spawn point (no game-over/well-full
-            // handling exists yet - that's BlockoutGameplayState's job). Without this check the
-            // new piece would silently lock on its very first tick, indistinguishable from a freeze.
+            // The stack has grown all the way up to the spawn point. Without this check the new
+            // piece would silently lock on its very first tick, indistinguishable from a freeze.
             if (!PlacementRules.CanPlaceAt(_grid, shape, startPosition))
             {
                 SpawnBlockedWellFull = true;
                 _spawningStopped = true;
-                Debug.LogError($"[BlockoutSpawner] Well is full at spawn - the next piece's start position {startPosition} is already occupied. Stopping spawns (no recovery here; well-full/game-over handling belongs to BlockoutGameplayState, out of scope for this spawner).", this);
+                Debug.LogError($"[BlockoutSpawner] Well is full at spawn - the next piece's start position {startPosition} is already occupied. Stopping spawns.", this);
+                WellFull?.Invoke();
                 return;
             }
 

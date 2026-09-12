@@ -3,6 +3,7 @@ using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay;
+using hp55games.Blockout.Gameplay.Events;
 using hp55games.Blockout.InputSystem;
 using hp55games.Polycubes.Grid;
 using hp55games.Polycubes.Shapes;
@@ -143,6 +144,28 @@ namespace hp55games.Blockout.Tests
             Assert.IsTrue(controller.IsLocked);
             Assert.IsTrue(grid.IsOccupied(0, 0, 1));
             Assert.IsTrue(grid.IsOccupied(1, 0, 1));
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Tick_PublishesLayersClearedEvent_WhenLockCompletesAFullLayer()
+        {
+            var grid = new VoxelGrid(2, 3, 1);
+            grid.SetOccupied(1, 0, 0, true); // layer 0 needs just one more cell to be full
+
+            var start = new Vector3Int(0, 0, 0);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            LayersClearedEvent received = null;
+            _eventBus.Subscribe<LayersClearedEvent>(evt => received = evt);
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.IsNotNull(received);
+            Assert.AreEqual(1, received.LayerCount);
+            Assert.AreEqual(ScoreCalculator.PointsForSimultaneousClears(1), received.PointsAwarded);
 
             Object.DestroyImmediate(controller.gameObject);
         }

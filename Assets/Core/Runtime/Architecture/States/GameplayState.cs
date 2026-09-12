@@ -10,7 +10,7 @@ namespace hp55games.Mobile.Core.Architecture.States
     /// Gameplay state: reacts to gameplay scene already loaded by SceneFlowService.
     /// This state should only manage game logic, HUD, subscriptions, BGM, etc.
     /// </summary>
-    public sealed class GameplayState : IGameState
+    public sealed class GameplayState : IGameplayState
     {
         private readonly bool _isResuming;
         private IMusicService _music;

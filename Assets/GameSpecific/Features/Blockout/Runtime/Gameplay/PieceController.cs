@@ -123,9 +123,17 @@ namespace hp55games.Blockout.Gameplay
         private void Lock()
         {
             PlacementRules.LockInto(_grid, Shape, GridPosition);
+            int layersCleared = PlacementRules.ClearFullLayersTouchedBy(_grid, Shape, GridPosition);
+
             IsLocked = true;
             Locked?.Invoke();
             _eventBus?.Publish(new PieceLockedEvent { GridPosition = GridPosition });
+
+            if (layersCleared > 0)
+            {
+                int points = ScoreCalculator.PointsForSimultaneousClears(layersCleared);
+                _eventBus?.Publish(new LayersClearedEvent { LayerCount = layersCleared, PointsAwarded = points });
+            }
         }
 
         private void AdvancePhase()
