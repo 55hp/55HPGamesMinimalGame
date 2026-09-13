@@ -13,11 +13,11 @@ namespace hp55games.Blockout.Gameplay
     {
         private enum StepState { Waiting, Stepping }
 
-        // Which actual PolycubeShape axis AxisA/AxisB (from swipe left/right vs up/down) drive
-        // is arbitrary until Franci judges what feels natural once this is running - swap these
-        // two constants to change it (Technical Doc Phase 3, open question 3).
+        // Technical Doc Phase 3, open question 3 - resolved: AxisB already covers X, Y is the
+        // well's vertical/fall axis and was never meant to be player-rotatable, so Z is the
+        // remaining horizontal axis for AxisA. Still a single named swap point if that changes.
         private enum PhysicalRotationAxis { X, Y, Z }
-        private const PhysicalRotationAxis AxisAMapsTo = PhysicalRotationAxis.Y;
+        private const PhysicalRotationAxis AxisAMapsTo = PhysicalRotationAxis.Z;
         private const PhysicalRotationAxis AxisBMapsTo = PhysicalRotationAxis.X;
 
         public PolycubeShape Shape { get; private set; }
@@ -123,9 +123,17 @@ namespace hp55games.Blockout.Gameplay
         private void Lock()
         {
             PlacementRules.LockInto(_grid, Shape, GridPosition);
+            int layersCleared = PlacementRules.ClearFullLayersTouchedBy(_grid, Shape, GridPosition);
+
             IsLocked = true;
             Locked?.Invoke();
             _eventBus?.Publish(new PieceLockedEvent { GridPosition = GridPosition });
+
+            if (layersCleared > 0)
+            {
+                int points = ScoreCalculator.PointsForSimultaneousClears(layersCleared);
+                _eventBus?.Publish(new LayersClearedEvent { LayerCount = layersCleared, PointsAwarded = points });
+            }
         }
 
         private void AdvancePhase()

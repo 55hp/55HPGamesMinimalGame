@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -47,10 +48,14 @@ namespace hp55games.Blockout.Tests
 
             LogAssert.Expect(LogType.Error, new Regex("well is full", RegexOptions.IgnoreCase));
 
+            bool wellFullFired = false;
+            spawner.WellFull += () => wellFullFired = true;
+
             spawner.Initialize(grid, _fallCurve, new List<PolycubeShape> { SingleCellShape() }, 2, 2, 2);
 
             Assert.IsTrue(spawner.SpawnBlockedWellFull);
             Assert.IsNull(spawner.CurrentPiece); // detected and reported, not a piece silently locked in place
+            Assert.IsTrue(wellFullFired); // BlockoutGameplayState listens for this to trigger game over
 
             Object.DestroyImmediate(go);
         }
@@ -91,11 +96,8 @@ namespace hp55games.Blockout.Tests
 
             Assert.AreEqual(color1, color2); // shape index 0 in both -> same color every run
 
-            Object.DestroyImmediate(spawner1.CurrentPieceCubes[0].gameObject);
-            Object.DestroyImmediate(spawner1.CurrentPiece.gameObject);
+            // Destroying the spawners cleans up their active piece/cubes too (OnDestroy).
             Object.DestroyImmediate(go1);
-            Object.DestroyImmediate(spawner2.CurrentPieceCubes[0].gameObject);
-            Object.DestroyImmediate(spawner2.CurrentPiece.gameObject);
             Object.DestroyImmediate(go2);
         }
 
@@ -113,17 +115,12 @@ namespace hp55games.Blockout.Tests
 
             var cubeGameObject = spawner.CurrentPieceCubes[0].gameObject;
             var material = cubeGameObject.GetComponent<Renderer>().material;
-            var controllerGameObject = spawner.CurrentPiece.gameObject;
             Assert.IsNotNull(material);
 
-            Object.DestroyImmediate(go); // triggers BlockoutSpawner.OnDestroy()
+            Object.DestroyImmediate(go); // triggers BlockoutSpawner.OnDestroy(), which also
+                                          // destroys the active piece's cube/controller (ClearPreviousRun)
 
             Assert.IsTrue(material == null); // Unity's overridden == treats a destroyed Object as null
-
-            // Cleanup: the spawner's cube/controller are independent root GameObjects, not
-            // children of `go`, so destroying the spawner doesn't remove them.
-            Object.DestroyImmediate(cubeGameObject);
-            Object.DestroyImmediate(controllerGameObject);
         }
 
         [Test]
@@ -153,12 +150,80 @@ namespace hp55games.Blockout.Tests
             Assert.IsTrue(lockedController.IsLocked);
             Assert.AreEqual((Vector3)lockedController.GridPosition, lockedCubes[0].position);
 
-            // Cleanup: the spawner's pieces/cubes are independent root GameObjects, not children
-            // of `go`, so the old (locked) and new (respawned) ones need tearing down explicitly.
-            foreach (var cube in lockedCubes) Object.DestroyImmediate(cube.gameObject);
-            Object.DestroyImmediate(lockedController.gameObject);
-            foreach (var cube in spawner.CurrentPieceCubes) Object.DestroyImmediate(cube.gameObject);
-            Object.DestroyImmediate(spawner.CurrentPiece.gameObject);
+            // Destroying the spawner cleans up both the locked piece's cubes (_lockedCubes) and
+            // the newly-respawned active piece (OnDestroy/ClearPreviousRun).
+            Object.DestroyImmediate(go);
+        }
+
+        [UnityTest]
+        public IEnumerator SyncCubesToCurrentGridPosition_ReflectsRotatedShape_AfterSuccessfulRotation()
+        {
+            // Regression test: BlockoutSpawner used to cache each cube's cell offset once at
+            // spawn time and reuse it every frame. A successful rotation replaces
+            // PieceController.Shape with a new rotated instance (same cell count/order, just
+            // repositioned), which the cached offsets never picked up - the rotation was correct
+            // in the grid but invisible on screen. Needs a real frame (UnityTest) since the sync
+            // only runs from BlockoutSpawner.Update().
+            var grid = new VoxelGrid(7, 7, 7);
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            // Bent in two dimensions so rotation about the current AxisA mapping (Z - see
+            // PieceController.AxisAMapsTo) visibly changes local offsets. The shape is planar in Y
+            // (every cell has y=0), and RotatedZ negates y (new_y = -old_y = -0 = 0), so this also
+            // can't clip the well's ceiling regardless of spawn height.
+            var shape = new PolycubeShape(new[]
+            {
+                Vector3Int.zero,
+                new Vector3Int(1, 0, 0),
+                new Vector3Int(1, 0, 1),
+            });
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+            spawner.Initialize(grid, _fallCurve, new List<PolycubeShape> { shape }, 7, 7, 7);
+
+            var controller = spawner.CurrentPiece;
+
+            eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+            Assert.AreNotSame(shape, controller.Shape); // rotation was applied to the logical shape
+
+            yield return null; // let BlockoutSpawner.Update() run once against the rotated shape
+
+            var cubes = spawner.CurrentPieceCubes;
+            var rotatedCells = controller.Shape.Cells;
+            for (int i = 0; i < cubes.Count; i++)
+            {
+                Vector3 expected = (Vector3)(controller.GridPosition + rotatedCells[i]);
+                Assert.AreEqual(expected, cubes[i].position);
+            }
+
+            Object.DestroyImmediate(go); // cleans up the active piece/cubes too (OnDestroy)
+        }
+
+        [Test]
+        public void Initialize_DestroysPreviousRunsLockedCubes()
+        {
+            // Regression test: a fresh Initialize() used to leave every previously-locked piece's
+            // cubes sitting in the scene forever, since nothing tracked or referenced them once
+            // their PieceController was discarded.
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+
+            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3);
+
+            var lockedCube = spawner.CurrentPieceCubes[0];
+            eventBus.Publish(new HardDropRequestedEvent()); // locks the first piece, spawns a second
+            Assert.IsNotNull(lockedCube); // still alive - this is "run 1"'s locked placeholder
+
+            // Starting a new run should sweep away the previous one's locked cubes.
+            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3);
+
+            Assert.IsTrue(lockedCube == null); // destroyed by the fresh Initialize(), not left behind
+
             Object.DestroyImmediate(go);
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
@@ -7,10 +8,10 @@ using hp55games.Polycubes.Shapes;
 
 namespace hp55games.Blockout.Gameplay
 {
-    // Standalone wiring for a first visual test of PieceController's fall + lock behavior:
-    // resolves its own config, owns the well's VoxelGrid, and keeps spawning pieces into it as
-    // each one locks. Not driven by BlockoutGameplayState or the FSM - delete once the real game
-    // state owns spawning, well placement, and rendering.
+    // Owns the well's VoxelGrid and keeps spawning pieces into it as each one locks. Driven by
+    // BlockoutGameplayState.EnterAsync (Phase 4), which calls Initialize(...) the way this used
+    // to self-start in Start() - see Initialize. Still standalone in the sense that it doesn't
+    // know about the FSM/game-over UI itself; it just spawns and reports WellFull.
     public sealed class BlockoutSpawner : MonoBehaviour
     {
         private VoxelGrid _grid;
@@ -27,13 +28,14 @@ namespace hp55games.Blockout.Gameplay
         private PieceController _controller;
         private Transform[] _cellCubes;
         private Renderer[] _cellRenderers;
-        private Vector3Int[] _cellOffsets;
 
-        // Every cube's Renderer.material access up above instantiates a unique Material that
-        // Unity never destroys on its own. Locked cubes are never despawned (no layer-clear/
-        // pooling yet), so there's no per-cube destroy point - tracked here instead and released
-        // in OnDestroy, the only point where cleanup doesn't break a still-visible locked cell.
-        private readonly List<Material> _spawnedMaterials = new();
+        // Every locked piece's cubes, across the whole run: nothing else references them once
+        // their PieceController is gone (OnPieceLocked discards it), so without this list they'd
+        // be orphaned GameObjects - both within a session (the original material-leak fix) and,
+        // worse, visually: a fresh Initialize() otherwise leaves the previous run's entire stack
+        // sitting in the scene. Cleared and destroyed at the start of Initialize() and in
+        // OnDestroy - see ClearPreviousRun.
+        private readonly List<Transform> _lockedCubes = new();
 
         private bool _spawningStopped;
 
@@ -65,37 +67,25 @@ namespace hp55games.Blockout.Gameplay
         private const float LockedValueFactor = 0.55f;
 
         // True once SpawnNext refused to spawn because the well is already full at the computed
-        // spawn position (see SpawnNext). Not recovered from here - that's BlockoutGameplayState's
-        // job (out of scope). Public so PlayMode tests can assert this instead of a silent lock.
+        // spawn position (see SpawnNext). Public so PlayMode tests (and BlockoutDebugOverlay) can
+        // read this instead of a silent lock.
         public bool SpawnBlockedWellFull { get; private set; }
         public PieceController CurrentPiece => _controller;
         public IReadOnlyList<Transform> CurrentPieceCubes => _cellCubes;
 
-        private void Start()
-        {
-            if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService))
-            {
-                Debug.LogError("[BlockoutSpawner] IConfigCatalogService is not registered - add a ConfigCatalogInstaller (with a populated ConfigCatalog) to the scene.", this);
-                return;
-            }
-
-            var fallCurve = catalogService.Get<BlockoutFallCurveConfig>();
-            var wellConfig = catalogService.Get<BlockoutWellConfig>();
-            if (fallCurve == null || wellConfig == null)
-            {
-                Debug.LogError("[BlockoutSpawner] Missing BlockoutFallCurveConfig or BlockoutWellConfig in the catalog.", this);
-                return;
-            }
-
-            var well = new BlockoutWell(wellConfig);
-            Initialize(well.Grid, fallCurve, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth);
-        }
+        // Fired once, the moment SpawnNext refuses to spawn because the well is full - see
+        // SpawnBlockedWellFull. BlockoutGameplayState listens for this to publish
+        // BlockoutGameOverEvent and drive the FSM to ResultState; no recovery happens here.
+        public event Action WellFull;
 
         // grid/fallCurve/shapes/dimensions are passed in rather than resolved here so the spawn
         // validation logic stays testable without needing IConfigCatalogService wired up (mirrors
-        // PieceController.Initialize).
+        // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is now
+        // the sole entry point - this class no longer self-starts in Start().
         public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
         {
+            ClearPreviousRun();
+
             _grid = grid;
             _fallCurve = fallCurve;
             _shapes = shapes;
@@ -115,22 +105,54 @@ namespace hp55games.Blockout.Gameplay
             SyncCubesToCurrentGridPosition();
         }
 
-        // Locked cubes stay visible for the rest of the session (no layer-clear/pooling yet), so
-        // their materials can only be released once the spawner itself goes away - scene unload
-        // or leaving Play mode. There's no earlier safe point without also making cells disappear.
-        private void OnDestroy()
+        // Leaves no visual trace of whatever a previous Initialize() left behind: every locked
+        // piece's cubes (see _lockedCubes), plus - defensively - any still-active piece from a
+        // run that never finished locking. Also called from OnDestroy for final cleanup.
+        private void ClearPreviousRun()
         {
-            foreach (var material in _spawnedMaterials)
+            if (_controller != null)
             {
-                if (material != null) Destroy(material);
+                Destroy(_controller.gameObject);
+                _controller = null;
+            }
+
+            if (_cellCubes != null)
+            {
+                DestroyCubes(_cellCubes);
+                _cellCubes = null;
+            }
+
+            DestroyCubes(_lockedCubes);
+            _lockedCubes.Clear();
+        }
+
+        // Destroys each cube's GameObject and its already-instantiated material (Renderer.material
+        // never gets cleaned up by Unity on its own - see _lockedCubes).
+        private static void DestroyCubes(IEnumerable<Transform> cubes)
+        {
+            foreach (var cube in cubes)
+            {
+                if (cube == null) continue;
+
+                var renderer = cube.GetComponent<Renderer>();
+                if (renderer != null && renderer.sharedMaterial != null) Destroy(renderer.sharedMaterial);
+
+                Destroy(cube.gameObject);
             }
         }
 
+        private void OnDestroy() => ClearPreviousRun();
+
         private void SyncCubesToCurrentGridPosition()
         {
+            // Read Shape.Cells fresh every call rather than a cached copy from spawn time: a
+            // successful rotation replaces Shape with a new rotated instance (same cell count and
+            // order, just repositioned - see PolycubeShape.Rotate), and a cached offset array would
+            // never pick that up, making the rotation invisible despite being logically correct.
+            var cells = _controller.Shape.Cells;
             for (int i = 0; i < _cellCubes.Length; i++)
             {
-                _cellCubes[i].position = (Vector3)(_controller.GridPosition + _cellOffsets[i]);
+                _cellCubes[i].position = (Vector3)(_controller.GridPosition + cells[i]);
             }
         }
 
@@ -144,14 +166,14 @@ namespace hp55games.Blockout.Gameplay
 
             var startPosition = CenteredTopStart(shape);
 
-            // The stack may have grown all the way up to the spawn point (no game-over/well-full
-            // handling exists yet - that's BlockoutGameplayState's job). Without this check the
-            // new piece would silently lock on its very first tick, indistinguishable from a freeze.
+            // The stack has grown all the way up to the spawn point. Without this check the new
+            // piece would silently lock on its very first tick, indistinguishable from a freeze.
             if (!PlacementRules.CanPlaceAt(_grid, shape, startPosition))
             {
                 SpawnBlockedWellFull = true;
                 _spawningStopped = true;
-                Debug.LogError($"[BlockoutSpawner] Well is full at spawn - the next piece's start position {startPosition} is already occupied. Stopping spawns (no recovery here; well-full/game-over handling belongs to BlockoutGameplayState, out of scope for this spawner).", this);
+                Debug.LogError($"[BlockoutSpawner] Well is full at spawn - the next piece's start position {startPosition} is already occupied. Stopping spawns.", this);
+                WellFull?.Invoke();
                 return;
             }
 
@@ -164,14 +186,11 @@ namespace hp55games.Blockout.Gameplay
             var color = _pieceColors != null && _pieceColors.Length > 0
                 ? _pieceColors[shapeIndex % _pieceColors.Length]
                 : Color.white;
-            _cellOffsets = new Vector3Int[cells.Count];
             _cellCubes = new Transform[cells.Count];
             _cellRenderers = new Renderer[cells.Count];
 
             for (int i = 0; i < cells.Count; i++)
             {
-                _cellOffsets[i] = cells[i];
-
                 var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 cube.name = "BlockoutPiece (TEMP)";
                 var renderer = cube.GetComponent<Renderer>();
@@ -180,7 +199,6 @@ namespace hp55games.Blockout.Gameplay
 
                 _cellCubes[i] = cube.transform;
                 _cellRenderers[i] = renderer;
-                _spawnedMaterials.Add(renderer.material);
             }
 
             var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
@@ -201,8 +219,12 @@ namespace hp55games.Blockout.Gameplay
             SyncCubesToCurrentGridPosition();
             LockCurrentPieceColor();
 
-            // Don't touch _cellCubes any further after this - leaving them where they are IS the
-            // locked placeholder. Only the (invisible) controller object is discarded.
+            // Hand these cubes off to _lockedCubes so a future Initialize() can find and destroy
+            // them - nothing else will reference them once _cellCubes is overwritten by the next
+            // SpawnNext(). Leaving them positioned where they are IS the locked placeholder.
+            _lockedCubes.AddRange(_cellCubes);
+
+            // Only the (invisible) controller object is discarded here.
             Destroy(_controller.gameObject);
             _controller = null;
             SpawnNext();
