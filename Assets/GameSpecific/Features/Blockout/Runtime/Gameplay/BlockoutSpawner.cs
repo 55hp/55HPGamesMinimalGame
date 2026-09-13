@@ -28,7 +28,6 @@ namespace hp55games.Blockout.Gameplay
         private PieceController _controller;
         private Transform[] _cellCubes;
         private Renderer[] _cellRenderers;
-        private Vector3Int[] _cellOffsets;
 
         // Every cube's Renderer.material access up above instantiates a unique Material that
         // Unity never destroys on its own. Locked cubes are never despawned (no layer-clear/
@@ -115,9 +114,14 @@ namespace hp55games.Blockout.Gameplay
 
         private void SyncCubesToCurrentGridPosition()
         {
+            // Read Shape.Cells fresh every call rather than a cached copy from spawn time: a
+            // successful rotation replaces Shape with a new rotated instance (same cell count and
+            // order, just repositioned - see PolycubeShape.Rotate), and a cached offset array would
+            // never pick that up, making the rotation invisible despite being logically correct.
+            var cells = _controller.Shape.Cells;
             for (int i = 0; i < _cellCubes.Length; i++)
             {
-                _cellCubes[i].position = (Vector3)(_controller.GridPosition + _cellOffsets[i]);
+                _cellCubes[i].position = (Vector3)(_controller.GridPosition + cells[i]);
             }
         }
 
@@ -151,14 +155,11 @@ namespace hp55games.Blockout.Gameplay
             var color = _pieceColors != null && _pieceColors.Length > 0
                 ? _pieceColors[shapeIndex % _pieceColors.Length]
                 : Color.white;
-            _cellOffsets = new Vector3Int[cells.Count];
             _cellCubes = new Transform[cells.Count];
             _cellRenderers = new Renderer[cells.Count];
 
             for (int i = 0; i < cells.Count; i++)
             {
-                _cellOffsets[i] = cells[i];
-
                 var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 cube.name = "BlockoutPiece (TEMP)";
                 var renderer = cube.GetComponent<Renderer>();

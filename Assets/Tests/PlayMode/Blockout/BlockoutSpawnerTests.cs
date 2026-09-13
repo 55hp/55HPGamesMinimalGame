@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -163,6 +164,53 @@ namespace hp55games.Blockout.Tests
             Object.DestroyImmediate(lockedController.gameObject);
             foreach (var cube in spawner.CurrentPieceCubes) Object.DestroyImmediate(cube.gameObject);
             Object.DestroyImmediate(spawner.CurrentPiece.gameObject);
+            Object.DestroyImmediate(go);
+        }
+
+        [UnityTest]
+        public IEnumerator SyncCubesToCurrentGridPosition_ReflectsRotatedShape_AfterSuccessfulRotation()
+        {
+            // Regression test: BlockoutSpawner used to cache each cube's cell offset once at
+            // spawn time and reuse it every frame. A successful rotation replaces
+            // PieceController.Shape with a new rotated instance (same cell count/order, just
+            // repositioned), which the cached offsets never picked up - the rotation was correct
+            // in the grid but invisible on screen. Needs a real frame (UnityTest) since the sync
+            // only runs from BlockoutSpawner.Update().
+            var grid = new VoxelGrid(7, 7, 7);
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            // Bent in two dimensions so rotation about the current AxisA mapping (Y - see
+            // PieceController.AxisAMapsTo) visibly changes local offsets; RotatedY leaves Y
+            // unchanged, so this also can't clip the well's ceiling regardless of spawn height.
+            var shape = new PolycubeShape(new[]
+            {
+                Vector3Int.zero,
+                new Vector3Int(1, 0, 0),
+                new Vector3Int(1, 0, 1),
+            });
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+            spawner.Initialize(grid, _fallCurve, new List<PolycubeShape> { shape }, 7, 7, 7);
+
+            var controller = spawner.CurrentPiece;
+
+            eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+            Assert.AreNotSame(shape, controller.Shape); // rotation was applied to the logical shape
+
+            yield return null; // let BlockoutSpawner.Update() run once against the rotated shape
+
+            var cubes = spawner.CurrentPieceCubes;
+            var rotatedCells = controller.Shape.Cells;
+            for (int i = 0; i < cubes.Count; i++)
+            {
+                Vector3 expected = (Vector3)(controller.GridPosition + rotatedCells[i]);
+                Assert.AreEqual(expected, cubes[i].position);
+            }
+
+            foreach (var cube in cubes) Object.DestroyImmediate(cube.gameObject);
+            Object.DestroyImmediate(controller.gameObject);
             Object.DestroyImmediate(go);
         }
     }
