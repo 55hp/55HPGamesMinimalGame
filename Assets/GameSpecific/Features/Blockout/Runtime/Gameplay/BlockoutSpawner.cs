@@ -29,11 +29,13 @@ namespace hp55games.Blockout.Gameplay
         private Transform[] _cellCubes;
         private Renderer[] _cellRenderers;
 
-        // Every cube's Renderer.material access up above instantiates a unique Material that
-        // Unity never destroys on its own. Locked cubes are never despawned (no layer-clear/
-        // pooling yet), so there's no per-cube destroy point - tracked here instead and released
-        // in OnDestroy, the only point where cleanup doesn't break a still-visible locked cell.
-        private readonly List<Material> _spawnedMaterials = new();
+        // Every locked piece's cubes, across the whole run: nothing else references them once
+        // their PieceController is gone (OnPieceLocked discards it), so without this list they'd
+        // be orphaned GameObjects - both within a session (the original material-leak fix) and,
+        // worse, visually: a fresh Initialize() otherwise leaves the previous run's entire stack
+        // sitting in the scene. Cleared and destroyed at the start of Initialize() and in
+        // OnDestroy - see ClearPreviousRun.
+        private readonly List<Transform> _lockedCubes = new();
 
         private bool _spawningStopped;
 
@@ -82,6 +84,8 @@ namespace hp55games.Blockout.Gameplay
         // the sole entry point - this class no longer self-starts in Start().
         public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
         {
+            ClearPreviousRun();
+
             _grid = grid;
             _fallCurve = fallCurve;
             _shapes = shapes;
@@ -101,16 +105,43 @@ namespace hp55games.Blockout.Gameplay
             SyncCubesToCurrentGridPosition();
         }
 
-        // Locked cubes stay visible for the rest of the session (no layer-clear/pooling yet), so
-        // their materials can only be released once the spawner itself goes away - scene unload
-        // or leaving Play mode. There's no earlier safe point without also making cells disappear.
-        private void OnDestroy()
+        // Leaves no visual trace of whatever a previous Initialize() left behind: every locked
+        // piece's cubes (see _lockedCubes), plus - defensively - any still-active piece from a
+        // run that never finished locking. Also called from OnDestroy for final cleanup.
+        private void ClearPreviousRun()
         {
-            foreach (var material in _spawnedMaterials)
+            if (_controller != null)
             {
-                if (material != null) Destroy(material);
+                Destroy(_controller.gameObject);
+                _controller = null;
+            }
+
+            if (_cellCubes != null)
+            {
+                DestroyCubes(_cellCubes);
+                _cellCubes = null;
+            }
+
+            DestroyCubes(_lockedCubes);
+            _lockedCubes.Clear();
+        }
+
+        // Destroys each cube's GameObject and its already-instantiated material (Renderer.material
+        // never gets cleaned up by Unity on its own - see _lockedCubes).
+        private static void DestroyCubes(IEnumerable<Transform> cubes)
+        {
+            foreach (var cube in cubes)
+            {
+                if (cube == null) continue;
+
+                var renderer = cube.GetComponent<Renderer>();
+                if (renderer != null && renderer.sharedMaterial != null) Destroy(renderer.sharedMaterial);
+
+                Destroy(cube.gameObject);
             }
         }
+
+        private void OnDestroy() => ClearPreviousRun();
 
         private void SyncCubesToCurrentGridPosition()
         {
@@ -168,7 +199,6 @@ namespace hp55games.Blockout.Gameplay
 
                 _cellCubes[i] = cube.transform;
                 _cellRenderers[i] = renderer;
-                _spawnedMaterials.Add(renderer.material);
             }
 
             var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
@@ -189,8 +219,12 @@ namespace hp55games.Blockout.Gameplay
             SyncCubesToCurrentGridPosition();
             LockCurrentPieceColor();
 
-            // Don't touch _cellCubes any further after this - leaving them where they are IS the
-            // locked placeholder. Only the (invisible) controller object is discarded.
+            // Hand these cubes off to _lockedCubes so a future Initialize() can find and destroy
+            // them - nothing else will reference them once _cellCubes is overwritten by the next
+            // SpawnNext(). Leaving them positioned where they are IS the locked placeholder.
+            _lockedCubes.AddRange(_cellCubes);
+
+            // Only the (invisible) controller object is discarded here.
             Destroy(_controller.gameObject);
             _controller = null;
             SpawnNext();
