@@ -4,21 +4,35 @@ using hp55games.Mobile.Core.Save;
 
 namespace hp55games.Blockout.Config
 {
-    // Technical Doc Phase 3: tracks which BlockoutSkin is active and persists the choice across
-    // sessions via ISaveService/SaveData.activeSkinId. Every skin is treated as unlocked here -
-    // Phase 6 adds the real unlock check on SetActiveSkin.
+    // Technical Doc Phase 3 (active-skin tracking) + Phase 6 (real unlock/spend): tracks which
+    // BlockoutSkin is active and which are unlocked, persisting both across sessions via
+    // ISaveService/SaveData (activeSkinId, unlockedSkinIds, coins).
     public interface IBlockoutSkinService
     {
         // Never null as long as at least one BlockoutSkin exists in the catalog: falls back to
         // whichever skin has UnlockedByDefault set (the always-free default palette), or the
         // first catalog entry if even that's missing. Null only when the catalog has no
         // BlockoutSkin at all - callers already null-check catalog lookups the same way
-        // (see BlockoutGameplayState.StartSpawning).
+        // (see BlockoutGameplayState.StartSpawning). Always unlocked (see IsUnlocked) - Initialize
+        // never leaves the player unable to render pieces at all.
         BlockoutSkin ActiveSkin { get; }
 
-        // No-op (with a logged warning) if skinId doesn't match any catalog entry - callers
-        // should only pass an id they got from a real BlockoutSkin.SkinId.
+        // True for the always-free default (BlockoutSkin.UnlockedByDefault) or any skin whose
+        // SkinId is in SaveData.unlockedSkinIds (see TryUnlockSkin). False for a null skin.
+        bool IsUnlocked(BlockoutSkin skin);
+
+        // No-op (with a logged warning) if skinId doesn't match any catalog entry, or if it does
+        // but IsUnlocked is false for it - callers should only activate a skin the player has
+        // actually unlocked (TryUnlockSkin first, or it's the always-free default).
         void SetActiveSkin(string skinId);
+
+        // Spends CostInCoins from SaveData.coins and adds skinId to SaveData.unlockedSkinIds,
+        // then persists. Returns false (with a logged reason, no coins spent) if skinId doesn't
+        // match any catalog entry, is already unlocked, or SaveData.coins is short of
+        // CostInCoins. Personal-best-score bonus intentionally not implemented (GDD leaves it
+        // open) - this only ever spends coins, never awards them; see
+        // BlockoutGameplayState.OnWellFull for the earning side of the economy.
+        bool TryUnlockSkin(string skinId);
     }
 
     public sealed class BlockoutSkinService : IBlockoutSkinService
@@ -50,21 +64,27 @@ namespace hp55games.Blockout.Config
             }
         }
 
+        public bool IsUnlocked(BlockoutSkin skin)
+        {
+            if (skin == null) return false;
+            if (skin.UnlockedByDefault) return true;
+
+            var save = ResolveSaveData();
+            return save != null && save.unlockedSkinIds != null && save.unlockedSkinIds.Contains(skin.SkinId);
+        }
+
         public void SetActiveSkin(string skinId)
         {
-            var skins = ResolveCatalogService()?.GetAll<BlockoutSkin>();
-            bool exists = false;
-            if (skins != null)
-            {
-                foreach (var skin in skins)
-                {
-                    if (skin.SkinId == skinId) { exists = true; break; }
-                }
-            }
-
-            if (!exists)
+            var skin = FindSkin(skinId);
+            if (skin == null)
             {
                 Debug.LogWarning($"[BlockoutSkinService] SetActiveSkin: no BlockoutSkin with SkinId \"{skinId}\" in the catalog. Ignored.");
+                return;
+            }
+
+            if (!IsUnlocked(skin))
+            {
+                Debug.LogWarning($"[BlockoutSkinService] SetActiveSkin: \"{skinId}\" is not unlocked yet. Ignored.");
                 return;
             }
 
@@ -73,6 +93,48 @@ namespace hp55games.Blockout.Config
 
             save.activeSkinId = skinId;
             ServiceRegistry.Resolve<ISaveService>().Save();
+        }
+
+        public bool TryUnlockSkin(string skinId)
+        {
+            var skin = FindSkin(skinId);
+            if (skin == null)
+            {
+                Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: no BlockoutSkin with SkinId \"{skinId}\" in the catalog.");
+                return false;
+            }
+
+            if (IsUnlocked(skin))
+            {
+                Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: \"{skinId}\" is already unlocked.");
+                return false;
+            }
+
+            var save = ResolveSaveData();
+            if (save == null) return false;
+
+            if (save.coins < skin.CostInCoins)
+            {
+                Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: not enough coins for \"{skinId}\" (has {save.coins}, needs {skin.CostInCoins}).");
+                return false;
+            }
+
+            save.coins -= skin.CostInCoins;
+            save.unlockedSkinIds.Add(skinId);
+            ServiceRegistry.Resolve<ISaveService>().Save();
+            return true;
+        }
+
+        private static BlockoutSkin FindSkin(string skinId)
+        {
+            var skins = ResolveCatalogService()?.GetAll<BlockoutSkin>();
+            if (skins == null) return null;
+
+            foreach (var skin in skins)
+            {
+                if (skin.SkinId == skinId) return skin;
+            }
+            return null;
         }
 
         // Resolved lazily (not cached at construction) rather than injected: this service is

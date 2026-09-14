@@ -28,6 +28,13 @@ namespace hp55games.Blockout.Gameplay
         private BlockoutSpawner _spawner;
         private IDisposable _layersClearedSubscription;
 
+        // Technical Doc Phase 6 coins formula's bonus term (+5 x N per multi-layer clear event
+        // during the run) - accumulated here rather than recomputed from anything persistent,
+        // since it only matters for the single run currently in progress. Reset to 0 on every
+        // fresh run (never on resume - see EnterAsync), paid out alongside the base term
+        // (floor(finalScore / 100)) at game over (see OnWellFull).
+        private int _bonusCoinsThisRun;
+
         public BlockoutGameplayState(bool isResuming = false)
         {
             _isResuming = isResuming;
@@ -58,6 +65,7 @@ namespace hp55games.Blockout.Gameplay
                 }
 
                 _context?.ResetRun();
+                _bonusCoinsThisRun = 0;
 
                 var navigation = ServiceRegistry.Resolve<IUINavigationService>();
                 await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
@@ -125,9 +133,14 @@ namespace hp55games.Blockout.Gameplay
         }
 
         // Reuses the template's existing score infrastructure (IGameContextService.Score,
-        // ScoreChangedEvent, UIGameplayHUD) rather than a Blockout-specific score store.
+        // ScoreChangedEvent, UIGameplayHUD) rather than a Blockout-specific score store. Also
+        // accumulates the coins formula's bonus term: +5 x N coins per "layer-clear multiplo"
+        // (LayerCount >= 2) - a single-layer clear earns no bonus, only the base term computed
+        // from final score at game over (see OnWellFull).
         private void OnLayersCleared(LayersClearedEvent evt)
         {
+            if (evt.LayerCount >= 2) _bonusCoinsThisRun += 5 * evt.LayerCount;
+
             if (_context == null) return;
 
             _context.Score += evt.PointsAwarded;
@@ -135,19 +148,33 @@ namespace hp55games.Blockout.Gameplay
         }
 
         // Spawn-column stack reached the well's height: publish BlockoutGameOverEvent (FinalScore
-        // read from context.Score, not a separately-tracked total) and hand off to the template's
-        // ResultState - no Blockout-specific result state needed.
+        // read from context.Score, not a separately-tracked total), pay out this run's coins
+        // (Technical Doc Phase 6: floor(finalScore / 100) base + the per-clear bonus already
+        // accumulated in _bonusCoinsThisRun), and hand off to the template's ResultState - no
+        // Blockout-specific result state needed.
         private void OnWellFull()
         {
             if (_spawner != null) _spawner.WellFull -= OnWellFull;
 
             int finalScore = _context?.Score ?? 0;
+            AwardCoins(finalScore);
+
             _eventBus?.Publish(new BlockoutGameOverEvent { FinalScore = finalScore });
 
             if (_fsm != null)
             {
                 AsyncUtils.FireAndForget(_fsm.ChangeStateAsync(new ResultState()), context: nameof(BlockoutGameplayState));
             }
+        }
+
+        private void AwardCoins(int finalScore)
+        {
+            if (!ServiceRegistry.TryResolve<ISaveService>(out var saveService)) return;
+
+            int coinsEarned = finalScore / 100 + _bonusCoinsThisRun; // int division already floors for a non-negative score
+            saveService.Data.coins += coinsEarned;
+            saveService.Data.progress.lifetimeCoins += coinsEarned;
+            saveService.Save();
         }
     }
 }

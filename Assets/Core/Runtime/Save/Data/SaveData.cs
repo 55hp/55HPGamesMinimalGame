@@ -14,6 +14,13 @@ namespace hp55games.Mobile.Core.Save
         /// </summary>
         public string activeSkinId;
 
+        /// <summary>
+        /// SkinIds the player has spent coins to unlock (Blockout skin system). A skin whose
+        /// BlockoutSkin.UnlockedByDefault is true (the always-free default) doesn't need to be
+        /// listed here - it's unlocked regardless.
+        /// </summary>
+        public List<string> unlockedSkinIds = new List<string>();
+
         public string lastProfile = "default";
         public OptionsData options = new OptionsData();
 
