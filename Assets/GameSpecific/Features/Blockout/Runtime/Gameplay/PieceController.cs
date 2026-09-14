@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Polycubes.Shapes;
@@ -28,11 +29,17 @@ namespace hp55games.Blockout.Gameplay
 
         // Testable without going through Unity's frame loop or the event bus registration required by Awake().
         public event Action<float> FallIntervalChanged;
-        public event Action Locked;
+
+        // Fires exactly once per lock, synchronously, with the Y layers cleared by this lock
+        // (empty if none) - BlockoutSpawner uses the array to mirror the clear/collapse in
+        // WellCellRenderer and dispatch to the active skin's clear behaviour BEFORE it spawns the
+        // next piece, since that has to happen in this exact order (see BlockoutSpawner.OnPieceLocked).
+        public event Action<int[]> Locked;
 
         private StepState _state;
         private float _stateTimer;
         private BlockoutFallCurveConfig _fallCurve;
+        private BlockoutTimeDifficultyModifier _timeDifficulty;
         private VoxelGrid _grid;
         private IEventBus _eventBus;
         private IDisposable _moveSubscription;
@@ -58,14 +65,18 @@ namespace hp55games.Blockout.Gameplay
 
         // fallCurve/grid are passed in rather than resolved here so the tick/phase/locking logic
         // stays testable without needing IConfigCatalogService wired up (see PieceControllerTests).
-        public void Initialize(PolycubeShape shape, Vector3Int startPosition, BlockoutFallCurveConfig fallCurve, VoxelGrid grid)
+        // timeDifficulty is the same principle applied to the new time+clear based system - null
+        // is a valid "not wired up" value (tests that don't care about it simply omit it), in
+        // which case CurrentInterval is exactly the phase-based value, unmodified.
+        public void Initialize(PolycubeShape shape, Vector3Int startPosition, BlockoutFallCurveConfig fallCurve, VoxelGrid grid, BlockoutTimeDifficultyModifier timeDifficulty = null)
         {
             Shape = shape;
             GridPosition = startPosition;
             _fallCurve = fallCurve;
+            _timeDifficulty = timeDifficulty;
             _grid = grid;
             PhaseIndex = 0;
-            CurrentInterval = _fallCurve.IntervalForPhase(PhaseIndex);
+            CurrentInterval = ComputeCurrentInterval();
             _state = StepState.Waiting;
             _stateTimer = 0f;
             IsLocked = false;
@@ -81,6 +92,11 @@ namespace hp55games.Blockout.Gameplay
         public void Tick(float deltaTime)
         {
             if (IsLocked) return;
+
+            // Re-checked every tick, not just on phase advance: the time-based modifier's own
+            // 15s timer can shift the combined interval independently of PhaseIndex, at any
+            // point during this piece's fall.
+            RefreshCurrentInterval();
 
             _stateTimer += deltaTime;
 
@@ -123,10 +139,11 @@ namespace hp55games.Blockout.Gameplay
         private void Lock()
         {
             PlacementRules.LockInto(_grid, Shape, GridPosition);
-            int layersCleared = PlacementRules.ClearFullLayersTouchedBy(_grid, Shape, GridPosition);
+            var clearedLayerYs = new List<int>();
+            int layersCleared = PlacementRules.ClearFullLayersTouchedBy(_grid, Shape, GridPosition, clearedLayerYs);
 
             IsLocked = true;
-            Locked?.Invoke();
+            Locked?.Invoke(clearedLayerYs.ToArray());
             _eventBus?.Publish(new PieceLockedEvent { GridPosition = GridPosition });
 
             if (layersCleared > 0)
@@ -139,7 +156,16 @@ namespace hp55games.Blockout.Gameplay
         private void AdvancePhase()
         {
             PhaseIndex++;
-            float newInterval = _fallCurve.IntervalForPhase(PhaseIndex);
+            RefreshCurrentInterval();
+        }
+
+        // Recomputes CurrentInterval from the phase-based curve combined with the time-based
+        // modifier (if any) and fires FallIntervalChanged/FallIntervalChangedEvent only when the
+        // combined value actually moved. Called on every Tick (the modifier can change between
+        // phase advances) and on AdvancePhase (PhaseIndex changed).
+        private void RefreshCurrentInterval()
+        {
+            float newInterval = ComputeCurrentInterval();
             bool changed = !Mathf.Approximately(newInterval, CurrentInterval);
             CurrentInterval = newInterval;
 
@@ -148,6 +174,12 @@ namespace hp55games.Blockout.Gameplay
                 FallIntervalChanged?.Invoke(CurrentInterval);
                 _eventBus?.Publish(new FallIntervalChangedEvent { NewInterval = CurrentInterval });
             }
+        }
+
+        private float ComputeCurrentInterval()
+        {
+            float phaseInterval = _fallCurve.IntervalForPhase(PhaseIndex);
+            return _timeDifficulty != null ? _timeDifficulty.ApplyTo(phaseInterval) : phaseInterval;
         }
 
         // Same discrete-check pattern as the fall step: attempt via CanPlaceAt, only commit if valid.

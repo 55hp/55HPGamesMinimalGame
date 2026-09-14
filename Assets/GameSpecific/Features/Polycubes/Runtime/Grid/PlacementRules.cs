@@ -32,6 +32,13 @@ namespace hp55games.Polycubes.Grid
         // VoxelGrid.ClearLayerAndCollapse), so a not-yet-processed lower layer's index stays valid
         // after a higher one is cleared; clearing bottom-up would invalidate it instead.
         public static int ClearFullLayersTouchedBy(VoxelGrid grid, PolycubeShape shape, Vector3Int origin)
+            => ClearFullLayersTouchedBy(grid, shape, origin, null);
+
+        // Same as above, plus reports exactly which Y layers were cleared (in the same
+        // highest-first order they were processed) via clearedLayerYs, when a caller isn't
+        // satisfied with just the count - Blockout uses this to mirror the collapse in its own
+        // (color-aware) rendering layer, which this game-agnostic grid knows nothing about.
+        public static int ClearFullLayersTouchedBy(VoxelGrid grid, PolycubeShape shape, Vector3Int origin, List<int> clearedLayerYs)
         {
             var touchedLayers = new List<int>();
             foreach (var cell in shape.Cells)
@@ -49,6 +56,7 @@ namespace hp55games.Polycubes.Grid
                 if (grid.IsLayerFull(y))
                 {
                     grid.ClearLayerAndCollapse(y);
+                    clearedLayerYs?.Add(y);
                     cleared++;
                 }
             }

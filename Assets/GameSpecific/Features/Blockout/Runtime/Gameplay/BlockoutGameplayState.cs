@@ -100,14 +100,15 @@ namespace hp55games.Blockout.Gameplay
 
             var fallCurve = catalogService.Get<BlockoutFallCurveConfig>();
             var wellConfig = catalogService.Get<BlockoutWellConfig>();
-            if (fallCurve == null || wellConfig == null)
+            var timeDifficultyConfig = catalogService.Get<BlockoutTimeDifficultyConfig>();
+            if (fallCurve == null || wellConfig == null || timeDifficultyConfig == null)
             {
-                Debug.LogError("[BlockoutGameplayState] Missing BlockoutFallCurveConfig or BlockoutWellConfig in the catalog.");
+                Debug.LogError("[BlockoutGameplayState] Missing BlockoutFallCurveConfig, BlockoutWellConfig, or BlockoutTimeDifficultyConfig in the catalog.");
                 return;
             }
 
             var well = new BlockoutWell(wellConfig);
-            _spawner.Initialize(well.Grid, fallCurve, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth);
+            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth);
         }
 
         // Reuses the template's existing score infrastructure (IGameContextService.Score,

@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
+using hp55games.Blockout.Rendering;
 using hp55games.Polycubes.Grid;
 using hp55games.Polycubes.Shapes;
 
 namespace hp55games.Blockout.Gameplay
 {
     // Owns the well's VoxelGrid and keeps spawning pieces into it as each one locks. Driven by
-    // BlockoutGameplayState.EnterAsync (Phase 4), which calls Initialize(...) the way this used
-    // to self-start in Start() - see Initialize. Still standalone in the sense that it doesn't
-    // know about the FSM/game-over UI itself; it just spawns and reports WellFull.
+    // BlockoutGameplayState.EnterAsync (Phase 4), which calls Initialize(...). Visuals are fully
+    // delegated to WellCellRenderer (Phase 5, pooled) - this class only decides WHICH grid cells
+    // are shown and WHAT COLOR they mean (active vs locked), never touches a GameObject/Renderer
+    // directly.
     public sealed class BlockoutSpawner : MonoBehaviour
     {
         private VoxelGrid _grid;
@@ -19,23 +20,25 @@ namespace hp55games.Blockout.Gameplay
         private int _wellHeight;
         private int _wellDepth;
         private BlockoutFallCurveConfig _fallCurve;
+        private BlockoutTimeDifficultyModifier _timeDifficulty;
 
         // Cycled in order (rather than picked randomly) so a run is repeatable while eyeballing
         // fall/lock timing - call it if you'd rather have random.
         private IReadOnlyList<PolycubeShape> _shapes;
         private int _nextShapeIndex;
 
+        private WellCellRenderer _cellRenderer;
         private PieceController _controller;
-        private Transform[] _cellCubes;
-        private Renderer[] _cellRenderers;
 
-        // Every locked piece's cubes, across the whole run: nothing else references them once
-        // their PieceController is gone (OnPieceLocked discards it), so without this list they'd
-        // be orphaned GameObjects - both within a session (the original material-leak fix) and,
-        // worse, visually: a fresh Initialize() otherwise leaves the previous run's entire stack
-        // sitting in the scene. Cleared and destroyed at the start of Initialize() and in
-        // OnDestroy - see ClearPreviousRun.
-        private readonly List<Transform> _lockedCubes = new();
+        [Tooltip("Technical Doc Phase 2 stand-in for the active skin's clear behaviour, until Phase 3's active-skin service resolves this from the persisted active BlockoutSkin instead. Left unassigned, a layer clear still collapses/scores normally, just with no visual reaction dispatched.")]
+        [SerializeField] private BlockoutClearBehaviour _clearBehaviour;
+
+        // The active piece's currently-shown cell positions and color: tracked so a change in
+        // GridPosition/Shape (fall step, move, rotate, hard drop) hides exactly the old set and
+        // shows exactly the new one, instead of re-showing every cell every frame regardless of
+        // whether anything actually moved. Null when there's no active (unlocked) piece.
+        private Vector3Int[] _shownCells;
+        private Color _activeColor;
 
         private bool _spawningStopped;
 
@@ -44,8 +47,7 @@ namespace hp55games.Blockout.Gameplay
         // gets the same color, every run. Distinct from each other and from the wireframe's green
         // (BlockoutWellWireframe). Editable here rather than hardcoded so Franci can retune it
         // without recompiling. Locked cells are dimmed from whichever of these was used, at lock
-        // time (LockCurrentPieceColor), reusing the cube's existing material instance rather than
-        // creating a new one or a separate render system.
+        // time (OnPieceLocked), independent of WellCellRenderer's own rendering mechanism.
         [SerializeField]
         private Color[] _pieceColors =
         {
@@ -71,7 +73,6 @@ namespace hp55games.Blockout.Gameplay
         // read this instead of a silent lock.
         public bool SpawnBlockedWellFull { get; private set; }
         public PieceController CurrentPiece => _controller;
-        public IReadOnlyList<Transform> CurrentPieceCubes => _cellCubes;
 
         // Fired once, the moment SpawnNext refuses to spawn because the well is full - see
         // SpawnBlockedWellFull. BlockoutGameplayState listens for this to publish
@@ -80,11 +81,34 @@ namespace hp55games.Blockout.Gameplay
 
         // grid/fallCurve/shapes/dimensions are passed in rather than resolved here so the spawn
         // validation logic stays testable without needing IConfigCatalogService wired up (mirrors
-        // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is now
-        // the sole entry point - this class no longer self-starts in Start().
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
+        // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is the
+        // sole entry point - this class doesn't self-start. clearBehaviour is null by default so
+        // production callers (which don't pass one) leave whatever's assigned in the Inspector
+        // untouched - only a non-null value here overrides it, which is what lets tests exercise
+        // the clear-behaviour dispatch without an Inspector-assigned asset.
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, BlockoutClearBehaviour clearBehaviour = null)
         {
-            ClearPreviousRun();
+            if (clearBehaviour != null) _clearBehaviour = clearBehaviour;
+
+            // Fresh per run, per spec (the session timer restarts from zero on every new game) -
+            // dispose the previous run's subscription before replacing it.
+            _timeDifficulty?.Dispose();
+            _timeDifficulty = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
+
+            if (_cellRenderer == null)
+            {
+                _cellRenderer = FindObjectOfType<WellCellRenderer>();
+                if (_cellRenderer == null)
+                {
+                    Debug.LogError("[BlockoutSpawner] No WellCellRenderer found in the scene - pieces will spawn with no visual.", this);
+                }
+            }
+
+            // Leaves no visual trace of a previous run: every locked cell, plus whatever the
+            // active piece was showing.
+            _cellRenderer?.HideAll();
+            _controller = null;
+            _shownCells = null;
 
             _grid = grid;
             _fallCurve = fallCurve;
@@ -99,61 +123,54 @@ namespace hp55games.Blockout.Gameplay
             SpawnNext();
         }
 
+        private void OnDestroy()
+        {
+            _timeDifficulty?.Dispose();
+        }
+
         private void Update()
         {
+            // Ticked unconditionally (not gated on having an active piece): the session timer
+            // runs on real elapsed time for the whole run, independent of piece lifecycle.
+            _timeDifficulty?.Tick(Time.unscaledDeltaTime);
+
             if (_controller == null) return;
-            SyncCubesToCurrentGridPosition();
+            SyncActivePieceVisual();
         }
 
-        // Leaves no visual trace of whatever a previous Initialize() left behind: every locked
-        // piece's cubes (see _lockedCubes), plus - defensively - any still-active piece from a
-        // run that never finished locking. Also called from OnDestroy for final cleanup.
-        private void ClearPreviousRun()
+        // Shows the active piece's current cells and hides whichever cells it previously
+        // occupied, but only when GridPosition/Shape actually changed since the last call - a
+        // fall step, move, rotate, and hard drop all go through this same path.
+        private void SyncActivePieceVisual()
         {
-            if (_controller != null)
+            if (_cellRenderer == null) return;
+
+            var shapeCells = _controller.Shape.Cells;
+            var newCells = new Vector3Int[shapeCells.Count];
+            for (int i = 0; i < shapeCells.Count; i++)
             {
-                Destroy(_controller.gameObject);
-                _controller = null;
+                newCells[i] = _controller.GridPosition + shapeCells[i];
             }
 
-            if (_cellCubes != null)
+            if (_shownCells != null && CellsEqual(_shownCells, newCells)) return;
+
+            if (_shownCells != null)
             {
-                DestroyCubes(_cellCubes);
-                _cellCubes = null;
+                foreach (var cell in _shownCells) _cellRenderer.HideCell(cell);
             }
 
-            DestroyCubes(_lockedCubes);
-            _lockedCubes.Clear();
+            foreach (var cell in newCells) _cellRenderer.ShowCell(cell, _activeColor);
+            _shownCells = newCells;
         }
 
-        // Destroys each cube's GameObject and its already-instantiated material (Renderer.material
-        // never gets cleaned up by Unity on its own - see _lockedCubes).
-        private static void DestroyCubes(IEnumerable<Transform> cubes)
+        private static bool CellsEqual(Vector3Int[] a, Vector3Int[] b)
         {
-            foreach (var cube in cubes)
+            if (a.Length != b.Length) return false;
+            for (int i = 0; i < a.Length; i++)
             {
-                if (cube == null) continue;
-
-                var renderer = cube.GetComponent<Renderer>();
-                if (renderer != null && renderer.sharedMaterial != null) Destroy(renderer.sharedMaterial);
-
-                Destroy(cube.gameObject);
+                if (a[i] != b[i]) return false;
             }
-        }
-
-        private void OnDestroy() => ClearPreviousRun();
-
-        private void SyncCubesToCurrentGridPosition()
-        {
-            // Read Shape.Cells fresh every call rather than a cached copy from spawn time: a
-            // successful rotation replaces Shape with a new rotated instance (same cell count and
-            // order, just repositioned - see PolycubeShape.Rotate), and a cached offset array would
-            // never pick that up, making the rotation invisible despite being logically correct.
-            var cells = _controller.Shape.Cells;
-            for (int i = 0; i < _cellCubes.Length; i++)
-            {
-                _cellCubes[i].position = (Vector3)(_controller.GridPosition + cells[i]);
-            }
+            return true;
         }
 
         private void SpawnNext()
@@ -177,68 +194,74 @@ namespace hp55games.Blockout.Gameplay
                 return;
             }
 
-            var cells = shape.Cells;
-
-            // TEMPORARY placeholder visuals: one plain cube per shape cell, not pooled, no
-            // material/renderer service. Once the piece locks, LockCurrentPieceColor dims these
-            // same cubes in place - that's the "locked cell" placeholder, so stacking is visible.
-            // Replace with WellCellRenderer once that lands.
-            var color = _pieceColors != null && _pieceColors.Length > 0
+            _activeColor = _pieceColors != null && _pieceColors.Length > 0
                 ? _pieceColors[shapeIndex % _pieceColors.Length]
                 : Color.white;
-            _cellCubes = new Transform[cells.Count];
-            _cellRenderers = new Renderer[cells.Count];
-
-            for (int i = 0; i < cells.Count; i++)
-            {
-                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.name = "BlockoutPiece (TEMP)";
-                var renderer = cube.GetComponent<Renderer>();
-                renderer.material.color = color;
-                cube.transform.position = (Vector3)(startPosition + cells[i]);
-
-                _cellCubes[i] = cube.transform;
-                _cellRenderers[i] = renderer;
-            }
 
             var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
             _controller = pieceObject.AddComponent<PieceController>();
             _controller.Locked += OnPieceLocked;
-            _controller.Initialize(shape, startPosition, _fallCurve, _grid);
+            _controller.Initialize(shape, startPosition, _fallCurve, _grid, _timeDifficulty);
+
+            SyncActivePieceVisual(); // show immediately rather than waiting for the next Update()
         }
 
-        private void OnPieceLocked()
+        private void OnPieceLocked(int[] clearedLayerYs)
         {
             _controller.Locked -= OnPieceLocked;
 
             // Locking and respawning below are fully synchronous (no frame boundary in between),
             // so Update() never gets a chance to observe this controller's final GridPosition
-            // before _controller is reassigned to the next piece - sync here instead, or these
-            // cubes are left wherever they were on the last regular frame (looks frozen mid-air
-            // after a hard drop in particular, since that can skip several cells in one go).
-            SyncCubesToCurrentGridPosition();
-            LockCurrentPieceColor();
+            // before _controller is reassigned to the next piece - sync here instead, or the
+            // shown cells are left wherever they were on the last regular frame (looks frozen
+            // mid-air after a hard drop in particular, since that can skip several cells at once).
+            SyncActivePieceVisual();
 
-            // Hand these cubes off to _lockedCubes so a future Initialize() can find and destroy
-            // them - nothing else will reference them once _cellCubes is overwritten by the next
-            // SpawnNext(). Leaving them positioned where they are IS the locked placeholder.
-            _lockedCubes.AddRange(_cellCubes);
+            if (_cellRenderer != null && _shownCells != null)
+            {
+                Color.RGBToHSV(_activeColor, out float h, out float s, out float v);
+                var lockedColor = Color.HSVToRGB(h, s * LockedSaturationFactor, v * LockedValueFactor);
 
-            // Only the (invisible) controller object is discarded here.
+                // Recolors the already-shown cells in place (ShowCell again at the same position),
+                // rather than hiding and re-showing them - that's the "locked cell" placeholder.
+                foreach (var cell in _shownCells) _cellRenderer.ShowCell(cell, lockedColor);
+            }
+
+            // These cells are now permanent (locked), not "the active piece" anymore - nothing
+            // further should hide them on this spawner's account.
+            _shownCells = null;
+
+            // Must run before SpawnNext() below: SpawnNext immediately shows the next piece's
+            // cells via WellCellRenderer, and CollapseLayer's shift-everything-above-down pass
+            // would wrongly drag those freshly-shown cells down with it if the next piece were
+            // already on screen when this runs.
+            HandleLayerClears(clearedLayerYs);
+
             Destroy(_controller.gameObject);
             _controller = null;
             SpawnNext();
         }
 
-        // Dims each cube's already-instantiated material in place (same hue, less saturated and
-        // darker) rather than creating a new material or a separate render system.
-        private void LockCurrentPieceColor()
+        // Mirrors PlacementRules.ClearFullLayersTouchedBy's grid collapse in the pooled visuals
+        // (WellCellRenderer has no way to hear about a clear on its own - VoxelGrid's occupancy
+        // data carries no rendering/color concept) and hands the exact cleared cell
+        // positions/colors to the active skin's clear behaviour. clearedLayerYs is already in the
+        // highest-first order PlacementRules processed it in, which CollapseLayer relies on for a
+        // simultaneous multi-layer clear to collapse correctly.
+        private void HandleLayerClears(int[] clearedLayerYs)
         {
-            for (int i = 0; i < _cellRenderers.Length; i++)
+            if (_cellRenderer == null || clearedLayerYs == null || clearedLayerYs.Length == 0) return;
+
+            var clearedPositions = new List<Vector3Int>();
+            var clearedColors = new List<Color>();
+
+            foreach (var y in clearedLayerYs)
             {
-                Color.RGBToHSV(_cellRenderers[i].material.color, out float h, out float s, out float v);
-                _cellRenderers[i].material.color = Color.HSVToRGB(h, s * LockedSaturationFactor, v * LockedValueFactor);
+                _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _wellHeight, clearedPositions, clearedColors);
             }
+
+            IBlockoutClearBehaviour behaviour = _clearBehaviour;
+            behaviour?.OnLayersCleared(new BlockoutClearContext(clearedPositions, clearedColors, clearedLayerYs.Length));
         }
 
         // Centers the shape horizontally in the well and drops its topmost cell to the well's

@@ -5,9 +5,10 @@ using hp55games.Blockout.Config;
 
 namespace hp55games.Blockout.InputSystem
 {
-    // Standalone wiring, same spirit as BlockoutSpawner: resolves its own dependencies and turns
-    // raw IInputService gestures into Blockout gameplay-request events. Not driven by
-    // BlockoutGameplayState or the FSM - delete/fold in once the real game state exists.
+    // Turns raw IInputService gestures into Blockout gameplay-request events. Not owned by
+    // BlockoutGameplayState (input should keep working independent of gameplay-state lifecycle),
+    // but relies on the same GameBootstrap -> Menu -> BlockoutGameplayState path for its
+    // dependencies to already be registered by the time it runs.
     public sealed class BlockoutInputHandler : MonoBehaviour
     {
         [Tooltip("Camera used to project taps into the well. Defaults to Camera.main if left empty.")]
@@ -28,7 +29,6 @@ namespace hp55games.Blockout.InputSystem
         private IEventBus _eventBus;
         private int _wellWidth;
         private int _wellDepth;
-        private bool _ownsInputTick;
 
         private bool _tapPending;
         private float _tapPendingSince;
@@ -36,22 +36,22 @@ namespace hp55games.Blockout.InputSystem
 
         private void Awake()
         {
-            // Standalone test scene (no Bootstrap flow): provide and tick our own IInputService /
-            // IEventBus. In the real app flow GameBootstrap + InputServiceDriver already do both,
-            // so this is a no-op there (existing instances are left alone, not replaced).
+            // Gameplay is only ever reached via GameBootstrap -> Menu -> BlockoutGameplayState
+            // (confirmed as of Phase 4), which registers IInputService/IEventBus long before this
+            // component's Awake() can run - both are hard requirements now, not a "might be
+            // missing in a standalone scene" case to self-provision a fallback for.
             if (!ServiceRegistry.TryResolve(out _input))
             {
-                _input = new InputService();
-                ServiceRegistry.Register<IInputService>(_input);
-                _ownsInputTick = true;
-                Debug.Log("[BlockoutInputHandler] No IInputService registered - created and driving a standalone instance for this scene.", this);
+                Debug.LogError("[BlockoutInputHandler] IInputService is not registered.", this);
+                enabled = false;
+                return;
             }
 
             if (!ServiceRegistry.TryResolve(out _eventBus))
             {
-                _eventBus = new EventBus();
-                ServiceRegistry.Register<IEventBus>(_eventBus);
-                Debug.Log("[BlockoutInputHandler] No IEventBus registered - created a standalone instance for this scene.", this);
+                Debug.LogError("[BlockoutInputHandler] IEventBus is not registered.", this);
+                enabled = false;
+                return;
             }
 
             if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService))
@@ -87,8 +87,6 @@ namespace hp55games.Blockout.InputSystem
 
         private void Update()
         {
-            if (_ownsInputTick) _input.Tick(Time.unscaledDeltaTime);
-
             // A pending tap resolves into a move only once the double-tap window has passed
             // without a second tap - see HandleTap.
             if (_tapPending && Time.unscaledTime - _tapPendingSince > DoubleTapWindowSeconds)

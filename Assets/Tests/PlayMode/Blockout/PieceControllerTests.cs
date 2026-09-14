@@ -99,6 +99,53 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
+        public void Initialize_AppliesTimeDifficultyModifier_ToCurrentInterval()
+        {
+            var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
+            var modifier = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
+            modifier.Tick(timeDifficultyConfig.TimerTickIntervalSeconds + 1f); // one reduction applied
+
+            var go = new GameObject(nameof(PieceControllerTests));
+            var controller = go.AddComponent<PieceController>();
+            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
+
+            float expectedRatio = modifier.SessionInterval / timeDifficultyConfig.SessionBaseInterval;
+            float expected = Mathf.Max(_fallCurve.IntervalForPhase(0) * expectedRatio, timeDifficultyConfig.CombinedFloorInterval);
+            Assert.AreEqual(expected, controller.CurrentInterval, 0.0001f);
+
+            Object.DestroyImmediate(controller.gameObject);
+            Object.DestroyImmediate(timeDifficultyConfig);
+        }
+
+        [Test]
+        public void Tick_RefreshesCurrentInterval_WhenTimeDifficultyModifierChanges_EvenWithoutAPhaseAdvance()
+        {
+            // Regression guard: CurrentInterval used to only change on AdvancePhase, but the
+            // time-based modifier's own 15s timer can shift the combined value independently of
+            // PhaseIndex, mid-piece.
+            var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
+            var modifier = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
+
+            var go = new GameObject(nameof(PieceControllerTests));
+            var controller = go.AddComponent<PieceController>();
+            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
+
+            float intervalBeforeTimerTick = controller.CurrentInterval;
+            int raiseCount = 0;
+            controller.FallIntervalChanged += _ => raiseCount++;
+
+            modifier.Tick(timeDifficultyConfig.TimerTickIntervalSeconds + 1f); // session interval drops
+            controller.Tick(0.001f); // far short of a phase transition - only the refresh should react
+
+            Assert.AreEqual(0, controller.PhaseIndex); // confirms this wasn't a phase-driven change
+            Assert.AreEqual(1, raiseCount);
+            Assert.Less(controller.CurrentInterval, intervalBeforeTimerTick);
+
+            Object.DestroyImmediate(controller.gameObject);
+            Object.DestroyImmediate(timeDifficultyConfig);
+        }
+
+        [Test]
         public void Tick_LocksPiece_WhenNextStepWouldGoBelowWellFloor()
         {
             var grid = new VoxelGrid(3, 3, 3);
@@ -166,6 +213,47 @@ namespace hp55games.Blockout.Tests
             Assert.IsNotNull(received);
             Assert.AreEqual(1, received.LayerCount);
             Assert.AreEqual(ScoreCalculator.PointsForSimultaneousClears(1), received.PointsAwarded);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Locked_ReportsTheClearedLayerY_WhenLockCompletesAFullLayer()
+        {
+            // BlockoutSpawner needs the exact Y (not just the count) to mirror the collapse in
+            // WellCellRenderer before spawning the next piece - see BlockoutSpawner.OnPieceLocked.
+            var grid = new VoxelGrid(2, 3, 1);
+            grid.SetOccupied(1, 0, 0, true); // layer 0 needs just one more cell to be full
+
+            var start = new Vector3Int(0, 0, 0);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            int[] receivedClearedLayerYs = null;
+            controller.Locked += clearedLayerYs => receivedClearedLayerYs = clearedLayerYs;
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            CollectionAssert.AreEqual(new[] { 0 }, receivedClearedLayerYs);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Locked_ReportsAnEmptyArray_WhenLockCompletesNoFullLayer()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            var start = new Vector3Int(1, 0, 1);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            int[] receivedClearedLayerYs = null;
+            controller.Locked += clearedLayerYs => receivedClearedLayerYs = clearedLayerYs;
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.IsNotNull(receivedClearedLayerYs);
+            Assert.AreEqual(0, receivedClearedLayerYs.Length);
 
             Object.DestroyImmediate(controller.gameObject);
         }
