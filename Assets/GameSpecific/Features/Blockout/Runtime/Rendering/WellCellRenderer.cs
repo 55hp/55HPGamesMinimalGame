@@ -69,6 +69,56 @@ namespace hp55games.Blockout.Rendering
             _shownCells.Remove(gridPos);
         }
 
+        // Mirrors VoxelGrid.ClearLayerAndCollapse for the pooled visuals: captures the
+        // position/color of every shown cell in layer y (appended to outClearedPositions/
+        // outClearedColors, for a caller building a BlockoutClearContext), hides them, then
+        // shifts every shown cell in the layers above down by one - without this, a cleared
+        // layer's cubes would keep floating in place and everything above would drift out of
+        // sync with the logical grid after the very first clear. width/depth/height are passed
+        // in (this class doesn't own well dimensions); y must be processed in the same
+        // highest-first order PlacementRules.ClearFullLayersTouchedBy cleared the grid in, when
+        // more than one layer clears at once.
+        public void CollapseLayer(int y, int width, int depth, int height, IList<Vector3Int> outClearedPositions, IList<Color> outClearedColors)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                for (int z = 0; z < depth; z++)
+                {
+                    var pos = new Vector3Int(x, y, z);
+                    if (!_shownCells.ContainsKey(pos)) continue;
+
+                    outClearedPositions?.Add(pos);
+                    outClearedColors?.Add(GetCellColor(pos));
+                    HideCell(pos);
+                }
+            }
+
+            for (int layer = y; layer < height - 1; layer++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    for (int z = 0; z < depth; z++)
+                    {
+                        MoveCellDown(new Vector3Int(x, layer + 1, z), new Vector3Int(x, layer, z));
+                    }
+                }
+            }
+        }
+
+        // Relocates a shown cell from `from` to `to` (one layer down) if one is shown there, or
+        // no-ops otherwise - `to` is guaranteed empty by the time this runs for a given layer
+        // (CollapseLayer processes layers bottom-up from y, so whatever was shown at `to` was
+        // already moved out, or hidden, in the previous iteration), exactly mirroring
+        // VoxelGrid's own per-cell overwrite.
+        private void MoveCellDown(Vector3Int from, Vector3Int to)
+        {
+            if (!_shownCells.TryGetValue(from, out var instance)) return;
+
+            _shownCells.Remove(from);
+            instance.transform.position = (Vector3)to;
+            _shownCells[to] = instance;
+        }
+
         // Read-only introspection for tests/debug tooling - not used by the show/hide mechanism
         // itself.
         public bool IsCellShown(Vector3Int gridPos) => _shownCells.ContainsKey(gridPos);

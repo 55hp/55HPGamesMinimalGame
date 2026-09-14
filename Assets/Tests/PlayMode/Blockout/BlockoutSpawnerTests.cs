@@ -237,6 +237,71 @@ namespace hp55games.Blockout.Tests
             Object.DestroyImmediate(cellRenderer.gameObject);
         }
 
+        // Stand-in BlockoutClearBehaviour for assertions - see also
+        // BlockoutClearBehaviourTests.RecordingClearBehaviour, same idea.
+        private sealed class RecordingClearBehaviour : BlockoutClearBehaviour
+        {
+            public BlockoutClearContext? LastContext;
+            public override void OnLayersCleared(BlockoutClearContext context) => LastContext = context;
+        }
+
+        [Test]
+        public void HardDrop_DispatchesToClearBehaviour_WithTheClearedCellsPositionsAndColors()
+        {
+            // width=1, depth=1: a single-cell piece landing on the floor always completes the
+            // (only possible) layer, so this hard drop is guaranteed to trigger a clear.
+            var cellRenderer = CreateCellRenderer();
+            var grid = new VoxelGrid(1, 3, 1);
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            var behaviour = ScriptableObject.CreateInstance<RecordingClearBehaviour>();
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 1, behaviour);
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(behaviour.LastContext.HasValue);
+            Assert.AreEqual(1, behaviour.LastContext.Value.LayerCount);
+            Assert.AreEqual(1, behaviour.LastContext.Value.ClearedCellPositions.Count);
+            Assert.AreEqual(new Vector3Int(0, 0, 0), behaviour.LastContext.Value.ClearedCellPositions[0]);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(cellRenderer.gameObject);
+            Object.DestroyImmediate(behaviour);
+        }
+
+        [Test]
+        public void HardDrop_DoesNotDragTheNewlySpawnedPieceDownWithTheCollapse()
+        {
+            // Regression guard: the clear/collapse dispatch used to run from a LayersClearedEvent
+            // handler, which fired AFTER the next piece had already spawned and been shown - the
+            // collapse's shift-everything-above-down pass would then wrongly drag the new piece's
+            // just-shown cells down too. Must run before SpawnNext() instead (see
+            // BlockoutSpawner.OnPieceLocked).
+            var cellRenderer = CreateCellRenderer();
+            var grid = new VoxelGrid(1, 3, 1);
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 1);
+
+            var spawnPos = spawner.CurrentPiece.GridPosition; // (0, 2, 0) - top of the well
+
+            eventBus.Publish(new HardDropRequestedEvent()); // locks at y=0, clears the only layer, spawns piece 2
+
+            Assert.IsNotNull(spawner.CurrentPiece);
+            Assert.IsFalse(spawner.CurrentPiece.IsLocked);
+            Assert.AreEqual(spawnPos, spawner.CurrentPiece.GridPosition); // still at the real spawn point, not shifted down
+            Assert.IsTrue(cellRenderer.IsCellShown(spawnPos)); // its cell is where it's supposed to be
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(cellRenderer.gameObject);
+        }
+
         [Test]
         public void Initialize_ResetsTimeDifficulty_ForANewRun()
         {

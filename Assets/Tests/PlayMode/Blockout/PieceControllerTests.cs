@@ -218,6 +218,47 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
+        public void Locked_ReportsTheClearedLayerY_WhenLockCompletesAFullLayer()
+        {
+            // BlockoutSpawner needs the exact Y (not just the count) to mirror the collapse in
+            // WellCellRenderer before spawning the next piece - see BlockoutSpawner.OnPieceLocked.
+            var grid = new VoxelGrid(2, 3, 1);
+            grid.SetOccupied(1, 0, 0, true); // layer 0 needs just one more cell to be full
+
+            var start = new Vector3Int(0, 0, 0);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            int[] receivedClearedLayerYs = null;
+            controller.Locked += clearedLayerYs => receivedClearedLayerYs = clearedLayerYs;
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            CollectionAssert.AreEqual(new[] { 0 }, receivedClearedLayerYs);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Locked_ReportsAnEmptyArray_WhenLockCompletesNoFullLayer()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            var start = new Vector3Int(1, 0, 1);
+            var controller = CreateController(SingleCellShape(), start, grid);
+
+            int[] receivedClearedLayerYs = null;
+            controller.Locked += clearedLayerYs => receivedClearedLayerYs = clearedLayerYs;
+
+            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.IsNotNull(receivedClearedLayerYs);
+            Assert.AreEqual(0, receivedClearedLayerYs.Length);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
         public void HandleMoveRequested_DoesNotMove_WhenTargetCellIsAlreadyLocked()
         {
             var grid = new VoxelGrid(3, 3, 3);

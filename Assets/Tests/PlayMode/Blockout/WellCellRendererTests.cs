@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
@@ -99,6 +100,60 @@ namespace hp55games.Blockout.Tests
             Assert.IsFalse(renderer.IsCellShown(new Vector3Int(0, 0, 0)));
             Assert.IsFalse(renderer.IsCellShown(new Vector3Int(1, 0, 0)));
             Assert.IsFalse(renderer.IsCellShown(new Vector3Int(2, 0, 0)));
+
+            Object.DestroyImmediate(renderer.gameObject);
+        }
+
+        [Test]
+        public void CollapseLayer_HidesTheClearedLayer_AndReportsItsPositionsAndColors()
+        {
+            var renderer = CreateRenderer();
+            renderer.ShowCell(new Vector3Int(0, 0, 0), Color.red);
+            renderer.ShowCell(new Vector3Int(1, 0, 0), Color.blue);
+
+            var positions = new List<Vector3Int>();
+            var colors = new List<Color>();
+            renderer.CollapseLayer(0, width: 2, depth: 1, height: 1, positions, colors);
+
+            Assert.IsFalse(renderer.IsCellShown(new Vector3Int(0, 0, 0)));
+            Assert.IsFalse(renderer.IsCellShown(new Vector3Int(1, 0, 0)));
+            Assert.AreEqual(2, positions.Count);
+            CollectionAssert.Contains(positions, new Vector3Int(0, 0, 0));
+            CollectionAssert.Contains(positions, new Vector3Int(1, 0, 0));
+            CollectionAssert.Contains(colors, Color.red);
+            CollectionAssert.Contains(colors, Color.blue);
+
+            Object.DestroyImmediate(renderer.gameObject);
+        }
+
+        [Test]
+        public void CollapseLayer_ShiftsEveryCellAboveDownByOne()
+        {
+            var renderer = CreateRenderer();
+            renderer.ShowCell(new Vector3Int(0, 0, 0), Color.red); // the layer about to clear
+            renderer.ShowCell(new Vector3Int(0, 1, 0), Color.green); // should end up at y=0
+            renderer.ShowCell(new Vector3Int(0, 2, 0), Color.blue); // should end up at y=1
+
+            renderer.CollapseLayer(0, width: 1, depth: 1, height: 3, new List<Vector3Int>(), new List<Color>());
+
+            Assert.AreEqual(Color.green, renderer.GetCellColor(new Vector3Int(0, 0, 0)));
+            Assert.AreEqual(Color.blue, renderer.GetCellColor(new Vector3Int(0, 1, 0)));
+            Assert.IsFalse(renderer.IsCellShown(new Vector3Int(0, 2, 0))); // top layer now empty, nothing left to shift into it
+
+            Object.DestroyImmediate(renderer.gameObject);
+        }
+
+        [Test]
+        public void CollapseLayer_LeavesUntouchedCellsAtOtherXZColumnsInPlace()
+        {
+            var renderer = CreateRenderer();
+            renderer.ShowCell(new Vector3Int(0, 0, 0), Color.red); // cleared layer
+            renderer.ShowCell(new Vector3Int(1, 1, 0), Color.yellow); // different column, above the cleared layer
+
+            renderer.CollapseLayer(0, width: 2, depth: 1, height: 2, new List<Vector3Int>(), new List<Color>());
+
+            Assert.AreEqual(Color.yellow, renderer.GetCellColor(new Vector3Int(1, 0, 0))); // shifted down within its own column
+            Assert.IsFalse(renderer.IsCellShown(new Vector3Int(1, 1, 0)));
 
             Object.DestroyImmediate(renderer.gameObject);
         }

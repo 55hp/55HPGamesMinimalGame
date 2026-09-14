@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Polycubes.Shapes;
@@ -28,7 +29,12 @@ namespace hp55games.Blockout.Gameplay
 
         // Testable without going through Unity's frame loop or the event bus registration required by Awake().
         public event Action<float> FallIntervalChanged;
-        public event Action Locked;
+
+        // Fires exactly once per lock, synchronously, with the Y layers cleared by this lock
+        // (empty if none) - BlockoutSpawner uses the array to mirror the clear/collapse in
+        // WellCellRenderer and dispatch to the active skin's clear behaviour BEFORE it spawns the
+        // next piece, since that has to happen in this exact order (see BlockoutSpawner.OnPieceLocked).
+        public event Action<int[]> Locked;
 
         private StepState _state;
         private float _stateTimer;
@@ -133,10 +139,11 @@ namespace hp55games.Blockout.Gameplay
         private void Lock()
         {
             PlacementRules.LockInto(_grid, Shape, GridPosition);
-            int layersCleared = PlacementRules.ClearFullLayersTouchedBy(_grid, Shape, GridPosition);
+            var clearedLayerYs = new List<int>();
+            int layersCleared = PlacementRules.ClearFullLayersTouchedBy(_grid, Shape, GridPosition, clearedLayerYs);
 
             IsLocked = true;
-            Locked?.Invoke();
+            Locked?.Invoke(clearedLayerYs.ToArray());
             _eventBus?.Publish(new PieceLockedEvent { GridPosition = GridPosition });
 
             if (layersCleared > 0)

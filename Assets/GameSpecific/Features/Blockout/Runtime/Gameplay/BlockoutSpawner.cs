@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Rendering;
 using hp55games.Polycubes.Grid;
@@ -30,6 +29,9 @@ namespace hp55games.Blockout.Gameplay
 
         private WellCellRenderer _cellRenderer;
         private PieceController _controller;
+
+        [Tooltip("Technical Doc Phase 2 stand-in for the active skin's clear behaviour, until Phase 3's active-skin service resolves this from the persisted active BlockoutSkin instead. Left unassigned, a layer clear still collapses/scores normally, just with no visual reaction dispatched.")]
+        [SerializeField] private BlockoutClearBehaviour _clearBehaviour;
 
         // The active piece's currently-shown cell positions and color: tracked so a change in
         // GridPosition/Shape (fall step, move, rotate, hard drop) hides exactly the old set and
@@ -80,9 +82,14 @@ namespace hp55games.Blockout.Gameplay
         // grid/fallCurve/shapes/dimensions are passed in rather than resolved here so the spawn
         // validation logic stays testable without needing IConfigCatalogService wired up (mirrors
         // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is the
-        // sole entry point - this class doesn't self-start.
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
+        // sole entry point - this class doesn't self-start. clearBehaviour is null by default so
+        // production callers (which don't pass one) leave whatever's assigned in the Inspector
+        // untouched - only a non-null value here overrides it, which is what lets tests exercise
+        // the clear-behaviour dispatch without an Inspector-assigned asset.
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, BlockoutClearBehaviour clearBehaviour = null)
         {
+            if (clearBehaviour != null) _clearBehaviour = clearBehaviour;
+
             // Fresh per run, per spec (the session timer restarts from zero on every new game) -
             // dispose the previous run's subscription before replacing it.
             _timeDifficulty?.Dispose();
@@ -199,7 +206,7 @@ namespace hp55games.Blockout.Gameplay
             SyncActivePieceVisual(); // show immediately rather than waiting for the next Update()
         }
 
-        private void OnPieceLocked()
+        private void OnPieceLocked(int[] clearedLayerYs)
         {
             _controller.Locked -= OnPieceLocked;
 
@@ -224,9 +231,37 @@ namespace hp55games.Blockout.Gameplay
             // further should hide them on this spawner's account.
             _shownCells = null;
 
+            // Must run before SpawnNext() below: SpawnNext immediately shows the next piece's
+            // cells via WellCellRenderer, and CollapseLayer's shift-everything-above-down pass
+            // would wrongly drag those freshly-shown cells down with it if the next piece were
+            // already on screen when this runs.
+            HandleLayerClears(clearedLayerYs);
+
             Destroy(_controller.gameObject);
             _controller = null;
             SpawnNext();
+        }
+
+        // Mirrors PlacementRules.ClearFullLayersTouchedBy's grid collapse in the pooled visuals
+        // (WellCellRenderer has no way to hear about a clear on its own - VoxelGrid's occupancy
+        // data carries no rendering/color concept) and hands the exact cleared cell
+        // positions/colors to the active skin's clear behaviour. clearedLayerYs is already in the
+        // highest-first order PlacementRules processed it in, which CollapseLayer relies on for a
+        // simultaneous multi-layer clear to collapse correctly.
+        private void HandleLayerClears(int[] clearedLayerYs)
+        {
+            if (_cellRenderer == null || clearedLayerYs == null || clearedLayerYs.Length == 0) return;
+
+            var clearedPositions = new List<Vector3Int>();
+            var clearedColors = new List<Color>();
+
+            foreach (var y in clearedLayerYs)
+            {
+                _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _wellHeight, clearedPositions, clearedColors);
+            }
+
+            IBlockoutClearBehaviour behaviour = _clearBehaviour;
+            behaviour?.OnLayersCleared(new BlockoutClearContext(clearedPositions, clearedColors, clearedLayerYs.Length));
         }
 
         // Centers the shape horizontally in the well and drops its topmost cell to the well's
