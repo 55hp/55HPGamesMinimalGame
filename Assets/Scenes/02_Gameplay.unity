@@ -426,20 +426,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87172b13f75d437d9f17858049a96fd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _clearBehaviour: {fileID: 11400000, guid: 5dc63bbb7b64d4d4783c70950be51d17, type: 2}
-  _pieceColors:
-  - {r: 0.902, g: 0.098, b: 0.294, a: 1}
-  - {r: 0.961, g: 0.51, b: 0.192, a: 1}
-  - {r: 1, g: 0.882, b: 0.098, a: 1}
-  - {r: 0.263, g: 0.388, b: 0.847, a: 1}
-  - {r: 0.569, g: 0.118, b: 0.706, a: 1}
-  - {r: 0.275, g: 0.941, b: 0.941, a: 1}
-  - {r: 0.941, g: 0.196, b: 0.902, a: 1}
-  - {r: 0.98, g: 0.745, b: 0.831, a: 1}
-  - {r: 0.604, g: 0.388, b: 0.141, a: 1}
-  - {r: 0.502, g: 0, b: 0, a: 1}
-  - {r: 0, g: 0, b: 0.459, a: 1}
-  - {r: 0.863, g: 0.745, b: 1, a: 1}
 --- !u!1 &900000007
 GameObject:
   m_ObjectHideFlags: 0

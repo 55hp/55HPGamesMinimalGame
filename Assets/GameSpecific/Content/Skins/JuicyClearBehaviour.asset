@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d898cfb3bf0536c4aab8e12ad2b91ccb, type: 3}
+  m_Name: JuicyClearBehaviour
+  m_EditorClassIdentifier: 
+  _physicsObjectPrefab: {fileID: 3240548507903990755, guid: 1dc09f94427b59f48a707e2169559751,
+    type: 3}
+  _launchSpeed: 4
+  _horizontalScatterSpeed: 1.5
