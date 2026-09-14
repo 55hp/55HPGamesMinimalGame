@@ -99,6 +99,53 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
+        public void Initialize_AppliesTimeDifficultyModifier_ToCurrentInterval()
+        {
+            var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
+            var modifier = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
+            modifier.Tick(timeDifficultyConfig.TimerTickIntervalSeconds + 1f); // one reduction applied
+
+            var go = new GameObject(nameof(PieceControllerTests));
+            var controller = go.AddComponent<PieceController>();
+            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
+
+            float expectedRatio = modifier.SessionInterval / timeDifficultyConfig.SessionBaseInterval;
+            float expected = Mathf.Max(_fallCurve.IntervalForPhase(0) * expectedRatio, timeDifficultyConfig.CombinedFloorInterval);
+            Assert.AreEqual(expected, controller.CurrentInterval, 0.0001f);
+
+            Object.DestroyImmediate(controller.gameObject);
+            Object.DestroyImmediate(timeDifficultyConfig);
+        }
+
+        [Test]
+        public void Tick_RefreshesCurrentInterval_WhenTimeDifficultyModifierChanges_EvenWithoutAPhaseAdvance()
+        {
+            // Regression guard: CurrentInterval used to only change on AdvancePhase, but the
+            // time-based modifier's own 15s timer can shift the combined value independently of
+            // PhaseIndex, mid-piece.
+            var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
+            var modifier = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
+
+            var go = new GameObject(nameof(PieceControllerTests));
+            var controller = go.AddComponent<PieceController>();
+            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
+
+            float intervalBeforeTimerTick = controller.CurrentInterval;
+            int raiseCount = 0;
+            controller.FallIntervalChanged += _ => raiseCount++;
+
+            modifier.Tick(timeDifficultyConfig.TimerTickIntervalSeconds + 1f); // session interval drops
+            controller.Tick(0.001f); // far short of a phase transition - only the refresh should react
+
+            Assert.AreEqual(0, controller.PhaseIndex); // confirms this wasn't a phase-driven change
+            Assert.AreEqual(1, raiseCount);
+            Assert.Less(controller.CurrentInterval, intervalBeforeTimerTick);
+
+            Object.DestroyImmediate(controller.gameObject);
+            Object.DestroyImmediate(timeDifficultyConfig);
+        }
+
+        [Test]
         public void Tick_LocksPiece_WhenNextStepWouldGoBelowWellFloor()
         {
             var grid = new VoxelGrid(3, 3, 3);

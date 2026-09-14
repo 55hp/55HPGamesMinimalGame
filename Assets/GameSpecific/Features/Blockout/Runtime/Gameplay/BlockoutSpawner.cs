@@ -21,6 +21,7 @@ namespace hp55games.Blockout.Gameplay
         private int _wellHeight;
         private int _wellDepth;
         private BlockoutFallCurveConfig _fallCurve;
+        private BlockoutTimeDifficultyModifier _timeDifficulty;
 
         // Cycled in order (rather than picked randomly) so a run is repeatable while eyeballing
         // fall/lock timing - call it if you'd rather have random.
@@ -80,8 +81,13 @@ namespace hp55games.Blockout.Gameplay
         // validation logic stays testable without needing IConfigCatalogService wired up (mirrors
         // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is the
         // sole entry point - this class doesn't self-start.
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth)
         {
+            // Fresh per run, per spec (the session timer restarts from zero on every new game) -
+            // dispose the previous run's subscription before replacing it.
+            _timeDifficulty?.Dispose();
+            _timeDifficulty = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
+
             if (_cellRenderer == null)
             {
                 _cellRenderer = FindObjectOfType<WellCellRenderer>();
@@ -110,8 +116,17 @@ namespace hp55games.Blockout.Gameplay
             SpawnNext();
         }
 
+        private void OnDestroy()
+        {
+            _timeDifficulty?.Dispose();
+        }
+
         private void Update()
         {
+            // Ticked unconditionally (not gated on having an active piece): the session timer
+            // runs on real elapsed time for the whole run, independent of piece lifecycle.
+            _timeDifficulty?.Tick(Time.unscaledDeltaTime);
+
             if (_controller == null) return;
             SyncActivePieceVisual();
         }
@@ -179,7 +194,7 @@ namespace hp55games.Blockout.Gameplay
             var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
             _controller = pieceObject.AddComponent<PieceController>();
             _controller.Locked += OnPieceLocked;
-            _controller.Initialize(shape, startPosition, _fallCurve, _grid);
+            _controller.Initialize(shape, startPosition, _fallCurve, _grid, _timeDifficulty);
 
             SyncActivePieceVisual(); // show immediately rather than waiting for the next Update()
         }
