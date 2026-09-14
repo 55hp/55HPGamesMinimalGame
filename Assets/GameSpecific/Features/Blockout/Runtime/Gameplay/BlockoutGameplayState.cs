@@ -107,8 +107,21 @@ namespace hp55games.Blockout.Gameplay
                 return;
             }
 
+            if (!ServiceRegistry.TryResolve<IBlockoutSkinService>(out var skinService))
+            {
+                Debug.LogError("[BlockoutGameplayState] IBlockoutSkinService is not registered - add BlockoutGameplayStateInstaller to the scene.");
+                return;
+            }
+
+            var activeSkin = skinService.ActiveSkin;
+            if (activeSkin == null)
+            {
+                Debug.LogError("[BlockoutGameplayState] No BlockoutSkin in the catalog - pieces need at least one skin (e.g. BlockoutSkin_Default) to render.");
+                return;
+            }
+
             var well = new BlockoutWell(wellConfig);
-            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth);
+            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth, activeSkin.PieceColors, activeSkin.ClearBehaviour);
         }
 
         // Reuses the template's existing score infrastructure (IGameContextService.Score,
