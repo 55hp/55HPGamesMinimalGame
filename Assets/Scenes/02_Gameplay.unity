@@ -426,6 +426,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87172b13f75d437d9f17858049a96fd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _clearBehaviour: {fileID: 11400000, guid: 5dc63bbb7b64d4d4783c70950be51d17, type: 2}
+  _pieceColors:
+  - {r: 0.902, g: 0.098, b: 0.294, a: 1}
+  - {r: 0.961, g: 0.51, b: 0.192, a: 1}
+  - {r: 1, g: 0.882, b: 0.098, a: 1}
+  - {r: 0.263, g: 0.388, b: 0.847, a: 1}
+  - {r: 0.569, g: 0.118, b: 0.706, a: 1}
+  - {r: 0.275, g: 0.941, b: 0.941, a: 1}
+  - {r: 0.941, g: 0.196, b: 0.902, a: 1}
+  - {r: 0.98, g: 0.745, b: 0.831, a: 1}
+  - {r: 0.604, g: 0.388, b: 0.141, a: 1}
+  - {r: 0.502, g: 0, b: 0, a: 1}
+  - {r: 0, g: 0, b: 0.459, a: 1}
+  - {r: 0.863, g: 0.745, b: 1, a: 1}
 --- !u!1 &900000007
 GameObject:
   m_ObjectHideFlags: 0
@@ -560,6 +574,98 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc192ef1577e49808e6b011def60aca7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &900000016
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 900000017}
+  - component: {fileID: 900000018}
+  m_Layer: 0
+  m_Name: GAMEPLAY_BlockoutWellWireframe (TEMP)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &900000017
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000016}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &900000018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000016}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa47a976f9744bffa836995ce13a08e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _wellOrigin: {fileID: 0}
+  _lineColor: {r: 0.15, g: 1, b: 0.3, a: 1}
+  _lineWidth: 0.03
+--- !u!1 &900000019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 900000020}
+  - component: {fileID: 900000021}
+  m_Layer: 0
+  m_Name: GAMEPLAY_WellCellRenderer (TEMP)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &900000020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &900000021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af2097be6821410f926367d22ba25989, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cellPrefab: {fileID: 0}
 --- !u!1 &1504290695
 GameObject:
   m_ObjectHideFlags: 0
@@ -860,98 +966,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!1 &900000016
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 900000017}
-  - component: {fileID: 900000018}
-  m_Layer: 0
-  m_Name: GAMEPLAY_BlockoutWellWireframe (TEMP)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &900000017
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900000016}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &900000018
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900000016}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa47a976f9744bffa836995ce13a08e8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _wellOrigin: {fileID: 0}
-  _lineColor: {r: 0.15, g: 1, b: 0.3, a: 1}
-  _lineWidth: 0.03
---- !u!1 &900000019
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 900000020}
-  - component: {fileID: 900000021}
-  m_Layer: 0
-  m_Name: GAMEPLAY_WellCellRenderer (TEMP)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &900000020
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900000019}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &900000021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900000019}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af2097be6821410f926367d22ba25989, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _cellPrefab: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

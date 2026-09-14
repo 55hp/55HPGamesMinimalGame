@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 197d311f23f24ece805ad83597fe353a, type: 3}
   m_Name: BlockoutSkin_Default
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   _skinId: default
   _displayName: Classic
   _costInCoins: 0
@@ -29,4 +29,4 @@ MonoBehaviour:
   - {r: 0.502, g: 0, b: 0, a: 1}
   - {r: 0, g: 0, b: 0.459, a: 1}
   - {r: 0.863, g: 0.745, b: 1, a: 1}
-  _clearBehaviour: {fileID: 0}
+  _clearBehaviour: {fileID: 11400000, guid: 5dc63bbb7b64d4d4783c70950be51d17, type: 2}
