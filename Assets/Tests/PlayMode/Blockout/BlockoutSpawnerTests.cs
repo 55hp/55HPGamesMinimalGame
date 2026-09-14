@@ -8,7 +8,6 @@ using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Pooling;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay;
-using hp55games.Blockout.Gameplay.Events;
 using hp55games.Blockout.InputSystem;
 using hp55games.Blockout.Rendering;
 using hp55games.Polycubes.Grid;
@@ -37,6 +36,11 @@ namespace hp55games.Blockout.Tests
 
         private static PolycubeShape SingleCellShape() => new PolycubeShape(new[] { Vector3Int.zero });
 
+        // Stand-in for a real skin's PieceColors (Technical Doc Phase 3 - BlockoutSpawner no
+        // longer has a fixed palette of its own) for tests that actually check color content;
+        // tests that don't care pass null and get BlockoutSpawner's Color.white fallback instead.
+        private static readonly Color[] TestPieceColors = { Color.red, Color.blue, Color.green };
+
         // Only needed by tests that verify visuals: BlockoutSpawner finds this via
         // FindObjectOfType, same as BlockoutGameplayState finds BlockoutSpawner itself.
         private static WellCellRenderer CreateCellRenderer()
@@ -61,12 +65,22 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            LogAssert.Expect(LogType.Error, new Regex("well is full", RegexOptions.IgnoreCase));
+            // This test is about the spawn-blocked/WellFull logic, not rendering, so it
+            // deliberately doesn't set up a WellCellRenderer - Initialize() logs its own error
+            // about that (BlockoutSpawner.cs:103), on top of the "well is full" one below.
+            //
+            // (?i) inline flag, not the RegexOptions.IgnoreCase overload: LogAssert.Expect stores
+            // the regex via ToString() and reconstructs it later, which silently drops
+            // RegexOptions - only inline flags baked into the pattern text survive that round
+            // trip. Passing RegexOptions.IgnoreCase here compiles and looks right but never
+            // actually applies, a known Unity Test Framework gotcha.
+            LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
+            LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
 
             bool wellFullFired = false;
             spawner.WellFull += () => wellFullFired = true;
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 2, 2, 2);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 2, 2, 2, null, null);
 
             Assert.IsTrue(spawner.SpawnBlockedWellFull);
             Assert.IsNull(spawner.CurrentPiece); // detected and reported, not a piece silently locked in place
@@ -83,7 +97,13 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3);
+            // This test is about the spawn-success logic, not rendering, so it deliberately
+            // doesn't set up a WellCellRenderer - Initialize() logs its own error about that
+            // (BlockoutSpawner.cs:103). (?i) inline flag, not RegexOptions.IgnoreCase - see the
+            // comment in Initialize_DoesNotSpawnPiece_WhenComputedStartPositionIsAlreadyOccupied.
+            LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
+
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3, null, null);
 
             Assert.IsFalse(spawner.SpawnBlockedWellFull);
             Assert.IsNotNull(spawner.CurrentPiece);
@@ -102,14 +122,14 @@ namespace hp55games.Blockout.Tests
 
             var go1 = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner1 = go1.AddComponent<BlockoutSpawner>();
-            spawner1.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 5, 10, 5);
+            spawner1.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 5, 10, 5, TestPieceColors, null);
             var color1 = cellRenderer.GetCellColor(spawner1.CurrentPiece.GridPosition);
 
             // spawner2.Initialize below hides spawner1's piece from cellRenderer (HideAll) as a
             // side effect - color1 is already captured, so that's fine.
             var go2 = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner2 = go2.AddComponent<BlockoutSpawner>();
-            spawner2.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 5, 10, 5);
+            spawner2.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 5, 10, 5, TestPieceColors, null);
             var color2 = cellRenderer.GetCellColor(spawner2.CurrentPiece.GridPosition);
 
             Assert.AreEqual(color1, color2); // shape index 0 in both -> same color every run
@@ -130,7 +150,7 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 5, 3);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 5, 3, TestPieceColors, null);
 
             var activeColor = cellRenderer.GetCellColor(spawner.CurrentPiece.GridPosition);
 
@@ -173,7 +193,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 7, 7, 7);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 7, 7, 7, null, null);
 
             var controller = spawner.CurrentPiece;
             var originalCells = new Vector3Int[shape.Cells.Count];
@@ -221,7 +241,7 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3);
+            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3, null, null);
 
             var spawnPos = spawner.CurrentPiece.GridPosition;
             eventBus.Publish(new HardDropRequestedEvent()); // locks the first piece, spawns a second
@@ -229,7 +249,7 @@ namespace hp55games.Blockout.Tests
             Assert.IsTrue(cellRenderer.IsCellShown(lockedPos)); // still visible - "run 1"'s locked placeholder
 
             // Starting a new run should sweep away the previous one's locked cells.
-            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3);
+            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 3, 3, null, null);
 
             Assert.IsFalse(cellRenderer.IsCellShown(lockedPos));
 
@@ -258,7 +278,7 @@ namespace hp55games.Blockout.Tests
             var behaviour = ScriptableObject.CreateInstance<RecordingClearBehaviour>();
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 1, behaviour);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 1, null, behaviour);
 
             eventBus.Publish(new HardDropRequestedEvent());
 
@@ -287,7 +307,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 1);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 1, null, null);
 
             var spawnPos = spawner.CurrentPiece.GridPosition; // (0, 2, 0) - top of the well
 
@@ -308,23 +328,45 @@ namespace hp55games.Blockout.Tests
             // Regression guard: BlockoutSpawner.Initialize() must construct a fresh
             // BlockoutTimeDifficultyModifier per run (and dispose the previous one's
             // subscription) so the session timer restarts from zero on every new game.
+            //
+            // The session-interval reduction is triggered by an actual layer clear now, not by
+            // publishing LayersClearedEvent directly - BlockoutSpawner no longer publishes it
+            // itself (the clear/collapse dispatch moved to PieceController.Locked, a synchronous
+            // Action<int[]>, to fix a real sequencing bug - see
+            // HardDrop_DoesNotDragTheNewlySpawnedPieceDownWithTheCollapse above). A width=1,
+            // depth=1 well makes a hard drop guaranteed to complete the only layer, same
+            // technique as HardDrop_DispatchesToClearBehaviour_WithTheClearedCellsPositionsAndColors
+            // above. PieceController still publishes LayersClearedEvent itself (for scoring/
+            // BlockoutTimeDifficultyModifier), so that part of the wiring is unchanged - only how
+            // this test triggers it needed to catch up.
+            var cellRenderer = CreateCellRenderer();
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(new VoxelGrid(3, 5, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 5, 3);
+            spawner.Initialize(new VoxelGrid(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 5, 1, null, null);
 
-            eventBus.Publish(new LayersClearedEvent { LayerCount = 1, PointsAwarded = 100 }); // reduces run 1's session interval
+            eventBus.Publish(new HardDropRequestedEvent()); // locks, clears the only layer, reduces run 1's session interval
+
+            // PieceController.CurrentInterval is a snapshot taken at Initialize() and only
+            // refreshed by Tick()/AdvancePhase() - piece 2 was already spawned (inside the
+            // Locked?.Invoke() call chain) BEFORE PieceController.Lock() goes on to publish
+            // LayersClearedEvent, so its snapshot predates the reduction. A real frame's Update()
+            // would refresh it the same way; Tick(0f) does the same synchronously, without
+            // advancing any fall-state timer (deltaTime=0), since this is a [Test] with no frame
+            // boundary to wait for.
+            spawner.CurrentPiece.Tick(0f);
 
             float phaseInterval = _fallCurve.IntervalForPhase(0);
             Assert.Less(spawner.CurrentPiece.CurrentInterval, phaseInterval); // the reduction reached this piece
 
-            spawner.Initialize(new VoxelGrid(3, 5, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 5, 3);
+            spawner.Initialize(new VoxelGrid(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 5, 1, null, null);
 
             Assert.AreEqual(phaseInterval, spawner.CurrentPiece.CurrentInterval, 0.0001f); // back to ratio 1.0
 
             Object.DestroyImmediate(go);
+            Object.DestroyImmediate(cellRenderer.gameObject);
         }
     }
 }

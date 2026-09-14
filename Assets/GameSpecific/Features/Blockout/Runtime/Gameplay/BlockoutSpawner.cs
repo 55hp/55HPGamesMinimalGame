@@ -30,8 +30,16 @@ namespace hp55games.Blockout.Gameplay
         private WellCellRenderer _cellRenderer;
         private PieceController _controller;
 
-        [Tooltip("Technical Doc Phase 2 stand-in for the active skin's clear behaviour, until Phase 3's active-skin service resolves this from the persisted active BlockoutSkin instead. Left unassigned, a layer clear still collapses/scores normally, just with no visual reaction dispatched.")]
-        [SerializeField] private BlockoutClearBehaviour _clearBehaviour;
+        // Both sourced from the active skin (Technical Doc Phase 3 - BlockoutGameplayState reads
+        // IBlockoutSkinService.ActiveSkin and passes its PieceColors/ClearBehaviour into
+        // Initialize) instead of being fixed on this component. Same shape always gets the same
+        // color within a run (indexed by the shape's position in the set passed to Initialize,
+        // wrapping if there are ever more shapes than colors) - distinct from each other and from
+        // the wireframe's green (BlockoutWellWireframe). Locked cells are dimmed from whichever of
+        // these was used, at lock time (OnPieceLocked), independent of WellCellRenderer's own
+        // rendering mechanism.
+        private IReadOnlyList<Color> _pieceColors;
+        private IBlockoutClearBehaviour _clearBehaviour;
 
         // The active piece's currently-shown cell positions and color: tracked so a change in
         // GridPosition/Shape (fall step, move, rotate, hard drop) hides exactly the old set and
@@ -41,29 +49,6 @@ namespace hp55games.Blockout.Gameplay
         private Color _activeColor;
 
         private bool _spawningStopped;
-
-        // Fixed per-shape palette (indexed by the shape's position in the set passed to
-        // Initialize - wraps if there are ever more shapes than colors): the same shape always
-        // gets the same color, every run. Distinct from each other and from the wireframe's green
-        // (BlockoutWellWireframe). Editable here rather than hardcoded so Franci can retune it
-        // without recompiling. Locked cells are dimmed from whichever of these was used, at lock
-        // time (OnPieceLocked), independent of WellCellRenderer's own rendering mechanism.
-        [SerializeField]
-        private Color[] _pieceColors =
-        {
-            new Color(0.902f, 0.098f, 0.294f), // red
-            new Color(0.961f, 0.510f, 0.192f), // orange
-            new Color(1.000f, 0.882f, 0.098f), // yellow
-            new Color(0.263f, 0.388f, 0.847f), // blue
-            new Color(0.569f, 0.118f, 0.706f), // purple
-            new Color(0.275f, 0.941f, 0.941f), // cyan
-            new Color(0.941f, 0.196f, 0.902f), // magenta
-            new Color(0.980f, 0.745f, 0.831f), // pink
-            new Color(0.604f, 0.388f, 0.141f), // brown
-            new Color(0.502f, 0.000f, 0.000f), // maroon
-            new Color(0.000f, 0.000f, 0.459f), // navy
-            new Color(0.863f, 0.745f, 1.000f), // lavender
-        };
 
         private const float LockedSaturationFactor = 0.35f;
         private const float LockedValueFactor = 0.55f;
@@ -79,16 +64,15 @@ namespace hp55games.Blockout.Gameplay
         // BlockoutGameOverEvent and drive the FSM to ResultState; no recovery happens here.
         public event Action WellFull;
 
-        // grid/fallCurve/shapes/dimensions are passed in rather than resolved here so the spawn
-        // validation logic stays testable without needing IConfigCatalogService wired up (mirrors
-        // PieceController.Initialize). Called by BlockoutGameplayState.EnterAsync, which is the
-        // sole entry point - this class doesn't self-start. clearBehaviour is null by default so
-        // production callers (which don't pass one) leave whatever's assigned in the Inspector
-        // untouched - only a non-null value here overrides it, which is what lets tests exercise
-        // the clear-behaviour dispatch without an Inspector-assigned asset.
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, BlockoutClearBehaviour clearBehaviour = null)
+        // grid/fallCurve/shapes/dimensions/pieceColors/clearBehaviour are passed in rather than
+        // resolved here so the spawn validation logic stays testable without needing
+        // IConfigCatalogService/IBlockoutSkinService wired up (mirrors PieceController.Initialize).
+        // Called by BlockoutGameplayState.EnterAsync, which is the sole entry point - this class
+        // doesn't self-start.
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, IReadOnlyList<Color> pieceColors, IBlockoutClearBehaviour clearBehaviour)
         {
-            if (clearBehaviour != null) _clearBehaviour = clearBehaviour;
+            _pieceColors = pieceColors;
+            _clearBehaviour = clearBehaviour;
 
             // Fresh per run, per spec (the session timer restarts from zero on every new game) -
             // dispose the previous run's subscription before replacing it.
@@ -194,8 +178,8 @@ namespace hp55games.Blockout.Gameplay
                 return;
             }
 
-            _activeColor = _pieceColors != null && _pieceColors.Length > 0
-                ? _pieceColors[shapeIndex % _pieceColors.Length]
+            _activeColor = _pieceColors != null && _pieceColors.Count > 0
+                ? _pieceColors[shapeIndex % _pieceColors.Count]
                 : Color.white;
 
             var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
@@ -260,8 +244,7 @@ namespace hp55games.Blockout.Gameplay
                 _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _wellHeight, clearedPositions, clearedColors);
             }
 
-            IBlockoutClearBehaviour behaviour = _clearBehaviour;
-            behaviour?.OnLayersCleared(new BlockoutClearContext(clearedPositions, clearedColors, clearedLayerYs.Length));
+            _clearBehaviour?.OnLayersCleared(new BlockoutClearContext(clearedPositions, clearedColors, clearedLayerYs.Length));
         }
 
         // Centers the shape horizontally in the well and drops its topmost cell to the well's
