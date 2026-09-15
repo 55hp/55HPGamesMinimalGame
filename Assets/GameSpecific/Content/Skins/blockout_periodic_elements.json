@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "description": "Dati dei 118 elementi chimici per il sistema skin Blockout 'Tavola Periodica'. densityNormalized e' una normalizzazione log10 su tutto il set (0=piu' leggero, 1=piu' denso), pensata come base per l'impulso fisico delle sferette da clear. unlockCostCoins e' lasciato null: la progressione economica va ricalibrata separatamente (vedi nota nel GDD).",
-  "sourceNote": "Densita' a temperatura/pressione ambiente (~20 C, 1 atm) da fonti pubbliche standard. Gli elementi sintetici piu' pesanti (Z>=99, piu' At e Fr) hanno densita' predetta teoricamente, non misurata su campione macroscopico.",
+  "sourceNote": "Densita' a temperatura/pressione ambiente (~20 C, 1 atm) da fonti pubbliche standard. Gli elementi sintetici piu' pesanti (Z>=99, piu' At e Fr) hanno densita' predetta teoricamente, non misurata su campione macroscopico. Anno di scoperta: anno della prima sintesi/isolamento riportata (fonti pubbliche standard); per gli elementi noti fin dall'antichita' (C, S, Fe, Cu, Zn, Ag, Sn, Au, Hg, Pb, Sb) non esiste una data di scoperta puntuale attribuibile, discoveryYear e' null e knownSinceAntiquity e' true. Per i piu' recenti elementi sintetici (Z>=113) l'anno riflette la prima sintesi riportata, che puo' precedere di alcuni anni il riconoscimento IUPAC ufficiale (es. Z118 sintetizzato 2002, riconosciuto IUPAC 2015-2016). Sblocco: 106 elementi con discoveryYear noto si sbloccano con coins ad un costo pari allanno di scoperta stesso; 11 elementi noti dallantichita (oltre al Carbonio, sempre sbloccato di default) si sbloccano tramite achievement di gioco (unlockAchievementId), non coins; unlockMethod indica quale dei tre meccanismi si applica.",
   "elements": [
     {
       "atomicNumber": 1,
@@ -13,7 +13,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#F2F3F5",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1766,
+      "discoveryYear": 1766,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 2,
@@ -25,7 +28,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#D9FFFF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1895,
+      "discoveryYear": 1895,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 3,
@@ -37,7 +43,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#CC80FF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1817,
+      "discoveryYear": 1817,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 4,
@@ -49,7 +58,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#C2FF00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1797,
+      "discoveryYear": 1797,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 5,
@@ -61,7 +73,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FFB5B5",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1808,
+      "discoveryYear": 1808,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 6,
@@ -73,7 +88,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#909090",
-      "unlockCostCoins": null
+      "unlockCostCoins": 0,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "default"
     },
     {
       "atomicNumber": 7,
@@ -85,7 +103,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#3050F8",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1772,
+      "discoveryYear": 1772,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 8,
@@ -97,7 +118,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#FF0D0D",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1774,
+      "discoveryYear": 1774,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 9,
@@ -109,7 +133,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#90E050",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1886,
+      "discoveryYear": 1886,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 10,
@@ -121,7 +148,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#B3E3F5",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1898,
+      "discoveryYear": 1898,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 11,
@@ -133,7 +163,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#AB5CF2",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1807,
+      "discoveryYear": 1807,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 12,
@@ -145,7 +178,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#8AFF00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1755,
+      "discoveryYear": 1755,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 13,
@@ -157,7 +193,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#BFA6A6",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1825,
+      "discoveryYear": 1825,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 14,
@@ -169,7 +208,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#F0C8A0",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1824,
+      "discoveryYear": 1824,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 15,
@@ -181,7 +223,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FF8000",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1669,
+      "discoveryYear": 1669,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 16,
@@ -193,7 +238,11 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FFFF30",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "elements_unlocked_20"
     },
     {
       "atomicNumber": 17,
@@ -205,7 +254,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#1FF01F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1774,
+      "discoveryYear": 1774,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 18,
@@ -217,7 +269,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#80D1E3",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1894,
+      "discoveryYear": 1894,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 19,
@@ -229,7 +284,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#8F40D4",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1807,
+      "discoveryYear": 1807,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 20,
@@ -241,7 +299,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#3DFF00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1808,
+      "discoveryYear": 1808,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 21,
@@ -253,7 +314,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#E6E6E6",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1879,
+      "discoveryYear": 1879,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 22,
@@ -265,7 +329,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#BFC2C7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1791,
+      "discoveryYear": 1791,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 23,
@@ -277,7 +344,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#A6A6AB",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1801,
+      "discoveryYear": 1801,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 24,
@@ -289,7 +359,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#8A99C7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1797,
+      "discoveryYear": 1797,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 25,
@@ -301,7 +374,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#9C7AC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1774,
+      "discoveryYear": 1774,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 26,
@@ -313,7 +389,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#E06633",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "first_run_completed"
     },
     {
       "atomicNumber": 27,
@@ -325,7 +405,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#F090A0",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1735,
+      "discoveryYear": 1735,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 28,
@@ -337,7 +420,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#50D050",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1751,
+      "discoveryYear": 1751,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 29,
@@ -349,7 +435,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#C88033",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "runs_completed_10"
     },
     {
       "atomicNumber": 30,
@@ -361,7 +451,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#7D80B0",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "runs_completed_50"
     },
     {
       "atomicNumber": 31,
@@ -373,7 +467,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#C28F8F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1875,
+      "discoveryYear": 1875,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 32,
@@ -385,7 +482,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#668F8F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1886,
+      "discoveryYear": 1886,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 33,
@@ -397,7 +497,11 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#BD80E3",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "multi_clear_3plus"
     },
     {
       "atomicNumber": 34,
@@ -409,7 +513,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FFA100",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1817,
+      "discoveryYear": 1817,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 35,
@@ -421,7 +528,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "liquid",
       "colorHex": "#A62929",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1826,
+      "discoveryYear": 1826,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 36,
@@ -433,7 +543,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#5CB8D1",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1898,
+      "discoveryYear": 1898,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 37,
@@ -445,7 +558,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#702EB0",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1861,
+      "discoveryYear": 1861,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 38,
@@ -457,7 +573,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00FF00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1790,
+      "discoveryYear": 1790,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 39,
@@ -469,7 +588,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#94FFFF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1794,
+      "discoveryYear": 1794,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 40,
@@ -481,7 +603,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#94E0E0",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1789,
+      "discoveryYear": 1789,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 41,
@@ -493,7 +618,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#73C2C9",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1801,
+      "discoveryYear": 1801,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 42,
@@ -505,7 +633,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#54B5B5",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1778,
+      "discoveryYear": 1778,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 43,
@@ -517,7 +648,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#3B9E9E",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1937,
+      "discoveryYear": 1937,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 44,
@@ -529,7 +663,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#248F8F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1844,
+      "discoveryYear": 1844,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 45,
@@ -541,7 +678,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#0A7D8C",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1803,
+      "discoveryYear": 1803,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 46,
@@ -553,7 +693,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#006985",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1803,
+      "discoveryYear": 1803,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 47,
@@ -565,7 +708,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#C0C0C0",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "login_streak_5"
     },
     {
       "atomicNumber": 48,
@@ -577,7 +724,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FFD98F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1817,
+      "discoveryYear": 1817,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 49,
@@ -589,7 +739,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#A67573",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1863,
+      "discoveryYear": 1863,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 50,
@@ -601,7 +754,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#668080",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "runs_completed_100"
     },
     {
       "atomicNumber": 51,
@@ -613,7 +770,11 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#9E63B5",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "single_run_score_15000"
     },
     {
       "atomicNumber": 52,
@@ -625,7 +786,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#D47A00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1782,
+      "discoveryYear": 1782,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 53,
@@ -637,7 +801,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#940094",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1811,
+      "discoveryYear": 1811,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 54,
@@ -649,7 +816,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#429EB0",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1898,
+      "discoveryYear": 1898,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 55,
@@ -661,7 +831,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#57178F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1860,
+      "discoveryYear": 1860,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 56,
@@ -673,7 +846,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00C900",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1808,
+      "discoveryYear": 1808,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 57,
@@ -685,7 +861,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#70D4FF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1839,
+      "discoveryYear": 1839,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 58,
@@ -697,7 +876,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FFFFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1803,
+      "discoveryYear": 1803,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 59,
@@ -709,7 +891,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#D9FFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1895,
+      "discoveryYear": 1895,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 60,
@@ -721,7 +906,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#C7FFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1895,
+      "discoveryYear": 1895,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 61,
@@ -733,7 +921,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#A3FFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1945,
+      "discoveryYear": 1945,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 62,
@@ -745,7 +936,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#8FFFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1879,
+      "discoveryYear": 1879,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 63,
@@ -757,7 +951,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#61FFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1901,
+      "discoveryYear": 1901,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 64,
@@ -769,7 +966,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#45FFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1880,
+      "discoveryYear": 1880,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 65,
@@ -781,7 +981,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#30FFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1843,
+      "discoveryYear": 1843,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 66,
@@ -793,7 +996,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#1FFFC7",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1886,
+      "discoveryYear": 1886,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 67,
@@ -805,7 +1011,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00FF9C",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1878,
+      "discoveryYear": 1878,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 68,
@@ -817,7 +1026,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00E675",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1842,
+      "discoveryYear": 1842,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 69,
@@ -829,7 +1041,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00D452",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1879,
+      "discoveryYear": 1879,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 70,
@@ -841,7 +1056,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00BF38",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1878,
+      "discoveryYear": 1878,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 71,
@@ -853,7 +1071,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00AB24",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1907,
+      "discoveryYear": 1907,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 72,
@@ -865,7 +1086,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#4DC2FF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1923,
+      "discoveryYear": 1923,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 73,
@@ -877,7 +1101,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#4DA6FF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1802,
+      "discoveryYear": 1802,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 74,
@@ -889,7 +1116,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#2194D6",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1783,
+      "discoveryYear": 1783,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 75,
@@ -901,7 +1131,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#267DAB",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1925,
+      "discoveryYear": 1925,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 76,
@@ -913,7 +1146,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#266696",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1803,
+      "discoveryYear": 1803,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 77,
@@ -925,7 +1161,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#175487",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1803,
+      "discoveryYear": 1803,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 78,
@@ -937,7 +1176,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#D0D0E0",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1557,
+      "discoveryYear": 1557,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 79,
@@ -949,7 +1191,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#FFD123",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "login_streak_14"
     },
     {
       "atomicNumber": 80,
@@ -961,7 +1207,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "liquid",
       "colorHex": "#B8B8D0",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "single_run_score_5000"
     },
     {
       "atomicNumber": 81,
@@ -973,7 +1223,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#A6544D",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1861,
+      "discoveryYear": 1861,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 82,
@@ -985,7 +1238,11 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#575961",
-      "unlockCostCoins": null
+      "unlockCostCoins": null,
+      "discoveryYear": null,
+      "knownSinceAntiquity": true,
+      "unlockMethod": "achievement",
+      "unlockAchievementId": "login_streak_2"
     },
     {
       "atomicNumber": 83,
@@ -997,7 +1254,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#9E4FB5",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1540,
+      "discoveryYear": 1540,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 84,
@@ -1009,7 +1269,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#AB5C00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1898,
+      "discoveryYear": 1898,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 85,
@@ -1021,7 +1284,10 @@
       "shaderCategory": "opaque",
       "stateAtRoomTemp": "solid",
       "colorHex": "#754F45",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1940,
+      "discoveryYear": 1940,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 86,
@@ -1033,7 +1299,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#428296",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1900,
+      "discoveryYear": 1900,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 87,
@@ -1045,7 +1314,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#420066",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1939,
+      "discoveryYear": 1939,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 88,
@@ -1057,7 +1329,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#007D00",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1898,
+      "discoveryYear": 1898,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 89,
@@ -1069,7 +1344,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#70ABFA",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1899,
+      "discoveryYear": 1899,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 90,
@@ -1081,7 +1359,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00BAFF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1829,
+      "discoveryYear": 1829,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 91,
@@ -1093,7 +1374,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#00A1FF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1917,
+      "discoveryYear": 1917,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 92,
@@ -1105,7 +1389,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#008FFF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1789,
+      "discoveryYear": 1789,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 93,
@@ -1117,7 +1404,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#0080FF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1940,
+      "discoveryYear": 1940,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 94,
@@ -1129,7 +1419,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#006BFF",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1940,
+      "discoveryYear": 1940,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 95,
@@ -1141,7 +1434,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#545CF2",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1944,
+      "discoveryYear": 1944,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 96,
@@ -1153,7 +1449,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#785CE3",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1944,
+      "discoveryYear": 1944,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 97,
@@ -1165,7 +1464,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#8A4FE3",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1949,
+      "discoveryYear": 1949,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 98,
@@ -1177,7 +1479,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#A136D4",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1950,
+      "discoveryYear": 1950,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 99,
@@ -1189,7 +1494,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#B31FD4",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1952,
+      "discoveryYear": 1952,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 100,
@@ -1201,7 +1509,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#B31FBA",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1952,
+      "discoveryYear": 1952,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 101,
@@ -1213,7 +1524,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#B30DA6",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1955,
+      "discoveryYear": 1955,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 102,
@@ -1225,7 +1539,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#BD0D87",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1958,
+      "discoveryYear": 1958,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 103,
@@ -1237,7 +1554,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#C70066",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1961,
+      "discoveryYear": 1961,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 104,
@@ -1249,7 +1569,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#CC0059",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1964,
+      "discoveryYear": 1964,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 105,
@@ -1261,7 +1584,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#D1004F",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1967,
+      "discoveryYear": 1967,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 106,
@@ -1273,7 +1599,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#D90045",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1974,
+      "discoveryYear": 1974,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 107,
@@ -1285,7 +1614,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#E00038",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1976,
+      "discoveryYear": 1976,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 108,
@@ -1297,7 +1629,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#E6002E",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1984,
+      "discoveryYear": 1984,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 109,
@@ -1309,7 +1644,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1982,
+      "discoveryYear": 1982,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 110,
@@ -1321,7 +1659,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1994,
+      "discoveryYear": 1994,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 111,
@@ -1333,7 +1674,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1994,
+      "discoveryYear": 1994,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 112,
@@ -1345,7 +1689,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 1996,
+      "discoveryYear": 1996,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 113,
@@ -1357,7 +1704,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 2004,
+      "discoveryYear": 2004,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 114,
@@ -1369,7 +1719,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 2011,
+      "discoveryYear": 2011,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 115,
@@ -1381,7 +1734,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 2004,
+      "discoveryYear": 2004,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 116,
@@ -1393,7 +1749,10 @@
       "shaderCategory": "metallic",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 2011,
+      "discoveryYear": 2011,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 117,
@@ -1405,7 +1764,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "solid",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 2010,
+      "discoveryYear": 2010,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     },
     {
       "atomicNumber": 118,
@@ -1417,7 +1779,10 @@
       "shaderCategory": "translucent",
       "stateAtRoomTemp": "gas",
       "colorHex": "#EB0026",
-      "unlockCostCoins": null
+      "unlockCostCoins": 2002,
+      "discoveryYear": 2002,
+      "knownSinceAntiquity": false,
+      "unlockMethod": "coins"
     }
   ]
 }

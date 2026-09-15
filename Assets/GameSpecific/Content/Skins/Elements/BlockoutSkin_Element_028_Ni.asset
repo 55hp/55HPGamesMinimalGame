@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-28
   _displayName: Nichel
-  _costInCoins: -1
+  _costInCoins: 1751
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.3137255, g: 0.8156863, b: 0.3137255, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 28
   _materialCategory: 0
   _densityNormalized: 0.8834
+  _unlockMethod: 1
+  _unlockAchievementId: 

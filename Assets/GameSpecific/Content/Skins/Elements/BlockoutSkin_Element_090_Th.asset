@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-90
   _displayName: Torio
-  _costInCoins: -1
+  _costInCoins: 1829
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.7294118, b: 1, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 90
   _materialCategory: 0
   _densityNormalized: 0.9044
+  _unlockMethod: 1
+  _unlockAchievementId: 

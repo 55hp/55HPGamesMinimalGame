@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-112
   _displayName: Copernicio
-  _costInCoins: -1
+  _costInCoins: 1996
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.92156863, g: 0, b: 0.14901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 112
   _materialCategory: 0
   _densityNormalized: 0.9585
+  _unlockMethod: 1
+  _unlockAchievementId: 

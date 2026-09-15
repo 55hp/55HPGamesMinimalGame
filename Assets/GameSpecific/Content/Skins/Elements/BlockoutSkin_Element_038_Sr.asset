@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-38
   _displayName: Stronzio
-  _costInCoins: -1
+  _costInCoins: 1790
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 1, b: 0, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 38
   _materialCategory: 0
   _densityNormalized: 0.79
+  _unlockMethod: 1
+  _unlockAchievementId: 

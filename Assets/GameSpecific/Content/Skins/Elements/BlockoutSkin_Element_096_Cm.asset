@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-96
   _displayName: Curio
-  _costInCoins: -1
+  _costInCoins: 1944
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.47058824, g: 0.36078432, b: 0.8901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 96
   _materialCategory: 0
   _densityNormalized: 0.9153
+  _unlockMethod: 1
+  _unlockAchievementId: 

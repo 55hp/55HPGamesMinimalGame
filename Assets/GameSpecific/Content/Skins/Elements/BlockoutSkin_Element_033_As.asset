@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 33
   _materialCategory: 1
   _densityNormalized: 0.8501
+  _unlockMethod: 2
+  _unlockAchievementId: multi_clear_3plus

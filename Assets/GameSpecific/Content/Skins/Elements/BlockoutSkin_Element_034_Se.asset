@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-34
   _displayName: Selenio
-  _costInCoins: -1
+  _costInCoins: 1817
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 1, g: 0.6313726, b: 0, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 34
   _materialCategory: 1
   _densityNormalized: 0.836
+  _unlockMethod: 1
+  _unlockAchievementId: 

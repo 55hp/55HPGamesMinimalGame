@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-39
   _displayName: Ittrio
-  _costInCoins: -1
+  _costInCoins: 1794
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5803922, g: 1, b: 1, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 39
   _materialCategory: 0
   _densityNormalized: 0.8304
+  _unlockMethod: 1
+  _unlockAchievementId: 

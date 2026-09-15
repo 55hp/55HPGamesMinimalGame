@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-70
   _displayName: Itterbio
-  _costInCoins: -1
+  _costInCoins: 1878
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.7490196, b: 0.21960784, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 70
   _materialCategory: 0
   _densityNormalized: 0.8644
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 29
   _materialCategory: 0
   _densityNormalized: 0.8838
+  _unlockMethod: 2
+  _unlockAchievementId: runs_completed_10

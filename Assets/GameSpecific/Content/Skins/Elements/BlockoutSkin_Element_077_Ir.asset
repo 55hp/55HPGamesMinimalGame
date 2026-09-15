@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-77
   _displayName: Iridio
-  _costInCoins: -1
+  _costInCoins: 1803
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.09019608, g: 0.32941177, b: 0.5294118, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 77
   _materialCategory: 0
   _densityNormalized: 0.9547
+  _unlockMethod: 1
+  _unlockAchievementId: 

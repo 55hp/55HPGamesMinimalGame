@@ -37,5 +37,24 @@ namespace hp55games.Mobile.Core.Save
 
         public string lastUtcIso;
         public double lastMonotonicSeconds;
+
+        /// <summary>
+        /// Achievement ids the player has completed (Blockout Periodic Table shop - see
+        /// IBlockoutAchievementService). An id landing here is permanent - achievements never
+        /// un-complete.
+        /// </summary>
+        public List<string> completedAchievementIds = new List<string>();
+
+        /// <summary>
+        /// Total Blockout runs completed (well-full/game-over reached at least once), across all
+        /// sessions - the "runs completed" achievement family's counter.
+        /// </summary>
+        public int runsCompleted;
+
+        /// <summary>
+        /// Current consecutive-day login streak (Blockout achievement family) - see
+        /// IBlockoutAchievementService.RecordLoginForToday, which increments/resets this.
+        /// </summary>
+        public int loginStreakDays;
     }
 }

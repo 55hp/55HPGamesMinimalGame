@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-109
   _displayName: Meitnerio
-  _costInCoins: -1
+  _costInCoins: 1982
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.92156863, g: 0, b: 0.14901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 109
   _materialCategory: 0
   _densityNormalized: 0.9935
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-49
   _displayName: Indio
-  _costInCoins: -1
+  _costInCoins: 1863
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.6509804, g: 0.45882353, b: 0.4509804, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 49
   _materialCategory: 0
   _densityNormalized: 0.8682
+  _unlockMethod: 1
+  _unlockAchievementId: 

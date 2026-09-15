@@ -37,6 +37,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9984bfdf243debc41a71ab0ea76dce37
+    m_Address: content/ui/pages/periodic_table_shop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a104524de933dde4bb35d175d444771b
+    m_Address: content/ui/popups/periodic_element_card
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b96116860b9edad4ba7d14ede14355d4
     m_Address: content/ui/pages/results
     m_ReadOnly: 0

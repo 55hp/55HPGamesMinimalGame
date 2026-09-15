@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-12
   _displayName: Magnesio
-  _costInCoins: -1
+  _costInCoins: 1755
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5411765, g: 1, b: 0, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 12
   _materialCategory: 0
   _densityNormalized: 0.7579
+  _unlockMethod: 1
+  _unlockAchievementId: 

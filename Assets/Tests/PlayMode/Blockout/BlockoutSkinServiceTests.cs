@@ -289,5 +289,41 @@ namespace hp55games.Blockout.Tests
             typeof(BlockoutSkin).GetField("_atomicNumber", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(skin, atomicNumber);
             return skin;
         }
+
+        [Test]
+        public void GrantUnlock_MarksTheSkinUnlocked_WithNoCoinCost_AndPersists()
+        {
+            var service = new BlockoutSkinService();
+
+            service.GrantUnlock("juicy-clear");
+
+            Assert.IsTrue(service.IsUnlocked(_otherSkin));
+            CollectionAssert.Contains(_saveService.Data.unlockedSkinIds, "juicy-clear");
+            Assert.AreEqual(0, _saveService.Data.coins); // GrantUnlock never spends coins - see TryUnlockSkin for the paid path
+            Assert.AreEqual(1, _saveService.SaveCallCount);
+        }
+
+        [Test]
+        public void GrantUnlock_IsIdempotent_WhenTheSkinIsAlreadyUnlocked()
+        {
+            _saveService.Data.unlockedSkinIds.Add("juicy-clear");
+            var service = new BlockoutSkinService();
+
+            service.GrantUnlock("juicy-clear");
+
+            Assert.AreEqual(1, _saveService.Data.unlockedSkinIds.FindAll(id => id == "juicy-clear").Count); // not duplicated
+            Assert.AreEqual(0, _saveService.SaveCallCount); // nothing changed - no redundant save
+        }
+
+        [Test]
+        public void GrantUnlock_LogsWarning_ForAnUnknownSkinId()
+        {
+            var service = new BlockoutSkinService();
+
+            LogAssert.Expect(LogType.Warning, new Regex("(?i)no BlockoutSkin"));
+            service.GrantUnlock("not-a-real-skin-id");
+
+            Assert.AreEqual(0, _saveService.SaveCallCount);
+        }
     }
 }

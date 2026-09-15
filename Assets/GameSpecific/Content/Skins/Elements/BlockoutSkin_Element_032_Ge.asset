@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-32
   _displayName: Germanio
-  _costInCoins: -1
+  _costInCoins: 1886
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.4, g: 0.56078434, b: 0.56078434, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 32
   _materialCategory: 1
   _densityNormalized: 0.8438
+  _unlockMethod: 1
+  _unlockAchievementId: 

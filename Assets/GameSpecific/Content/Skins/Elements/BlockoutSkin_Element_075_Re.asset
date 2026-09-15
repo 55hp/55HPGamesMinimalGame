@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-75
   _displayName: Renio
-  _costInCoins: -1
+  _costInCoins: 1925
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.14901961, g: 0.49019608, b: 0.67058825, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 75
   _materialCategory: 0
   _densityNormalized: 0.9493
+  _unlockMethod: 1
+  _unlockAchievementId: 

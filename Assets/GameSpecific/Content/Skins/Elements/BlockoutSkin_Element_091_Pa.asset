@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-91
   _displayName: Protoattinio
-  _costInCoins: -1
+  _costInCoins: 1917
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.6313726, b: 1, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 91
   _materialCategory: 0
   _densityNormalized: 0.9252
+  _unlockMethod: 1
+  _unlockAchievementId: 

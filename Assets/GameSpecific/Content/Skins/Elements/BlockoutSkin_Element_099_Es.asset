@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-99
   _displayName: Einsteinio
-  _costInCoins: -1
+  _costInCoins: 1952
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7019608, g: 0.12156863, b: 0.83137256, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 99
   _materialCategory: 0
   _densityNormalized: 0.8828
+  _unlockMethod: 1
+  _unlockAchievementId: 

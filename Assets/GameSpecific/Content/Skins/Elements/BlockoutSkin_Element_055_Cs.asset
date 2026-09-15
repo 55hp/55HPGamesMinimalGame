@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-55
   _displayName: Cesio
-  _costInCoins: -1
+  _costInCoins: 1860
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.34117648, g: 0.09019608, b: 0.56078434, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 55
   _materialCategory: 0
   _densityNormalized: 0.7636
+  _unlockMethod: 1
+  _unlockAchievementId: 

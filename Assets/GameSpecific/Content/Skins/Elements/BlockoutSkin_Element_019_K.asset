@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-19
   _displayName: Potassio
-  _costInCoins: -1
+  _costInCoins: 1807
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.56078434, g: 0.2509804, b: 0.83137256, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 19
   _materialCategory: 0
   _densityNormalized: 0.704
+  _unlockMethod: 1
+  _unlockAchievementId: 

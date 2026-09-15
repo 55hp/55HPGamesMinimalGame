@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-48
   _displayName: Cadmio
-  _costInCoins: -1
+  _costInCoins: 1817
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 1, g: 0.8509804, b: 0.56078434, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 48
   _materialCategory: 0
   _densityNormalized: 0.8814
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-89
   _displayName: Attinio
-  _costInCoins: -1
+  _costInCoins: 1899
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.4392157, g: 0.67058825, b: 0.98039216, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 89
   _materialCategory: 0
   _densityNormalized: 0.8928
+  _unlockMethod: 1
+  _unlockAchievementId: 

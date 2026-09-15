@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-4
   _displayName: Berillio
-  _costInCoins: -1
+  _costInCoins: 1797
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7607843, g: 1, b: 0, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 4
   _materialCategory: 0
   _densityNormalized: 0.7627
+  _unlockMethod: 1
+  _unlockAchievementId: 

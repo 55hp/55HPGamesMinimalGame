@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-117
   _displayName: Tennesso
-  _costInCoins: -1
+  _costInCoins: 2010
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.92156863, g: 0, b: 0.14901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 117
   _materialCategory: 2
   _densityNormalized: 0.867
+  _unlockMethod: 1
+  _unlockAchievementId: 

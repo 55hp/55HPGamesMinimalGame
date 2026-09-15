@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-54
   _displayName: Xenon
-  _costInCoins: -1
+  _costInCoins: 1898
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.25882354, g: 0.61960787, b: 0.6901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 54
   _materialCategory: 2
   _densityNormalized: 0.3211
+  _unlockMethod: 1
+  _unlockAchievementId: 

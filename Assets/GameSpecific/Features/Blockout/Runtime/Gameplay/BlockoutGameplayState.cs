@@ -8,6 +8,7 @@ using hp55games.Mobile.Core.Architecture.States;
 using hp55games.Mobile.Core.Context;
 using hp55games.Mobile.Core.Gameplay.Events;
 using hp55games.Mobile.Core.UI;
+using hp55games.Blockout.Achievements;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay.Events;
 
@@ -25,6 +26,7 @@ namespace hp55games.Blockout.Gameplay
         private IGameContextService _context;
         private IEventBus _eventBus;
         private IGameStateMachine _fsm;
+        private IBlockoutAchievementService _achievements;
         private BlockoutSpawner _spawner;
         private IDisposable _layersClearedSubscription;
 
@@ -47,6 +49,7 @@ namespace hp55games.Blockout.Gameplay
             ServiceRegistry.TryResolve(out _context);
             ServiceRegistry.TryResolve(out _eventBus);
             ServiceRegistry.TryResolve(out _fsm);
+            ServiceRegistry.TryResolve(out _achievements);
 
             _layersClearedSubscription = _eventBus?.Subscribe<LayersClearedEvent>(OnLayersCleared);
 
@@ -66,6 +69,7 @@ namespace hp55games.Blockout.Gameplay
 
                 _context?.ResetRun();
                 _bonusCoinsThisRun = 0;
+                _achievements?.RecordLoginForToday(); // Shop GDD login-streak family - once per fresh session, not on resume
 
                 var navigation = ServiceRegistry.Resolve<IUINavigationService>();
                 await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
@@ -145,6 +149,7 @@ namespace hp55games.Blockout.Gameplay
         private void OnLayersCleared(LayersClearedEvent evt)
         {
             if (evt.LayerCount >= 2) _bonusCoinsThisRun += 5 * evt.LayerCount;
+            _achievements?.RecordMultiClear(evt.LayerCount); // Shop GDD "multi_clear_3plus"
 
             if (_context == null) return;
 
@@ -163,6 +168,8 @@ namespace hp55games.Blockout.Gameplay
 
             int finalScore = _context?.Score ?? 0;
             AwardCoins(finalScore);
+            _achievements?.RecordRunCompleted(); // Shop GDD "first_run_completed"/"runs_completed_*"
+            _achievements?.RecordRunScore(finalScore); // Shop GDD "single_run_score_*"
 
             _eventBus?.Publish(new BlockoutGameOverEvent { FinalScore = finalScore });
 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-65
   _displayName: Terbio
-  _costInCoins: -1
+  _costInCoins: 1843
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.1882353, g: 1, b: 0.78039217, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 65
   _materialCategory: 0
   _densityNormalized: 0.8773
+  _unlockMethod: 1
+  _unlockAchievementId: 

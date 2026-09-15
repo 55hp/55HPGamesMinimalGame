@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 79
   _materialCategory: 0
   _densityNormalized: 0.9426
+  _unlockMethod: 2
+  _unlockAchievementId: login_streak_14

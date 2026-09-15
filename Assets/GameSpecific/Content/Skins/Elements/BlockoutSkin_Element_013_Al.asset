@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-13
   _displayName: Alluminio
-  _costInCoins: -1
+  _costInCoins: 1825
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7490196, g: 0.6509804, b: 0.6509804, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 13
   _materialCategory: 0
   _densityNormalized: 0.7916
+  _unlockMethod: 1
+  _unlockAchievementId: 

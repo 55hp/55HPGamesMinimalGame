@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-93
   _displayName: Nettunio
-  _costInCoins: -1
+  _costInCoins: 1940
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.5019608, b: 1, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 93
   _materialCategory: 0
   _densityNormalized: 0.9472
+  _unlockMethod: 1
+  _unlockAchievementId: 

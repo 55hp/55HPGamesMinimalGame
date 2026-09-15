@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-97
   _displayName: Berkelio
-  _costInCoins: -1
+  _costInCoins: 1949
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5411765, g: 0.30980393, b: 0.8901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 97
   _materialCategory: 0
   _densityNormalized: 0.9223
+  _unlockMethod: 1
+  _unlockAchievementId: 

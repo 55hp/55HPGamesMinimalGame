@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-62
   _displayName: Samario
-  _costInCoins: -1
+  _costInCoins: 1879
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.56078434, g: 1, b: 0.78039217, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 62
   _materialCategory: 0
   _densityNormalized: 0.8703
+  _unlockMethod: 1
+  _unlockAchievementId: 

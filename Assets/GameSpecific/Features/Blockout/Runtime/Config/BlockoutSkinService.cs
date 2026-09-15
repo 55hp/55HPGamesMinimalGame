@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Save;
+using hp55games.Blockout.Achievements;
 
 namespace hp55games.Blockout.Config
 {
@@ -31,11 +32,16 @@ namespace hp55games.Blockout.Config
         public readonly bool IsUnlocked;
         public readonly bool IsActive;
 
-        public BlockoutSkinShopEntry(BlockoutSkin skin, bool isUnlocked, bool isActive)
+        // Shop Technical Doc Phase 3: real group/period (and lanthanide/actinide flags) so the
+        // shop grid can place this entry without recomputing PeriodicTableLayout itself.
+        public readonly PeriodicTablePosition Position;
+
+        public BlockoutSkinShopEntry(BlockoutSkin skin, bool isUnlocked, bool isActive, PeriodicTablePosition position)
         {
             Skin = skin;
             IsUnlocked = isUnlocked;
             IsActive = isActive;
+            Position = position;
         }
     }
 
@@ -68,6 +74,13 @@ namespace hp55games.Blockout.Config
         // never awards them; see BlockoutGameplayState.OnWellFull for the earning side of the
         // economy.
         UnlockSkinResult TryUnlockSkin(string skinId);
+
+        // Shop Technical Doc: unconditionally marks skinId unlocked, no coin cost - the
+        // achievement service's own unlock path (BlockoutSkin.UnlockMethod == Achievement),
+        // called automatically the moment a trigger's condition is met, never on user request
+        // (that's TryUnlockSkin's job, for Coins-method skins). No-op (with a logged warning) for
+        // an unknown skinId; silently idempotent if already unlocked.
+        void GrantUnlock(string skinId);
 
         // Periodic Table GDD Technical Doc Phase 4: every element skin (AtomicNumber > 0) in the
         // catalog, ordered by AtomicNumber ascending (lowest-to-highest, matching the periodic
@@ -170,7 +183,34 @@ namespace hp55games.Blockout.Config
             save.coins -= skin.CostInCoins;
             save.unlockedSkinIds.Add(skinId);
             ServiceRegistry.Resolve<ISaveService>().Save();
+
+            // The one unlock path the achievement service has no other way to observe (GrantUnlock
+            // is achievements' own doing, so they already know) - a coin purchase can still be the
+            // Nth element that crosses the "unlocked >= 20" achievement threshold.
+            if (ServiceRegistry.TryResolve<IBlockoutAchievementService>(out var achievements))
+            {
+                achievements.RecheckElementsUnlockedThreshold();
+            }
+
             return UnlockSkinResult.Success;
+        }
+
+        public void GrantUnlock(string skinId)
+        {
+            var skin = FindSkin(skinId);
+            if (skin == null)
+            {
+                Debug.LogWarning($"[BlockoutSkinService] GrantUnlock: no BlockoutSkin with SkinId \"{skinId}\" in the catalog.");
+                return;
+            }
+
+            if (IsUnlocked(skin)) return; // already unlocked (default, or a previous grant/purchase) - idempotent no-op
+
+            var save = ResolveSaveData();
+            if (save == null) return;
+
+            save.unlockedSkinIds.Add(skinId);
+            ServiceRegistry.Resolve<ISaveService>().Save();
         }
 
         public IReadOnlyList<BlockoutSkinShopEntry> GetElementShopEntries()
@@ -189,7 +229,8 @@ namespace hp55games.Blockout.Config
             var result = new List<BlockoutSkinShopEntry>(elements.Count);
             foreach (var skin in elements)
             {
-                result.Add(new BlockoutSkinShopEntry(skin, IsUnlocked(skin), ReferenceEquals(skin, active)));
+                var position = PeriodicTableLayout.GetPosition(skin.AtomicNumber);
+                result.Add(new BlockoutSkinShopEntry(skin, IsUnlocked(skin), ReferenceEquals(skin, active), position));
             }
             return result;
         }

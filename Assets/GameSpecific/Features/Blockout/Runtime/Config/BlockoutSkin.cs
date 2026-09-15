@@ -49,6 +49,12 @@ namespace hp55games.Blockout.Config
         [Tooltip("Periodic Table GDD only: log-normalized real density (0 = lightest, 1 = densest) driving the melt clear behaviour's spherule impulse (see PeriodicMeltClearBehaviour). Unused by non-element skins.")]
         [SerializeField] private float _densityNormalized;
 
+        [Tooltip("Periodic Table Shop GDD only: which of the 3 unlock mechanisms applies. Default for non-element skins too (Default/Profondita/Juicy Clear use the older coins-only TryUnlockSkin path regardless of this field's value).")]
+        [SerializeField] private BlockoutSkinUnlockMethod _unlockMethod;
+
+        [Tooltip("Periodic Table Shop GDD only: achievement id (see IBlockoutAchievementService) that grants this skin when UnlockMethod is Achievement. Empty otherwise.")]
+        [SerializeField] private string _unlockAchievementId;
+
         public string SkinId => _skinId;
         public string DisplayName => _displayName;
         public int CostInCoins => _costInCoins;
@@ -60,6 +66,8 @@ namespace hp55games.Blockout.Config
         public int AtomicNumber => _atomicNumber;
         public PieceMaterialCategory MaterialCategory => _materialCategory;
         public float DensityNormalized => _densityNormalized;
+        public BlockoutSkinUnlockMethod UnlockMethod => _unlockMethod;
+        public string UnlockAchievementId => _unlockAchievementId;
 
 #if UNITY_EDITOR
         // Editor-only bulk setter for BlockoutPeriodicElementImporter - mirrors
@@ -69,7 +77,8 @@ namespace hp55games.Blockout.Config
         // path), so it fully overwrites rather than merging.
         public void EditorConfigureElement(string skinId, string displayName, int costInCoins, bool unlockedByDefault,
             Color pieceColor, BlockoutClearBehaviour clearBehaviour, string elementSymbol, int atomicNumber,
-            PieceMaterialCategory materialCategory, float densityNormalized)
+            PieceMaterialCategory materialCategory, float densityNormalized,
+            BlockoutSkinUnlockMethod unlockMethod, string unlockAchievementId)
         {
             _skinId = skinId;
             _displayName = displayName;
@@ -81,6 +90,8 @@ namespace hp55games.Blockout.Config
             _atomicNumber = atomicNumber;
             _materialCategory = materialCategory;
             _densityNormalized = densityNormalized;
+            _unlockMethod = unlockMethod;
+            _unlockAchievementId = unlockAchievementId;
         }
 #endif
     }

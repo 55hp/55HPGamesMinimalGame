@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-71
   _displayName: Lutezio
-  _costInCoins: -1
+  _costInCoins: 1907
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.67058825, b: 0.14117648, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 71
   _materialCategory: 0
   _densityNormalized: 0.891
+  _unlockMethod: 1
+  _unlockAchievementId: 

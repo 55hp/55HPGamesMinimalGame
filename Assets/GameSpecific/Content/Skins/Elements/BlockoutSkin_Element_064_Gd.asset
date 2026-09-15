@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-64
   _displayName: Gadolinio
-  _costInCoins: -1
+  _costInCoins: 1880
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.27058825, g: 1, b: 0.78039217, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 64
   _materialCategory: 0
   _densityNormalized: 0.8741
+  _unlockMethod: 1
+  _unlockAchievementId: 
