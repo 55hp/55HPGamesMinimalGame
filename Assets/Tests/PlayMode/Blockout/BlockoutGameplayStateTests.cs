@@ -118,5 +118,79 @@ namespace hp55games.Blockout.Tests
             Object.DestroyImmediate(fallCurve);
             Object.DestroyImmediate(timeDifficultyConfig);
         }
+
+        [UnityTest]
+        public IEnumerator OnWellFull_FloorsTheBaseTerm_WhenFinalScoreIsNotAMultipleOf100()
+        {
+            // A real clear's PointsAwarded (100*N^2) is always a multiple of 100, so this
+            // publishes a synthetic score directly to exercise AwardCoins' floor(finalScore/100)
+            // in isolation - LayerCount=1 keeps the bonus term at 0 so it can't mask the result.
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+            var context = new GameContextService();
+            ServiceRegistry.Register<IGameContextService>(context);
+            var saveService = new FakeSaveService();
+            ServiceRegistry.Register<ISaveService>(saveService);
+
+            var spawnerGo = new GameObject(nameof(BlockoutGameplayStateTests));
+            var spawner = spawnerGo.AddComponent<BlockoutSpawner>();
+
+            var state = new BlockoutGameplayState(isResuming: true);
+            yield return WaitFor(state.EnterAsync(CancellationToken.None));
+
+            eventBus.Publish(new LayersClearedEvent { LayerCount = 1, PointsAwarded = 250 });
+
+            var fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
+            var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
+            var grid = new VoxelGrid(1, 1, 1);
+            grid.SetOccupied(0, 0, 0, true);
+
+            LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
+            LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
+            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, null, null);
+
+            Assert.AreEqual(250, context.Score);
+            Assert.AreEqual(2, saveService.Data.coins); // floor(2.5) = 2, not 3
+
+            Object.DestroyImmediate(spawnerGo);
+            Object.DestroyImmediate(fallCurve);
+            Object.DestroyImmediate(timeDifficultyConfig);
+        }
+
+        [UnityTest]
+        public IEnumerator OnWellFull_SumsTheBonus_AcrossMultipleMultiLayerClearsInTheSameRun()
+        {
+            var eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+            var context = new GameContextService();
+            ServiceRegistry.Register<IGameContextService>(context);
+            var saveService = new FakeSaveService();
+            ServiceRegistry.Register<ISaveService>(saveService);
+
+            var spawnerGo = new GameObject(nameof(BlockoutGameplayStateTests));
+            var spawner = spawnerGo.AddComponent<BlockoutSpawner>();
+
+            var state = new BlockoutGameplayState(isResuming: true);
+            yield return WaitFor(state.EnterAsync(CancellationToken.None));
+
+            eventBus.Publish(new LayersClearedEvent { LayerCount = 2, PointsAwarded = 400 }); // +10 bonus
+            eventBus.Publish(new LayersClearedEvent { LayerCount = 3, PointsAwarded = 900 }); // +15 bonus
+
+            var fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
+            var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
+            var grid = new VoxelGrid(1, 1, 1);
+            grid.SetOccupied(0, 0, 0, true);
+
+            LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
+            LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
+            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, null, null);
+
+            Assert.AreEqual(1300, context.Score); // 400 + 900
+            Assert.AreEqual(38, saveService.Data.coins); // floor(1300/100)=13 base + (10+15)=25 bonus
+
+            Object.DestroyImmediate(spawnerGo);
+            Object.DestroyImmediate(fallCurve);
+            Object.DestroyImmediate(timeDifficultyConfig);
+        }
     }
 }

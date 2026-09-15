@@ -4,6 +4,17 @@ using hp55games.Mobile.Core.Save;
 
 namespace hp55games.Blockout.Config
 {
+    // Lets a TryUnlockSkin caller branch on why it failed (a shop UI, eventually, needs to show
+    // different messaging for "you can't afford this" vs "already own it") without parsing the
+    // logged warning text.
+    public enum UnlockSkinResult
+    {
+        Success,
+        UnknownSkinId,
+        AlreadyUnlocked,
+        NotEnoughCoins
+    }
+
     // Technical Doc Phase 3 (active-skin tracking) + Phase 6 (real unlock/spend): tracks which
     // BlockoutSkin is active and which are unlocked, persisting both across sessions via
     // ISaveService/SaveData (activeSkinId, unlockedSkinIds, coins).
@@ -27,12 +38,12 @@ namespace hp55games.Blockout.Config
         void SetActiveSkin(string skinId);
 
         // Spends CostInCoins from SaveData.coins and adds skinId to SaveData.unlockedSkinIds,
-        // then persists. Returns false (with a logged reason, no coins spent) if skinId doesn't
-        // match any catalog entry, is already unlocked, or SaveData.coins is short of
-        // CostInCoins. Personal-best-score bonus intentionally not implemented (GDD leaves it
-        // open) - this only ever spends coins, never awards them; see
-        // BlockoutGameplayState.OnWellFull for the earning side of the economy.
-        bool TryUnlockSkin(string skinId);
+        // then persists, returning Success. Otherwise returns (with a matching logged warning,
+        // no coins spent) UnknownSkinId, AlreadyUnlocked, or NotEnoughCoins. Personal-best-score
+        // bonus intentionally not implemented (GDD leaves it open) - this only ever spends coins,
+        // never awards them; see BlockoutGameplayState.OnWellFull for the earning side of the
+        // economy.
+        UnlockSkinResult TryUnlockSkin(string skinId);
     }
 
     public sealed class BlockoutSkinService : IBlockoutSkinService
@@ -95,34 +106,34 @@ namespace hp55games.Blockout.Config
             ServiceRegistry.Resolve<ISaveService>().Save();
         }
 
-        public bool TryUnlockSkin(string skinId)
+        public UnlockSkinResult TryUnlockSkin(string skinId)
         {
             var skin = FindSkin(skinId);
             if (skin == null)
             {
                 Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: no BlockoutSkin with SkinId \"{skinId}\" in the catalog.");
-                return false;
+                return UnlockSkinResult.UnknownSkinId;
             }
 
             if (IsUnlocked(skin))
             {
                 Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: \"{skinId}\" is already unlocked.");
-                return false;
+                return UnlockSkinResult.AlreadyUnlocked;
             }
 
             var save = ResolveSaveData();
-            if (save == null) return false;
+            if (save == null) return UnlockSkinResult.UnknownSkinId; // ISaveService missing - already logged by ResolveSaveData
 
             if (save.coins < skin.CostInCoins)
             {
                 Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: not enough coins for \"{skinId}\" (has {save.coins}, needs {skin.CostInCoins}).");
-                return false;
+                return UnlockSkinResult.NotEnoughCoins;
             }
 
             save.coins -= skin.CostInCoins;
             save.unlockedSkinIds.Add(skinId);
             ServiceRegistry.Resolve<ISaveService>().Save();
-            return true;
+            return UnlockSkinResult.Success;
         }
 
         private static BlockoutSkin FindSkin(string skinId)

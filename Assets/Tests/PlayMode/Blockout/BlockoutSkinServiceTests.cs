@@ -180,9 +180,9 @@ namespace hp55games.Blockout.Tests
             _saveService.Data.coins = 150;
             var service = new BlockoutSkinService();
 
-            bool result = service.TryUnlockSkin("juicy-clear");
+            var result = service.TryUnlockSkin("juicy-clear");
 
-            Assert.IsTrue(result);
+            Assert.AreEqual(UnlockSkinResult.Success, result);
             Assert.AreEqual(50, _saveService.Data.coins);
             CollectionAssert.Contains(_saveService.Data.unlockedSkinIds, "juicy-clear");
             Assert.AreEqual(1, _saveService.SaveCallCount);
@@ -197,9 +197,9 @@ namespace hp55games.Blockout.Tests
             var service = new BlockoutSkinService();
 
             LogAssert.Expect(LogType.Warning, new Regex("(?i)not enough coins"));
-            bool result = service.TryUnlockSkin("juicy-clear");
+            var result = service.TryUnlockSkin("juicy-clear");
 
-            Assert.IsFalse(result);
+            Assert.AreEqual(UnlockSkinResult.NotEnoughCoins, result);
             Assert.AreEqual(50, _saveService.Data.coins); // untouched
             CollectionAssert.DoesNotContain(_saveService.Data.unlockedSkinIds, "juicy-clear");
             Assert.AreEqual(0, _saveService.SaveCallCount);
@@ -213,9 +213,9 @@ namespace hp55games.Blockout.Tests
             var service = new BlockoutSkinService();
 
             LogAssert.Expect(LogType.Warning, new Regex("(?i)already unlocked"));
-            bool result = service.TryUnlockSkin("juicy-clear");
+            var result = service.TryUnlockSkin("juicy-clear");
 
-            Assert.IsFalse(result);
+            Assert.AreEqual(UnlockSkinResult.AlreadyUnlocked, result);
             Assert.AreEqual(1000, _saveService.Data.coins); // no double-spend
             Assert.AreEqual(0, _saveService.SaveCallCount);
         }
@@ -226,9 +226,9 @@ namespace hp55games.Blockout.Tests
             var service = new BlockoutSkinService();
 
             LogAssert.Expect(LogType.Warning, new Regex("(?i)no BlockoutSkin"));
-            bool result = service.TryUnlockSkin("not-a-real-skin-id");
+            var result = service.TryUnlockSkin("not-a-real-skin-id");
 
-            Assert.IsFalse(result);
+            Assert.AreEqual(UnlockSkinResult.UnknownSkinId, result);
             Assert.AreEqual(0, _saveService.SaveCallCount);
         }
     }
