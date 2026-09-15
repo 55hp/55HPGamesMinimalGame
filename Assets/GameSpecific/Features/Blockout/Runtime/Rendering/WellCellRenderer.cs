@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Pooling;
+using hp55games.Blockout.Config;
 
 namespace hp55games.Blockout.Rendering
 {
@@ -14,6 +15,11 @@ namespace hp55games.Blockout.Rendering
     {
         [Tooltip("Prefab shown per occupied cell (needs, or will get, a PooledObject component). If left empty, a plain temporary cube is created at runtime - assign a real prefab here once one exists (materials/mesh are Franci's manual job per Phase 5).")]
         [SerializeField] private PooledObject _cellPrefab;
+
+        [Tooltip("Periodic Table GDD Phase 2 (Bezi): the 3 candy-shader material variants, swapped onto a cell's Renderer per ShowCell's materialCategory argument. Opaque also doubles as the fallback for every non-element skin (materialCategory == null) and for Opaque itself, so it should always be assigned once these exist - Metallic/Translucent only matter for element skins.")]
+        [SerializeField] private Material _metallicMaterial;
+        [SerializeField] private Material _opaqueMaterial;
+        [SerializeField] private Material _translucentMaterial;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -39,7 +45,7 @@ namespace hp55games.Blockout.Rendering
         // Shows (or, if already shown, just re-colors) a cube at gridPos. Position is applied
         // every call since ShowCell also doubles as "move the piece to its new position" for the
         // active piece - callers hide the old position and show the new one on every change.
-        public void ShowCell(Vector3Int gridPos, Color color)
+        public void ShowCell(Vector3Int gridPos, Color color, PieceMaterialCategory? materialCategory = null)
         {
             if (!enabled) return;
 
@@ -58,8 +64,30 @@ namespace hp55games.Blockout.Rendering
             if (renderer == null) return;
 
             renderer.enabled = true;
+            ApplyMaterialCategory(renderer, materialCategory);
             ApplyColor(renderer, color);
         }
+
+        // Resolves to Opaque both when materialCategory is null (every non-element skin - Default,
+        // Profondita, Juicy Clear - never had a category concept) and for Opaque itself, rather
+        // than leaving the Renderer's material untouched: a pooled instance can be handed back by
+        // IObjectPoolService after last being shown under a different skin's category (e.g. a
+        // Translucent element), so "untouched" would mean stale, not "prefab default". Only skips
+        // the swap if the resolved slot itself isn't assigned yet (materials not authored yet -
+        // same "log nothing, just don't crash" fallback WellCellRenderer already uses for
+        // _cellPrefab).
+        private void ApplyMaterialCategory(Renderer renderer, PieceMaterialCategory? materialCategory)
+        {
+            var material = ResolveMaterial(materialCategory ?? PieceMaterialCategory.Opaque);
+            if (material != null) renderer.sharedMaterial = material;
+        }
+
+        private Material ResolveMaterial(PieceMaterialCategory category) => category switch
+        {
+            PieceMaterialCategory.Metallic => _metallicMaterial,
+            PieceMaterialCategory.Translucent => _translucentMaterial,
+            _ => _opaqueMaterial
+        };
 
         public void HideCell(Vector3Int gridPos)
         {

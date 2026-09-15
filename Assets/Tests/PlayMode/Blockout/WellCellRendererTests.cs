@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Pooling;
+using hp55games.Blockout.Config;
 using hp55games.Blockout.Rendering;
 
 namespace hp55games.Blockout.Tests
@@ -154,6 +156,96 @@ namespace hp55games.Blockout.Tests
 
             Assert.AreEqual(Color.yellow, renderer.GetCellColor(new Vector3Int(1, 0, 0))); // shifted down within its own column
             Assert.IsFalse(renderer.IsCellShown(new Vector3Int(1, 1, 0)));
+
+            Object.DestroyImmediate(renderer.gameObject);
+        }
+
+        // WellCellRenderer's 3 material fields have no test-facing setter (same reasoning as
+        // BlockoutSkin's private fields elsewhere in this suite) - Bezi assigns them in the
+        // Inspector in practice.
+        private static void SetMaterial(WellCellRenderer renderer, string fieldName, Material material)
+        {
+            typeof(WellCellRenderer).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance).SetValue(renderer, material);
+        }
+
+        private static Material RendererMaterial(WellCellRenderer renderer, Vector3Int pos)
+        {
+            var instance = (Dictionary<Vector3Int, PooledObject>)typeof(WellCellRenderer)
+                .GetField("_shownCells", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(renderer);
+            return instance[pos].GetComponent<Renderer>().sharedMaterial;
+        }
+
+        [Test]
+        public void ShowCell_SwapsToTheMetallicMaterial_WhenGivenTheMetallicCategory()
+        {
+            var renderer = CreateRenderer();
+            var metallic = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_metallicMaterial", metallic);
+            var pos = new Vector3Int(0, 0, 0);
+
+            renderer.ShowCell(pos, Color.white, PieceMaterialCategory.Metallic);
+
+            Assert.AreEqual(metallic, RendererMaterial(renderer, pos));
+
+            Object.DestroyImmediate(renderer.gameObject);
+            Object.DestroyImmediate(metallic);
+        }
+
+        [Test]
+        public void ShowCell_FallsBackToTheOpaqueMaterial_WhenNoCategoryIsGiven()
+        {
+            // Every non-element skin (Default, Profondita, Juicy Clear) calls ShowCell with no
+            // category at all - see BlockoutSpawner._materialCategory.
+            var renderer = CreateRenderer();
+            var opaque = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_opaqueMaterial", opaque);
+            var pos = new Vector3Int(0, 0, 0);
+
+            renderer.ShowCell(pos, Color.white);
+
+            Assert.AreEqual(opaque, RendererMaterial(renderer, pos));
+
+            Object.DestroyImmediate(renderer.gameObject);
+            Object.DestroyImmediate(opaque);
+        }
+
+        [Test]
+        public void ShowCell_SwapsMaterial_WhenAPooledInstanceIsReusedUnderADifferentCategory()
+        {
+            // Regression coverage for the exact bug the Opaque fallback (rather than a no-op)
+            // avoids: IObjectPoolService can hand back an instance last shown under a different
+            // skin's category (e.g. Translucent from a previous run), so a later ShowCell for a
+            // non-element skin (no category) must actively reset it, not leave it stale.
+            var renderer = CreateRenderer();
+            var translucent = new Material(Shader.Find("Sprites/Default"));
+            var opaque = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_translucentMaterial", translucent);
+            SetMaterial(renderer, "_opaqueMaterial", opaque);
+            var pos = new Vector3Int(0, 0, 0);
+
+            renderer.ShowCell(pos, Color.white, PieceMaterialCategory.Translucent);
+            renderer.HideCell(pos);
+            renderer.ShowCell(pos, Color.white); // reuses the pooled instance, no category this time
+
+            Assert.AreEqual(opaque, RendererMaterial(renderer, pos));
+
+            Object.DestroyImmediate(renderer.gameObject);
+            Object.DestroyImmediate(translucent);
+            Object.DestroyImmediate(opaque);
+        }
+
+        [Test]
+        public void ShowCell_LeavesTheExistingMaterialUntouched_WhenTheResolvedCategorysSlotIsUnassigned()
+        {
+            var renderer = CreateRenderer();
+            var pos = new Vector3Int(0, 0, 0);
+            renderer.ShowCell(pos, Color.white); // establishes whatever the fallback prefab's default material is
+            var before = RendererMaterial(renderer, pos);
+
+            renderer.ShowCell(pos, Color.white, PieceMaterialCategory.Translucent); // _translucentMaterial never assigned
+
+            Assert.AreEqual(before, RendererMaterial(renderer, pos));
 
             Object.DestroyImmediate(renderer.gameObject);
         }

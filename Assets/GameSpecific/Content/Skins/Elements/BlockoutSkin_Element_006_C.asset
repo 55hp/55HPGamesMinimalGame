@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 197d311f23f24ece805ad83597fe353a, type: 3}
+  m_Name: BlockoutSkin_Element_006_C
+  m_EditorClassIdentifier: 
+  _skinId: element-6
+  _displayName: Carbonio
+  _costInCoins: 0
+  _unlockedByDefault: 1
+  _pieceColors:
+  - {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+  _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _elementSymbol: C
+  _atomicNumber: 6
+  _materialCategory: 1
+  _densityNormalized: 0.7783

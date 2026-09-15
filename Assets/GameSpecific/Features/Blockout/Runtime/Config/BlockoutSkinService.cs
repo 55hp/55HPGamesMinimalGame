@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Save;
@@ -12,7 +13,30 @@ namespace hp55games.Blockout.Config
         Success,
         UnknownSkinId,
         AlreadyUnlocked,
-        NotEnoughCoins
+        NotEnoughCoins,
+
+        // Periodic Table GDD: the 118 imported element skins start with no unlock cost decided
+        // (BlockoutSkin.HasCostSet == false) - the economy formula is an explicit open item, not
+        // implemented yet. Distinct from NotEnoughCoins so a shop UI can tell "you can't afford
+        // it" apart from "this isn't purchasable yet".
+        CostNotSet
+    }
+
+    // Read-only snapshot for a shop UI: a BlockoutSkin paired with its current unlock/active
+    // state, so listing the catalog doesn't require the UI to call IsUnlocked/ActiveSkin itself
+    // per row (see BlockoutSkinService.GetElementShopEntries).
+    public readonly struct BlockoutSkinShopEntry
+    {
+        public readonly BlockoutSkin Skin;
+        public readonly bool IsUnlocked;
+        public readonly bool IsActive;
+
+        public BlockoutSkinShopEntry(BlockoutSkin skin, bool isUnlocked, bool isActive)
+        {
+            Skin = skin;
+            IsUnlocked = isUnlocked;
+            IsActive = isActive;
+        }
     }
 
     // Technical Doc Phase 3 (active-skin tracking) + Phase 6 (real unlock/spend): tracks which
@@ -44,6 +68,13 @@ namespace hp55games.Blockout.Config
         // never awards them; see BlockoutGameplayState.OnWellFull for the earning side of the
         // economy.
         UnlockSkinResult TryUnlockSkin(string skinId);
+
+        // Periodic Table GDD Technical Doc Phase 4: every element skin (AtomicNumber > 0) in the
+        // catalog, ordered by AtomicNumber ascending (lowest-to-highest, matching the periodic
+        // table's left-to-right layout), each paired with its current unlock/active state - the
+        // data a periodic-table shop UI consumes. Non-element skins (Default, Profondita, Juicy
+        // Clear) are excluded; they belong to the older, separate skin shop.
+        IReadOnlyList<BlockoutSkinShopEntry> GetElementShopEntries();
     }
 
     public sealed class BlockoutSkinService : IBlockoutSkinService
@@ -121,6 +152,12 @@ namespace hp55games.Blockout.Config
                 return UnlockSkinResult.AlreadyUnlocked;
             }
 
+            if (!skin.HasCostSet)
+            {
+                Debug.LogWarning($"[BlockoutSkinService] TryUnlockSkin: \"{skinId}\" has no unlock cost set yet.");
+                return UnlockSkinResult.CostNotSet;
+            }
+
             var save = ResolveSaveData();
             if (save == null) return UnlockSkinResult.UnknownSkinId; // ISaveService missing - already logged by ResolveSaveData
 
@@ -134,6 +171,27 @@ namespace hp55games.Blockout.Config
             save.unlockedSkinIds.Add(skinId);
             ServiceRegistry.Resolve<ISaveService>().Save();
             return UnlockSkinResult.Success;
+        }
+
+        public IReadOnlyList<BlockoutSkinShopEntry> GetElementShopEntries()
+        {
+            var skins = ResolveCatalogService()?.GetAll<BlockoutSkin>();
+            if (skins == null) return new List<BlockoutSkinShopEntry>();
+
+            var elements = new List<BlockoutSkin>();
+            foreach (var skin in skins)
+            {
+                if (skin.AtomicNumber > 0) elements.Add(skin);
+            }
+            elements.Sort((a, b) => a.AtomicNumber.CompareTo(b.AtomicNumber));
+
+            var active = ActiveSkin;
+            var result = new List<BlockoutSkinShopEntry>(elements.Count);
+            foreach (var skin in elements)
+            {
+                result.Add(new BlockoutSkinShopEntry(skin, IsUnlocked(skin), ReferenceEquals(skin, active)));
+            }
+            return result;
         }
 
         private static BlockoutSkin FindSkin(string skinId)

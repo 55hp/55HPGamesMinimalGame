@@ -20,7 +20,10 @@ namespace hp55games.Blockout.Tests
     {
         private sealed class FakeSaveService : ISaveService
         {
-            public SaveData Data { get; } = new SaveData();
+            // coins: 0, not SaveData's own default (1000, a fresh-save starting balance) - these
+            // tests assert the exact coins AwardCoins earns, independent of whatever starting
+            // balance production code happens to default to.
+            public SaveData Data { get; } = new SaveData { coins = 0 };
             public int SaveCallCount { get; private set; }
             public void Load() { }
             public void Save() => SaveCallCount++;

@@ -231,5 +231,63 @@ namespace hp55games.Blockout.Tests
             Assert.AreEqual(UnlockSkinResult.UnknownSkinId, result);
             Assert.AreEqual(0, _saveService.SaveCallCount);
         }
+
+        [Test]
+        public void TryUnlockSkin_Fails_WhenTheSkinsCostIsNotSetYet()
+        {
+            // _otherSkin never had _costInCoins set via reflection here, so it's still at
+            // BlockoutSkin's own default (CostNotSetValue) - the Periodic Table state for every
+            // freshly-imported element skin before the economy formula is decided.
+            _saveService.Data.coins = 100000;
+            var service = new BlockoutSkinService();
+
+            LogAssert.Expect(LogType.Warning, new Regex("(?i)no unlock cost set"));
+            var result = service.TryUnlockSkin("juicy-clear");
+
+            Assert.AreEqual(UnlockSkinResult.CostNotSet, result);
+            CollectionAssert.DoesNotContain(_saveService.Data.unlockedSkinIds, "juicy-clear");
+            Assert.AreEqual(0, _saveService.SaveCallCount);
+        }
+
+        [Test]
+        public void HasCostSet_IsFalse_ForANewlyCreatedSkin_UntilACostIsAssigned()
+        {
+            var skin = ScriptableObject.CreateInstance<BlockoutSkin>();
+
+            Assert.IsFalse(skin.HasCostSet);
+
+            Object.DestroyImmediate(skin);
+        }
+
+        [Test]
+        public void GetElementShopEntries_ReturnsOnlyElementSkins_OrderedByAtomicNumber_WithUnlockedAndActiveFlags()
+        {
+            var carbon = CreateElementSkin("element-6", atomicNumber: 6, unlockedByDefault: true);
+            var hydrogen = CreateElementSkin("element-1", atomicNumber: 1, unlockedByDefault: false);
+            ServiceRegistry.Register<IConfigCatalogService>(new FakeConfigCatalogService(_defaultSkin, _otherSkin, carbon, hydrogen));
+            _saveService.Data.activeSkinId = "element-6"; // pin ActiveSkin to carbon - _defaultSkin is also UnlockedByDefault, so an unpinned fallback would resolve to it first instead
+            var service = new BlockoutSkinService();
+
+            var entries = service.GetElementShopEntries();
+
+            Assert.AreEqual(2, entries.Count); // _defaultSkin/_otherSkin excluded: AtomicNumber == 0
+            Assert.AreSame(hydrogen, entries[0].Skin); // atomic number 1 before 6
+            Assert.AreSame(carbon, entries[1].Skin);
+
+            Assert.IsTrue(entries[1].IsUnlocked); // carbon: always-free default
+            Assert.IsTrue(entries[1].IsActive); // pinned via activeSkinId above
+            Assert.IsFalse(entries[0].IsUnlocked); // hydrogen: not unlocked
+            Assert.IsFalse(entries[0].IsActive);
+
+            Object.DestroyImmediate(carbon);
+            Object.DestroyImmediate(hydrogen);
+        }
+
+        private static BlockoutSkin CreateElementSkin(string skinId, int atomicNumber, bool unlockedByDefault)
+        {
+            var skin = CreateSkin(skinId, unlockedByDefault);
+            typeof(BlockoutSkin).GetField("_atomicNumber", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(skin, atomicNumber);
+            return skin;
+        }
     }
 }
