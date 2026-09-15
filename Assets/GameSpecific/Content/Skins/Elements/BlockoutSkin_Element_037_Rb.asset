@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-37
   _displayName: Rubidio
-  _costInCoins: -1
+  _costInCoins: 1861
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.4392157, g: 0.18039216, b: 0.6901961, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 37
   _materialCategory: 0
   _densityNormalized: 0.7482
+  _unlockMethod: 1
+  _unlockAchievementId: 

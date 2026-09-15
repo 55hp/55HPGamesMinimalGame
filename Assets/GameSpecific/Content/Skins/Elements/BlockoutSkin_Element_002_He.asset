@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-2
   _displayName: Elio
-  _costInCoins: -1
+  _costInCoins: 1895
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.8509804, g: 1, b: 1, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 2
   _materialCategory: 2
   _densityNormalized: 0.0527
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-40
   _displayName: Zirconio
-  _costInCoins: -1
+  _costInCoins: 1789
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5803922, g: 0.8784314, b: 0.8784314, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 40
   _materialCategory: 0
   _densityNormalized: 0.8592
+  _unlockMethod: 1
+  _unlockAchievementId: 

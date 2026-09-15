@@ -17,7 +17,6 @@ namespace hp55games.Blockout.Config.EditorTools
     {
         private const string JsonAssetPath = "Assets/GameSpecific/Content/Skins/blockout_periodic_elements.json";
         private const string OutputFolder = "Assets/GameSpecific/Content/Skins/Elements";
-        private const int CarbonAtomicNumber = 6; // GDD: always-unlocked, zero-cost default element
 
         [MenuItem("hp55games/Blockout/Import Periodic Table Elements")]
         public static void Import()
@@ -59,18 +58,24 @@ namespace hp55games.Blockout.Config.EditorTools
                 bool isNew = skin == null;
                 if (isNew) skin = ScriptableObject.CreateInstance<BlockoutSkin>();
 
-                bool isCarbon = element.atomicNumber == CarbonAtomicNumber;
+                var unlockMethod = ParseUnlockMethod(element);
                 skin.EditorConfigureElement(
                     skinId: SkinIdFor(element),
                     displayName: element.nameIt,
-                    costInCoins: isCarbon ? 0 : BlockoutSkin.CostNotSetValue,
-                    unlockedByDefault: isCarbon,
+                    // unlockCostCoins is only meaningful (and only reliably non-null in the JSON)
+                    // for the "coins" method - Default (Carbon) is always free, Achievement is
+                    // never coin-purchasable, so both stay at CostNotSetValue regardless of
+                    // whatever JsonUtility left in element.unlockCostCoins for a JSON null there.
+                    costInCoins: unlockMethod == BlockoutSkinUnlockMethod.Coins ? element.unlockCostCoins : BlockoutSkin.CostNotSetValue,
+                    unlockedByDefault: unlockMethod == BlockoutSkinUnlockMethod.Default,
                     pieceColor: color,
                     clearBehaviour: meltBehaviour,
                     elementSymbol: element.symbol,
                     atomicNumber: element.atomicNumber,
                     materialCategory: ParseCategory(element.shaderCategory),
-                    densityNormalized: element.densityNormalized);
+                    densityNormalized: element.densityNormalized,
+                    unlockMethod: unlockMethod,
+                    unlockAchievementId: unlockMethod == BlockoutSkinUnlockMethod.Achievement ? element.unlockAchievementId : string.Empty);
 
                 if (isNew)
                 {
@@ -131,6 +136,27 @@ namespace hp55games.Blockout.Config.EditorTools
             }
         }
 
+        // Shop Technical Doc Phase 1: unlockCostCoins is only trustworthy (and only ever
+        // non-null in the JSON) when unlockMethod is "coins" - Default (Carbon) is explicitly 0
+        // there, Achievement entries are explicitly null (JsonUtility's behavior for a JSON null
+        // landing on ElementDto's non-nullable int is irrelevant precisely because the caller
+        // never reads unlockCostCoins for those two methods). A malformed/unrecognized
+        // unlockMethod falls back to Achievement (with no achievement id) rather than Coins -
+        // that leaves the element simply unobtainable until the data is fixed, instead of
+        // accidentally free or accidentally priced from whatever garbage ended up in the field.
+        private static BlockoutSkinUnlockMethod ParseUnlockMethod(ElementDto element)
+        {
+            switch (element.unlockMethod)
+            {
+                case "default": return BlockoutSkinUnlockMethod.Default;
+                case "coins": return BlockoutSkinUnlockMethod.Coins;
+                case "achievement": return BlockoutSkinUnlockMethod.Achievement;
+                default:
+                    Debug.LogWarning($"[BlockoutPeriodicElementImporter] Element {element.atomicNumber} ({element.symbol}): unrecognized unlockMethod \"{element.unlockMethod}\" - treated as Achievement with no achievement id (unobtainable until fixed) rather than risking an accidental free/priced unlock.");
+                    return BlockoutSkinUnlockMethod.Achievement;
+            }
+        }
+
         [Serializable]
         private class ElementsFile
         {
@@ -139,11 +165,10 @@ namespace hp55games.Blockout.Config.EditorTools
 
         // Only the fields the importer actually consumes - JsonUtility silently ignores JSON
         // keys with no matching field here (densityGCm3, densityIsPredicted, stateAtRoomTemp,
-        // sourceNote, schemaVersion, description, unlockCostCoins), so the DTO doesn't need to
-        // mirror the full schema. unlockCostCoins in particular is deliberately not read: it's
-        // null for every element today (GDD: cost formula is an explicit open item), and
-        // JsonUtility can't parse a JSON null into a non-nullable int anyway - every imported
-        // skin's cost is set from CarbonAtomicNumber/BlockoutSkin.CostNotSetValue instead.
+        // sourceNote, schemaVersion, description, discoveryYear, knownSinceAntiquity), so the DTO
+        // doesn't need to mirror the full schema. discoveryYear/knownSinceAntiquity aren't needed
+        // separately: for a "coins" element unlockCostCoins already equals discoveryYear, and
+        // knownSinceAntiquity is implied by unlockMethod == "achievement".
         [Serializable]
         private class ElementDto
         {
@@ -153,6 +178,9 @@ namespace hp55games.Blockout.Config.EditorTools
             public float densityNormalized;
             public string shaderCategory;
             public string colorHex;
+            public int unlockCostCoins;
+            public string unlockMethod;
+            public string unlockAchievementId;
         }
     }
 }

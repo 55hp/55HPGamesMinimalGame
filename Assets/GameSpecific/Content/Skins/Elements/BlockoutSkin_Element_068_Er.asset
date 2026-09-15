@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-68
   _displayName: Erbio
-  _costInCoins: -1
+  _costInCoins: 1842
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.9019608, b: 0.45882353, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 68
   _materialCategory: 0
   _densityNormalized: 0.8847
+  _unlockMethod: 1
+  _unlockAchievementId: 

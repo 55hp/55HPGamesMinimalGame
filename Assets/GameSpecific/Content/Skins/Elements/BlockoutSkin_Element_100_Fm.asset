@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-100
   _displayName: Fermio
-  _costInCoins: -1
+  _costInCoins: 1952
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7019608, g: 0.12156863, b: 0.7294118, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 100
   _materialCategory: 0
   _densityNormalized: 0.8899
+  _unlockMethod: 1
+  _unlockAchievementId: 

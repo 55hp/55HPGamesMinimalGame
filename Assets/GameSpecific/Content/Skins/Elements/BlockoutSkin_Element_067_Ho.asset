@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-67
   _displayName: Olmio
-  _costInCoins: -1
+  _costInCoins: 1878
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 1, b: 0.6117647, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 67
   _materialCategory: 0
   _densityNormalized: 0.8824
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-92
   _displayName: Uranio
-  _costInCoins: -1
+  _costInCoins: 1789
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.56078434, b: 1, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 92
   _materialCategory: 0
   _densityNormalized: 0.9413
+  _unlockMethod: 1
+  _unlockAchievementId: 

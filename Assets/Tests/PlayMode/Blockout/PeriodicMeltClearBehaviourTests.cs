@@ -40,6 +40,8 @@ namespace hp55games.Blockout.Tests
             public bool IsUnlocked(BlockoutSkin skin) => true;
             public void SetActiveSkin(string skinId) { }
             public UnlockSkinResult TryUnlockSkin(string skinId) => UnlockSkinResult.Success;
+            public void GrantUnlock(string skinId) { }
+
             public IReadOnlyList<BlockoutSkinShopEntry> GetElementShopEntries() => new List<BlockoutSkinShopEntry>();
         }
 

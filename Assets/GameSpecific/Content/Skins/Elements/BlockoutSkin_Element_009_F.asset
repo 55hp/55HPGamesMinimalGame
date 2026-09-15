@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-9
   _displayName: Fluoro
-  _costInCoins: -1
+  _costInCoins: 1886
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5647059, g: 0.8784314, b: 0.3137255, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 9
   _materialCategory: 2
   _densityNormalized: 0.2256
+  _unlockMethod: 1
+  _unlockAchievementId: 

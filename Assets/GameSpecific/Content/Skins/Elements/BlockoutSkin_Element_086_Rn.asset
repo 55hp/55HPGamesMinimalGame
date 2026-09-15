@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-86
   _displayName: Radon
-  _costInCoins: -1
+  _costInCoins: 1900
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.25882354, g: 0.50980395, b: 0.5882353, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 86
   _materialCategory: 2
   _densityNormalized: 0.3597
+  _unlockMethod: 1
+  _unlockAchievementId: 

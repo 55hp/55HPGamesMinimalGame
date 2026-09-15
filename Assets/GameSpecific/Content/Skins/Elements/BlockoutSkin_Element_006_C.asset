@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-6
   _displayName: Carbonio
-  _costInCoins: 0
+  _costInCoins: -1
   _unlockedByDefault: 1
   _pieceColors:
   - {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 6
   _materialCategory: 1
   _densityNormalized: 0.7783
+  _unlockMethod: 0
+  _unlockAchievementId: 

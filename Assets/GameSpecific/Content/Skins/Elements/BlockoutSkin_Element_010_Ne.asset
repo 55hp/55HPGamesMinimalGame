@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-10
   _displayName: Neon
-  _costInCoins: -1
+  _costInCoins: 1898
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7019608, g: 0.8901961, b: 0.9607843, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 10
   _materialCategory: 2
   _densityNormalized: 0.1769
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-27
   _displayName: Cobalto
-  _costInCoins: -1
+  _costInCoins: 1735
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.9411765, g: 0.5647059, b: 0.627451, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 27
   _materialCategory: 0
   _densityNormalized: 0.8829
+  _unlockMethod: 1
+  _unlockAchievementId: 

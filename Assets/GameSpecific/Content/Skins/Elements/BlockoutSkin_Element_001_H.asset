@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-1
   _displayName: Idrogeno
-  _costInCoins: -1
+  _costInCoins: 1766
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.9490196, g: 0.9529412, b: 0.9607843, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 1
   _materialCategory: 2
   _densityNormalized: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 

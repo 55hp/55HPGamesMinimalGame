@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-21
   _displayName: Scandio
-  _costInCoins: -1
+  _costInCoins: 1879
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.9019608, g: 0.9019608, b: 0.9019608, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 21
   _materialCategory: 0
   _densityNormalized: 0.7995
+  _unlockMethod: 1
+  _unlockAchievementId: 

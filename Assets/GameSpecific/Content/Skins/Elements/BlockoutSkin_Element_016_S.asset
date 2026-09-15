@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 16
   _materialCategory: 1
   _densityNormalized: 0.7712
+  _unlockMethod: 2
+  _unlockAchievementId: elements_unlocked_20

@@ -20,14 +20,16 @@ namespace hp55games
                 {
                     public const string Popup_Generic = "content/ui/popup_generic";
                     public const string Popup_Pause = "content/ui/popups/pause";
+                    public const string Periodic_Element_Card = "content/ui/popups/periodic_element_card";
                 }
-                
+
                 public static class Pages
                 {
                     public const string Results_Page = "content/ui/pages/results";
                     public const string Credits_Page = "content/ui/pages/credits";
                     public const string Options_Page = "content/ui/pages/options";
                     public const string Main_Menu_Page = "content/ui/pages/main_menu";
+                    public const string Periodic_Table_Shop_Page = "content/ui/pages/periodic_table_shop";
                 }
                 
                 public static class Overlays

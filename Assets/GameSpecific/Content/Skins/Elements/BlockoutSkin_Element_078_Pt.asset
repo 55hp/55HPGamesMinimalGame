@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-78
   _displayName: Platino
-  _costInCoins: -1
+  _costInCoins: 1557
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.8156863, g: 0.8156863, b: 0.8784314, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 78
   _materialCategory: 0
   _densityNormalized: 0.9509
+  _unlockMethod: 1
+  _unlockAchievementId: 

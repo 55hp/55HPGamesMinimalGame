@@ -15,6 +15,7 @@ namespace hp55games.Mobile.Game.UI
     /// - Play -> ISceneFlowService.GoToGameplayAsync()
     /// - Options -> IUINavigationService.PushAsync(optionsPageAddress)
     /// - Credits -> IUINavigationService.PushAsync(creditsPageAddress)
+    /// - Shop -> IUINavigationService.PushAsync(shopPageAddress)
     /// - Exit -> Application.Quit()
     /// 
     /// Addresses are plain strings so you can plug your Addressable keys
@@ -27,10 +28,12 @@ namespace hp55games.Mobile.Game.UI
         [SerializeField] private Button playButton;
         [SerializeField] private Button optionsButton;
         [SerializeField] private Button creditsButton;
+        [SerializeField] private Button shopButton;
         [SerializeField] private Button exitButton;
 
         private string optionsPageAddress = Addr.Content.UI.Pages.Options_Page;
         private string creditsPageAddress = Addr.Content.UI.Pages.Credits_Page;
+        private string shopPageAddress = Addr.Content.UI.Pages.Periodic_Table_Shop_Page;
 
         private ISceneFlowService _sceneFlow;
         private IUINavigationService _navigation;
@@ -50,6 +53,7 @@ namespace hp55games.Mobile.Game.UI
             Bind(playButton, OnPlayClicked);
             Bind(optionsButton, OnOptionsClicked);
             Bind(creditsButton, OnCreditsClicked);
+            Bind(shopButton, OnShopClicked);
             Bind(exitButton, OnExitClicked);
         }
 
@@ -108,6 +112,23 @@ namespace hp55games.Mobile.Game.UI
             }
 
             AsyncUtils.FireAndForget(_navigation.PushAsync(creditsPageAddress), context: nameof(UIMainMenuPage));
+        }
+
+        private void OnShopClicked()
+        {
+            if (_navigation == null)
+            {
+                Debug.LogWarning("[UIMainMenuPage] Shop clicked but IUINavigationService is null.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(shopPageAddress))
+            {
+                Debug.LogWarning("[UIMainMenuPage] Shop clicked but shopPageAddress is empty.");
+                return;
+            }
+
+            AsyncUtils.FireAndForget(_navigation.PushAsync(shopPageAddress), context: nameof(UIMainMenuPage));
         }
 
         private void OnExitClicked()

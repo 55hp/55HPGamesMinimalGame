@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-22
   _displayName: Titanio
-  _costInCoins: -1
+  _costInCoins: 1791
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7490196, g: 0.7607843, b: 0.78039217, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 22
   _materialCategory: 0
   _densityNormalized: 0.8316
+  _unlockMethod: 1
+  _unlockAchievementId: 

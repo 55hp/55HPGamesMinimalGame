@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-84
   _displayName: Polonio
-  _costInCoins: -1
+  _costInCoins: 1898
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.67058825, g: 0.36078432, b: 0, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 84
   _materialCategory: 0
   _densityNormalized: 0.8868
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-95
   _displayName: Americio
-  _costInCoins: -1
+  _costInCoins: 1944
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.32941177, g: 0.36078432, b: 0.9490196, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 95
   _materialCategory: 0
   _densityNormalized: 0.9163
+  _unlockMethod: 1
+  _unlockAchievementId: 

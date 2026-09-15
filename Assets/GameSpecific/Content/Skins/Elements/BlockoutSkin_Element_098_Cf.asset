@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-98
   _displayName: Californio
-  _costInCoins: -1
+  _costInCoins: 1950
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.6313726, g: 0.21176471, b: 0.83137256, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 98
   _materialCategory: 0
   _densityNormalized: 0.9239
+  _unlockMethod: 1
+  _unlockAchievementId: 

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-20
   _displayName: Calcio
-  _costInCoins: -1
+  _costInCoins: 1808
   _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.23921569, g: 1, b: 0, a: 1}
@@ -23,3 +23,5 @@ MonoBehaviour:
   _atomicNumber: 20
   _materialCategory: 0
   _densityNormalized: 0.7486
+  _unlockMethod: 1
+  _unlockAchievementId: 
