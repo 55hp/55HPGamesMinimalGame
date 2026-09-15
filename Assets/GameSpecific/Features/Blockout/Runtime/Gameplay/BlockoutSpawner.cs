@@ -41,6 +41,11 @@ namespace hp55games.Blockout.Gameplay
         private IReadOnlyList<Color> _pieceColors;
         private IBlockoutClearBehaviour _clearBehaviour;
 
+        // Null for every non-element skin (Default, Profondita, Juicy Clear never had a material
+        // category) - WellCellRenderer.ShowCell treats null the same as Opaque. Sourced from
+        // BlockoutGameplayState.StartSpawning alongside pieceColors/clearBehaviour.
+        private PieceMaterialCategory? _materialCategory;
+
         // The active piece's currently-shown cell positions and color: tracked so a change in
         // GridPosition/Shape (fall step, move, rotate, hard drop) hides exactly the old set and
         // shows exactly the new one, instead of re-showing every cell every frame regardless of
@@ -69,10 +74,11 @@ namespace hp55games.Blockout.Gameplay
         // IConfigCatalogService/IBlockoutSkinService wired up (mirrors PieceController.Initialize).
         // Called by BlockoutGameplayState.EnterAsync, which is the sole entry point - this class
         // doesn't self-start.
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, IReadOnlyList<Color> pieceColors, IBlockoutClearBehaviour clearBehaviour)
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, IReadOnlyList<Color> pieceColors, IBlockoutClearBehaviour clearBehaviour, PieceMaterialCategory? materialCategory = null)
         {
             _pieceColors = pieceColors;
             _clearBehaviour = clearBehaviour;
+            _materialCategory = materialCategory;
 
             // Fresh per run, per spec (the session timer restarts from zero on every new game) -
             // dispose the previous run's subscription before replacing it.
@@ -143,7 +149,7 @@ namespace hp55games.Blockout.Gameplay
                 foreach (var cell in _shownCells) _cellRenderer.HideCell(cell);
             }
 
-            foreach (var cell in newCells) _cellRenderer.ShowCell(cell, _activeColor);
+            foreach (var cell in newCells) _cellRenderer.ShowCell(cell, _activeColor, _materialCategory);
             _shownCells = newCells;
         }
 
@@ -208,7 +214,7 @@ namespace hp55games.Blockout.Gameplay
 
                 // Recolors the already-shown cells in place (ShowCell again at the same position),
                 // rather than hiding and re-showing them - that's the "locked cell" placeholder.
-                foreach (var cell in _shownCells) _cellRenderer.ShowCell(cell, lockedColor);
+                foreach (var cell in _shownCells) _cellRenderer.ShowCell(cell, lockedColor, _materialCategory);
             }
 
             // These cells are now permanent (locked), not "the active piece" anymore - nothing

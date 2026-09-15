@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
@@ -166,6 +167,34 @@ namespace hp55games.Blockout.Tests
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(cellRenderer.gameObject);
+        }
+
+        [Test]
+        public void Initialize_ForwardsMaterialCategory_ToEveryShownCell()
+        {
+            // Periodic Table GDD: BlockoutGameplayState.StartSpawning computes this from the
+            // active skin (null for a non-element skin) and passes it straight through.
+            var cellRenderer = CreateCellRenderer();
+            var metallic = new Material(Shader.Find("Sprites/Default"));
+            typeof(WellCellRenderer).GetField("_metallicMaterial", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(cellRenderer, metallic);
+            var grid = new VoxelGrid(3, 5, 3);
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 3, 5, 3, TestPieceColors, null, PieceMaterialCategory.Metallic);
+
+            var shownAt = spawner.CurrentPiece.GridPosition;
+            var shownCells = (Dictionary<Vector3Int, PooledObject>)typeof(WellCellRenderer)
+                .GetField("_shownCells", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(cellRenderer);
+            var actualMaterial = shownCells[shownAt].GetComponent<Renderer>().sharedMaterial;
+
+            Assert.AreEqual(metallic, actualMaterial);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(cellRenderer.gameObject);
+            Object.DestroyImmediate(metallic);
         }
 
         [UnityTest]

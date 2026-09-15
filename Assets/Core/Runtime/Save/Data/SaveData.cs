@@ -6,7 +6,11 @@ namespace hp55games.Mobile.Core.Save
     [Serializable]
     public class SaveData
     {
-        public int coins;
+        // Starting balance for a fresh save (no save.json on disk yet - see SaveService.Load).
+        // 1000 by design: enough to test unlocking once the 118 elements have a real cost, still
+        // not enough to unlock everything at once. Irrelevant once a save exists - this default
+        // only applies before the very first Save().
+        public int coins = 1000;
 
         /// <summary>
         /// SkinId of the currently active cosmetic skin (Blockout skin system). Empty/null means

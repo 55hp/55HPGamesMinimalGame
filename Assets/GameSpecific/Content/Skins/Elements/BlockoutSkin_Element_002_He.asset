@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 197d311f23f24ece805ad83597fe353a, type: 3}
+  m_Name: BlockoutSkin_Element_002_He
+  m_EditorClassIdentifier: 
+  _skinId: element-2
+  _displayName: Elio
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _pieceColors:
+  - {r: 0.8509804, g: 1, b: 1, a: 1}
+  _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _elementSymbol: He
+  _atomicNumber: 2
+  _materialCategory: 2
+  _densityNormalized: 0.0527
