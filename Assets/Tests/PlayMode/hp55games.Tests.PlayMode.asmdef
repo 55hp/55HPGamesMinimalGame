@@ -6,7 +6,9 @@
         "UnityEditor.TestRunner",
         "Core.Runtime",
         "UI.Runtime",
-        "Game.Features"
+        "Game.Features",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
