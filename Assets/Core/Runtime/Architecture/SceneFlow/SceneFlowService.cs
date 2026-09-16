@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using hp55games.Mobile.Core;
 using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Architecture.States;
@@ -18,7 +19,12 @@ namespace hp55games.Mobile.Game.SceneFlow
         private readonly IUIOverlayService  _overlay;
         private readonly ISceneFlowConfig   _config;
         private bool _isTransitioning;
-        private AsyncOperation _gameplayPreload;
+
+        // True once StartGameplayPreload() has been called; true again (separately) once that
+        // load has actually finished and its scene roots have been deactivated - see
+        // StartGameplayPreload's remarks for why this no longer uses allowSceneActivation=false.
+        private bool _gameplayPreloadRequested;
+        private bool _gameplayPreloadReady;
 
         private string MenuSceneName     => _config?.MenuScene     ?? "01_Menu";
         private string GameplaySceneName => _config?.GameplayScene  ?? "02_Gameplay";
@@ -41,9 +47,36 @@ namespace hp55games.Mobile.Game.SceneFlow
 
         public void StartGameplayPreload()
         {
-            if (_gameplayPreload != null) return;
-            _gameplayPreload = SceneManager.LoadSceneAsync(GameplaySceneName, LoadSceneMode.Additive);
-            _gameplayPreload.allowSceneActivation = false;
+            if (_gameplayPreloadRequested) return;
+            _gameplayPreloadRequested = true;
+            AsyncUtils.FireAndForget(StartGameplayPreloadAsync(), context: nameof(SceneFlowService));
+        }
+
+        // Loads the gameplay scene all the way through instead of pausing it at 90% via
+        // allowSceneActivation = false. On device, a load parked at 90% was found to stall OTHER,
+        // unrelated async loads (Addressables UI page pushes - see 01_fsm_shop_bug.md follow-up)
+        // for as long as it stayed paused - only resolving once something (Play) finally set
+        // allowSceneActivation = true. Letting the load genuinely finish, then deactivating its
+        // root GameObjects so it stays invisible/inert until Play, avoids ever holding that
+        // stall state while still keeping the "already loaded when Play is pressed" benefit this
+        // preload exists for.
+        private async Task StartGameplayPreloadAsync()
+        {
+            var op = SceneManager.LoadSceneAsync(GameplaySceneName, LoadSceneMode.Additive);
+            while (op != null && !op.isDone) await Task.Yield();
+
+            var scene = SceneManager.GetSceneByName(GameplaySceneName);
+            if (scene.IsValid()) SetSceneRootsActive(scene, false);
+
+            _gameplayPreloadReady = true;
+        }
+
+        private static void SetSceneRootsActive(Scene scene, bool active)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                root.SetActive(active);
+            }
         }
 
         // Lets a specific game (e.g. Blockout) supply its own IGameplayState for the FSM's
@@ -151,14 +184,15 @@ namespace hp55games.Mobile.Game.SceneFlow
             Debug.Log("[SceneFlowService] GoToMenuAsync()");
             await RunWithOverlay(async () =>
             {
-                // If a gameplay preload is in progress (allowSceneActivation = false),
-                // activate it so Unity can finalise the load, then immediately unload it.
-                // Leaving it blocked at 90% with allowSceneActivation=false leaks memory.
-                if (_gameplayPreload != null)
+                // If a gameplay preload was started, wait for it to actually finish loading
+                // (rare - only matters if this runs before StartGameplayPreloadAsync's own load
+                // has completed) before unloading it; no reactivation needed since it's being
+                // torn down anyway.
+                if (_gameplayPreloadRequested)
                 {
-                    _gameplayPreload.allowSceneActivation = true;
-                    while (!_gameplayPreload.isDone) await Task.Yield();
-                    _gameplayPreload = null;
+                    while (!_gameplayPreloadReady) await Task.Yield();
+                    _gameplayPreloadRequested = false;
+                    _gameplayPreloadReady = false;
                 }
 
                 await UnloadSceneIfLoadedAsync(GameplaySceneName);
@@ -183,11 +217,16 @@ namespace hp55games.Mobile.Game.SceneFlow
             {
                 await UnloadSceneIfLoadedAsync(ResultsSceneName);
 
-                if (_gameplayPreload != null)
+                if (_gameplayPreloadRequested)
                 {
-                    _gameplayPreload.allowSceneActivation = true;
-                    while (!_gameplayPreload.isDone) await Task.Yield();
-                    _gameplayPreload = null;
+                    // Wait for the background load to actually finish if it hasn't yet (only
+                    // possible if Play is tapped almost immediately after the menu appears).
+                    while (!_gameplayPreloadReady) await Task.Yield();
+                    _gameplayPreloadRequested = false;
+                    _gameplayPreloadReady = false;
+
+                    var preloadedScene = SceneManager.GetSceneByName(GameplaySceneName);
+                    if (preloadedScene.IsValid()) SetSceneRootsActive(preloadedScene, true);
                 }
                 else
                 {
