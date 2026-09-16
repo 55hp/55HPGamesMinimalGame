@@ -1096,7 +1096,7 @@ MonoBehaviour:
   playButton: {fileID: 4390274861153177257}
   optionsButton: {fileID: 5634042129638252495}
   creditsButton: {fileID: 5303602280064287943}
-  shopButton: {fileID: 0}
+  shopButton: {fileID: 5952492781792595036}
   exitButton: {fileID: 2557269826629425576}
 --- !u!225 &3735918765278994666
 CanvasGroup:
