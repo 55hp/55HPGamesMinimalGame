@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.InputSystem;
-using hp55games.Blockout.Config;
+using hp55games.Blockout.Gameplay;
 
 namespace hp55games.Blockout.InputSystem
 {
@@ -27,8 +28,7 @@ namespace hp55games.Blockout.InputSystem
 
         private IInputService _input;
         private IEventBus _eventBus;
-        private int _wellWidth;
-        private int _wellDepth;
+        private BlockoutSpawner _spawner;
 
         private bool _tapPending;
         private float _tapPendingSince;
@@ -54,24 +54,6 @@ namespace hp55games.Blockout.InputSystem
                 return;
             }
 
-            if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService))
-            {
-                Debug.LogError("[BlockoutInputHandler] IConfigCatalogService is not registered - add a ConfigCatalogInstaller (with a populated ConfigCatalog) to the scene.", this);
-                enabled = false;
-                return;
-            }
-
-            var wellConfig = catalogService.Get<BlockoutWellConfig>();
-            if (wellConfig == null)
-            {
-                Debug.LogError("[BlockoutInputHandler] No BlockoutWellConfig found in the catalog.", this);
-                enabled = false;
-                return;
-            }
-
-            _wellWidth = wellConfig.Width;
-            _wellDepth = wellConfig.Depth;
-
             _input.Tap += HandleTap;
             _input.Swipe += HandleSwipe;
         }
@@ -92,7 +74,11 @@ namespace hp55games.Blockout.InputSystem
             if (_tapPending && Time.unscaledTime - _tapPendingSince > DoubleTapWindowSeconds)
             {
                 _tapPending = false;
-                if (TryResolveMoveDirection(_tapPendingScreenPosition, out var direction))
+
+                // A tap has no directional delta to rotate by, so a tap landing on the piece's
+                // own footprint is simply consumed with no effect - only a miss resolves into a
+                // move. See 03_input_translation_raycast.md.
+                if (TryResolveGestureAgainstPiece(_tapPendingScreenPosition, out bool hitPiece, out var direction) && !hitPiece)
                 {
                     _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
                 }
@@ -117,6 +103,17 @@ namespace hp55games.Blockout.InputSystem
 
         private void HandleSwipe(Vector2 start, Vector2 end)
         {
+            // Raycast-gated per 03_input_translation_raycast.md: a swipe starting on the active
+            // piece rotates (existing logic below, unchanged); a swipe starting off the piece
+            // translates instead. If the raycast can't resolve at all (no active piece / no
+            // camera yet), fall back to the old unconditional-rotate behavior rather than
+            // dropping the input.
+            if (TryResolveGestureAgainstPiece(start, out bool hitPiece, out var direction) && !hitPiece)
+            {
+                _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
+                return;
+            }
+
             var delta = end - start;
 
             // Swipe left/right -> AxisA, swipe up/down -> AxisB (per spec). Which physical
@@ -132,15 +129,24 @@ namespace hp55games.Blockout.InputSystem
             }
         }
 
-        // Camera-relative by construction: raycasts the tap through the actual camera into world
-        // space and compares against the well's real world bounds, so the result is correct
-        // regardless of camera angle - never inferred from raw screen-space halves/quadrants.
-        private bool TryResolveMoveDirection(Vector2 screenPosition, out MoveDirection direction)
+        // Raycasts a screen point vertically (via the ground plane, camera-relative so it's
+        // correct regardless of camera angle) against the active piece's occupied cells. A hit
+        // means the point landed on the piece's own X/Z footprint; a miss returns the direction
+        // from the piece's pivot (GridPosition - the shape's local-space anchor, per
+        // PolycubeShape/PieceController) to the point instead - no dead zone, works from anywhere
+        // on screen including edges. Returns false only when there's nothing to resolve against
+        // (no camera, or no active piece - e.g. between spawns).
+        private bool TryResolveGestureAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
         {
+            hitPiece = false;
             direction = default;
 
             var camera = _camera != null ? _camera : Camera.main;
             if (camera == null) return false;
+
+            if (_spawner == null) _spawner = FindObjectOfType<BlockoutSpawner>();
+            var piece = _spawner != null ? _spawner.CurrentPiece : null;
+            if (piece == null) return false;
 
             var origin = _wellOrigin != null ? _wellOrigin.position : Vector3.zero;
             var plane = new Plane(Vector3.up, origin);
@@ -148,23 +154,32 @@ namespace hp55games.Blockout.InputSystem
             if (!plane.Raycast(ray, out float distance)) return false;
 
             var local = ray.GetPoint(distance) - origin;
+            var gridPosition = piece.GridPosition;
+            IReadOnlyList<Vector3Int> cells = piece.Shape.Cells;
 
-            // The well's cubes sit at integer grid coordinates [0, width) x [0, depth), each
-            // physically occupying +/- CellHalfExtent - see BlockoutSpawner.CenteredTopStart.
-            float minX = -CellHalfExtent;
-            float maxX = _wellWidth - 1 + CellHalfExtent;
-            float minZ = -CellHalfExtent;
-            float maxZ = _wellDepth - 1 + CellHalfExtent;
+            foreach (var cell in cells)
+            {
+                float cellX = gridPosition.x + cell.x;
+                float cellZ = gridPosition.z + cell.z;
 
-            float xOvershoot = local.x < minX ? minX - local.x : local.x > maxX ? local.x - maxX : 0f;
-            float zOvershoot = local.z < minZ ? minZ - local.z : local.z > maxZ ? local.z - maxZ : 0f;
+                // Same +/- CellHalfExtent footprint each cube physically occupies, as used
+                // elsewhere in this file.
+                if (local.x >= cellX - CellHalfExtent && local.x <= cellX + CellHalfExtent
+                    && local.z >= cellZ - CellHalfExtent && local.z <= cellZ + CellHalfExtent)
+                {
+                    hitPiece = true;
+                    break;
+                }
+            }
 
-            if (xOvershoot <= 0f && zOvershoot <= 0f) return false; // tap landed inside the well - no move
+            if (hitPiece) return true;
 
-            if (xOvershoot >= zOvershoot)
-                direction = local.x < minX ? MoveDirection.Left : MoveDirection.Right;
-            else
-                direction = local.z < minZ ? MoveDirection.Back : MoveDirection.Forward;
+            float dx = local.x - gridPosition.x;
+            float dz = local.z - gridPosition.z;
+
+            direction = Mathf.Abs(dx) >= Mathf.Abs(dz)
+                ? (dx >= 0f ? MoveDirection.Right : MoveDirection.Left)
+                : (dz >= 0f ? MoveDirection.Forward : MoveDirection.Back);
 
             return true;
         }

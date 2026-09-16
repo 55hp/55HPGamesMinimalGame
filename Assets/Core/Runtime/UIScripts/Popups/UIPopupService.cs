@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -22,7 +23,25 @@ namespace hp55games.Mobile.UI
             _ui = UIRoot.FindOrCache();
         }
 
-        public async Task<GameObject> OpenAsync(string address)
+        public Task<GameObject> OpenAsync(string address) => OpenAsyncCore(address, null);
+
+        public async Task<T> OpenAsync<T>(string address) where T : Component
+        {
+            var go = await OpenAsyncCore(address, null);
+            return go ? go.GetComponent<T>() : null;
+        }
+
+        public async Task<T> OpenAsync<T>(string address, Action<T> configure) where T : Component
+        {
+            var go = await OpenAsyncCore(address, configure == null ? null : go2 =>
+            {
+                var component = go2.GetComponent<T>();
+                if (component != null) configure(component);
+            });
+            return go ? go.GetComponent<T>() : null;
+        }
+
+        private async Task<GameObject> OpenAsyncCore(string address, Action<GameObject> configureBeforeShow)
         {
             await EnsureUIRootAsync();
             if (_ui == null) return null;
@@ -31,6 +50,11 @@ namespace hp55games.Mobile.UI
             var popup = await _loader.InstantiateAsync(address, _ui.modals);
             if (popup == null) return null;
 
+            // Applied before the popup joins _opened / the scrim starts fading in, so nothing
+            // stale (the prefab's authored defaults) is ever actually rendered - see
+            // IUIPopupService.OpenAsync<T>(address, configure) remarks.
+            configureBeforeShow?.Invoke(popup);
+
             _opened.Add(popup);
 
             // mostra scrim se è il primo
@@ -38,12 +62,6 @@ namespace hp55games.Mobile.UI
                 await ScrimFadeToAsync(SCRIM_TARGET_ALPHA, true);
 
             return popup;
-        }
-
-        public async Task<T> OpenAsync<T>(string address) where T : Component
-        {
-            var go = await OpenAsync(address);
-            return go ? go.GetComponent<T>() : null;
         }
 
         public void Close(GameObject popup)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
@@ -26,15 +27,24 @@ namespace hp55games.Mobile.UI
 
         public bool CanGoBack => _stack.Count > 1;
 
-        public async Task PushAsync(string address)
+        public async Task PushAsync(string address, CancellationToken ct = default)
         {
             await EnsurePagesRootAsync();
-            if (_pagesRoot == null) return;
+            if (_pagesRoot == null || ct.IsCancellationRequested) return;
 
             var go = await _loader.InstantiateAsync(address, _pagesRoot);
             if (go == null)
             {
                 Debug.LogError($"[UINavigationService] Instanziazione pagina fallita: '{address}'");
+                return;
+            }
+
+            // Superseded while the Addressables load was in flight (e.g. Play tapped after a Shop
+            // push was already loading) - discard the now-stale page before it ever becomes
+            // visible or touches the stack, rather than stacking it on top of whatever's current.
+            if (ct.IsCancellationRequested)
+            {
+                _loader.ReleaseInstance(go);
                 return;
             }
 

@@ -71,6 +71,15 @@ namespace hp55games.Blockout.Gameplay
                 _bonusCoinsThisRun = 0;
                 _achievements?.RecordLoginForToday(); // Shop GDD login-streak family - once per fresh session, not on resume
 
+                // Attaches the runtime FOV fit (see 02_camera_investigation.md) to whatever camera
+                // is tagged MainCamera in this scene - only needed once per fresh entry, since the
+                // component and its GameObject both survive a pause/resume.
+                var mainCamera = UnityEngine.Camera.main;
+                if (mainCamera != null && mainCamera.GetComponent<BlockoutWellCamera>() == null)
+                {
+                    mainCamera.gameObject.AddComponent<BlockoutWellCamera>();
+                }
+
                 var navigation = ServiceRegistry.Resolve<IUINavigationService>();
                 await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
 

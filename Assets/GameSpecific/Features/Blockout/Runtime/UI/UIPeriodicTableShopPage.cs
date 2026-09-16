@@ -38,9 +38,13 @@ namespace hp55games.Blockout.UI
         [Header("Navigation")]
         [SerializeField] private Button _backButton;
 
+        [Header("Currency")]
+        [SerializeField] private TMP_Text _coinsBalanceLabel;
+
         private IBlockoutSkinService _skinService;
         private IUIPopupService _popupService;
         private IUINavigationService _navigation;
+        private ISaveService _save;
 
         private readonly List<BlockoutSkinShopEntry> _lanthanides = new();
         private readonly List<BlockoutSkinShopEntry> _actinides = new();
@@ -50,6 +54,7 @@ namespace hp55games.Blockout.UI
             ServiceRegistry.TryResolve(out _skinService);
             ServiceRegistry.TryResolve(out _popupService);
             ServiceRegistry.TryResolve(out _navigation);
+            ServiceRegistry.TryResolve(out _save);
 
             EnsureFullScreenRect();
 
@@ -110,22 +115,23 @@ namespace hp55games.Blockout.UI
             if (sizeFitter == null) sizeFitter = _seriesSubViewContainer.gameObject.AddComponent<ContentSizeFitter>();
             sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // A ScrollRect already targeting this container (however Bezi wired it) is left
-            // alone; one is added only if genuinely missing, treating the container's own parent
-            // as the viewport (the simplest valid ScrollRect setup - a nested dedicated Viewport
-            // object is an Editor-side refinement Bezi can still add later without this breaking).
-            if (_seriesSubViewContainer.GetComponentInParent<ScrollRect>() == null
-                && _seriesSubViewContainer.parent is RectTransform viewport)
-            {
-                var scrollRect = viewport.gameObject.AddComponent<ScrollRect>();
-                if (viewport.GetComponent<RectMask2D>() == null) viewport.gameObject.AddComponent<RectMask2D>();
+            // The prefab owns the series ScrollRect. Resolve it even while the series panel is inactive;
+            // otherwise GetComponentInParent without includeInactive falls through to a duplicate setup.
+            if (!(_seriesSubViewContainer.parent is RectTransform viewport)) return;
 
-                scrollRect.content = _seriesSubViewContainer;
-                scrollRect.viewport = viewport;
-                scrollRect.horizontal = true;
-                scrollRect.vertical = false;
-                scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            var scrollRect = _seriesSubViewContainer.GetComponentInParent<ScrollRect>(true);
+            if (scrollRect == null) scrollRect = viewport.GetComponent<ScrollRect>();
+            if (scrollRect == null)
+            {
+                Debug.LogError("[UIPeriodicTableShopPage] Series ScrollRect is not configured.", this);
+                return;
             }
+
+            scrollRect.content = _seriesSubViewContainer;
+            scrollRect.viewport = viewport;
+            scrollRect.horizontal = true;
+            scrollRect.vertical = false;
+            scrollRect.movementType = ScrollRect.MovementType.Elastic;
         }
 
         // Rebuilds the whole main grid from the current shop state - cheap enough at 118 entries
@@ -139,6 +145,7 @@ namespace hp55games.Blockout.UI
                 return;
             }
 
+            RefreshCoinsBalance();
             ClearContainer(_mainGridContainer);
 
             var entries = _skinService.GetElementShopEntries();
@@ -176,6 +183,16 @@ namespace hp55games.Blockout.UI
                     }
                 }
             }
+        }
+
+        // The prefab's CoinsBalanceLabel shipped with a hardcoded "Coins: 1000" placeholder - kept
+        // live here rather than via IEventBus, since BuildGrid already re-runs (Awake, and after
+        // every select/unlock via the card's onChanged callback) at exactly the moments the
+        // balance can change, same as the rest of this page's "rebuild the whole grid" approach.
+        private void RefreshCoinsBalance()
+        {
+            if (_coinsBalanceLabel == null) return;
+            _coinsBalanceLabel.text = _save != null ? $"Coins: {_save.Data.coins}" : string.Empty;
         }
 
         // period/group 3 in periods 6 and 7 is where the lanthanide/actinide block would sit in
@@ -217,12 +234,19 @@ namespace hp55games.Blockout.UI
         {
             if (_popupService == null) return;
 
-            var card = await _popupService.OpenAsync<UIPeriodicElementCard>(Addr.Content.UI.Popups.Periodic_Element_Card);
-            // Refresh callback rebuilds the whole grid (and, if the sub-view is open, the caller
-            // would need to reopen it to see it refreshed too - acceptable: the sub-view sits on
-            // top of the main grid, and closing/reopening it after a change is a minor rough edge
-            // Franci/Bezi can smooth over in Editor, not a functional gap).
-            card?.Configure(entry, BuildGrid);
+            // Configure runs before the popup is shown (see IUIPopupService.OpenAsync<T>(address,
+            // configure)) - previously it ran after OpenAsync returned, so the card was already
+            // visible (for the whole scrim fade) showing the prefab's stale/default content
+            // before Configure applied the real entry.
+            await _popupService.OpenAsync<UIPeriodicElementCard>(Addr.Content.UI.Popups.Periodic_Element_Card, card =>
+            {
+                // Refresh callback rebuilds the whole grid (and, if the sub-view is open, the
+                // caller would need to reopen it to see it refreshed too - acceptable: the
+                // sub-view sits on top of the main grid, and closing/reopening it after a change
+                // is a minor rough edge Franci/Bezi can smooth over in Editor, not a functional
+                // gap).
+                card.Configure(entry, BuildGrid);
+            });
         }
 
         private async void OnBackClicked()

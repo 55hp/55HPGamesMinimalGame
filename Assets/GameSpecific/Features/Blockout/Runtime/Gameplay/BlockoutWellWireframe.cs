@@ -4,9 +4,10 @@ using hp55games.Blockout.Config;
 
 namespace hp55games.Blockout.Gameplay
 {
-    // TEMP depth-perception scaffolding: draws a wireframe grid on the well's 4 side walls,
-    // spanning the full well height, matching the original Blockout's green-tunnel reference look
-    // - without it a down-the-shaft camera gives no readable sense of how deep a piece is.
+    // TEMP depth-perception scaffolding: draws a wireframe grid on the well's 4 side walls and
+    // floor, spanning the full well height, matching the original Blockout's green-tunnel
+    // reference look - without it a down-the-shaft camera gives no readable sense of how deep a
+    // piece is.
     // LineRenderer-based so it actually renders in Play mode (not just Scene view gizmos). Not
     // wired into WellCellRenderer - that's still Phase 5, out of scope. Likely replaced by real
     // level geometry later.
@@ -23,7 +24,7 @@ namespace hp55games.Blockout.Gameplay
         // the wireframe lines up exactly with the well's physical walls.
         private const float CellHalfExtent = 0.5f;
 
-        private enum FixedAxis { X, Z }
+        private enum FixedAxis { X, Y, Z }
 
         private void Start()
         {
@@ -68,10 +69,16 @@ namespace hp55games.Blockout.Gameplay
             // each X column boundary.
             BuildWall(origin, material, FixedAxis.Z, zMin, xMin, xMax, width, yMin, yMax, height);
             BuildWall(origin, material, FixedAxis.Z, zMax, xMin, xMax, width, yMin, yMax, height);
+
+            // The floor at y = yMin: lines parallel to X at each Z row, lines parallel to Z at
+            // each X column boundary. Same BuildWall shape as a wall - just with Y as the fixed
+            // axis and both remaining axes horizontal instead of one being vertical.
+            BuildWall(origin, material, FixedAxis.Y, yMin, xMin, xMax, width, zMin, zMax, depth);
         }
 
-        // Draws one wall's grid: (yCount+1) horizontal lines spanning u, and (uCount+1) vertical
-        // lines spanning y. `u` is Z for an X-fixed wall, or X for a Z-fixed wall.
+        // Draws one wall/floor's grid: (yCount+1) lines spanning u, and (uCount+1) lines spanning
+        // y. `u` and `y` are just the plane's two free axes - for an X/Z-fixed wall, `y` is world
+        // Y; for the Y-fixed floor, `y` is world Z. See PointOn for the axis mapping.
         private void BuildWall(Vector3 origin, Material material, FixedAxis fixedAxis, float fixedValue,
             float uMin, float uMax, int uCount, float yMin, float yMax, int yCount)
         {
@@ -88,8 +95,12 @@ namespace hp55games.Blockout.Gameplay
             }
         }
 
-        private static Vector3 PointOn(FixedAxis fixedAxis, float fixedValue, float u, float y) =>
-            fixedAxis == FixedAxis.X ? new Vector3(fixedValue, y, u) : new Vector3(u, y, fixedValue);
+        private static Vector3 PointOn(FixedAxis fixedAxis, float fixedValue, float u, float y) => fixedAxis switch
+        {
+            FixedAxis.X => new Vector3(fixedValue, y, u),
+            FixedAxis.Z => new Vector3(u, y, fixedValue),
+            _ => new Vector3(u, fixedValue, y), // FixedAxis.Y (floor): free axes are X and Z.
+        };
 
         private void CreateLine(Vector3 origin, Material material, Vector3 localA, Vector3 localB)
         {

@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.SceneFlow;
@@ -38,6 +39,11 @@ namespace hp55games.Mobile.Game.UI
         private ISceneFlowService _sceneFlow;
         private IUINavigationService _navigation;
 
+        // Cancelled/replaced whenever a new push-triggering button is tapped (Options/Credits/
+        // Shop/Play), so a stale in-flight push (e.g. Shop, still loading via Addressables) can
+        // never land after a later action - see 01_fsm_shop_bug.md.
+        private CancellationTokenSource _pendingPushCts;
+
         private void Awake()
         {
             if (!ServiceRegistry.TryResolve<ISceneFlowService>(out _sceneFlow))
@@ -64,6 +70,10 @@ namespace hp55games.Mobile.Game.UI
                 Debug.LogWarning("[UIMainMenuPage] Play clicked but ISceneFlowService is null.");
                 return;
             }
+
+            // Supersede any Options/Credits/Shop push still loading - it must not land after we've
+            // already moved on to gameplay.
+            _pendingPushCts?.Cancel();
 
             AsyncUtils.FireAndForget(OnPlayClickedAsync(), context: nameof(UIMainMenuPage));
         }
@@ -94,7 +104,7 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            AsyncUtils.FireAndForget(_navigation.PushAsync(optionsPageAddress), context: nameof(UIMainMenuPage));
+            PushPage(optionsPageAddress);
         }
 
         private void OnCreditsClicked()
@@ -111,7 +121,7 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            AsyncUtils.FireAndForget(_navigation.PushAsync(creditsPageAddress), context: nameof(UIMainMenuPage));
+            PushPage(creditsPageAddress);
         }
 
         private void OnShopClicked()
@@ -128,7 +138,17 @@ namespace hp55games.Mobile.Game.UI
                 return;
             }
 
-            AsyncUtils.FireAndForget(_navigation.PushAsync(shopPageAddress), context: nameof(UIMainMenuPage));
+            PushPage(shopPageAddress);
+        }
+
+        // Cancels whatever push is still in flight (e.g. a rapid re-tap, or Options/Credits/Shop
+        // tapped one after another) before starting a new one, so only the most recent request can
+        // ever land - see 01_fsm_shop_bug.md.
+        private void PushPage(string address)
+        {
+            _pendingPushCts?.Cancel();
+            _pendingPushCts = new CancellationTokenSource();
+            AsyncUtils.FireAndForget(_navigation.PushAsync(address, _pendingPushCts.Token), context: nameof(UIMainMenuPage));
         }
 
         private void OnExitClicked()
