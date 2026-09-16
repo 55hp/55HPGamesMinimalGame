@@ -10,6 +10,12 @@ using hp55games.Mobile.Core.UI;
 
 namespace hp55games.Mobile.Game.SceneFlow
 {
+    // Warning for anyone adding a new preload/background scene load here: do NOT use
+    // AsyncOperation.allowSceneActivation = false on a scene that might load while other
+    // Addressables operations (page navigation, popups, etc.) could be in flight - it holds the
+    // shared loading pipeline busy until activated, and can silently stall those other
+    // operations for as long as it stays paused. See StartGameplayPreloadAsync's remarks for the
+    // worked example/rationale (it used to do exactly this, and no longer does).
     public sealed class SceneFlowService : ISceneFlowService
     {
         private const float FadeDuration    = 0.25f;
