@@ -56,82 +56,12 @@ namespace hp55games.Blockout.UI
             ServiceRegistry.TryResolve(out _navigation);
             ServiceRegistry.TryResolve(out _save);
 
-            EnsureFullScreenRect();
-
             Bind(_backButton, OnBackClicked);
             Bind(_seriesSubViewCloseButton, CloseSeriesSubView);
 
             if (_seriesSubViewPanel != null) _seriesSubViewPanel.SetActive(false);
 
-            EnsureSeriesSubViewIsScrollable();
             BuildGrid();
-        }
-
-        // Bug (Play Mode, 2026-09-15): the instantiated page sat at Width/Height 0 - Hierarchy
-        // showed its own RectTransform with AnchorMin == AnchorMax == (0,0) and no offset, i.e.
-        // a point anchor with zero sizeDelta, not stretched to fill its parent (Layer_Pages).
-        // That's what AddComponent<RectTransform>() (or a script dragged onto a plain empty
-        // GameObject) leaves you with by default - it's never set by the "GameObject > UI > ..."
-        // creation menu, only by hand afterward, and this prefab's root apparently never got that
-        // manual step. Forced here in code instead of trusted from the prefab (same "don't depend
-        // on Editor setup being exactly right" approach as EnsureSeriesSubViewIsScrollable and
-        // UIPeriodicElementCell's Outline fallback) - the whole point of a Page root is to fill
-        // whatever the navigation service parents it under, so there's no case where anything
-        // other than full-stretch, zero-offset is correct for it.
-        private void EnsureFullScreenRect()
-        {
-            var rect = transform as RectTransform;
-            if (rect == null) return;
-
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-        }
-
-        // Bug (Bezi visual QA, 2026-09-15): _seriesSubViewContainer had neither a layout group
-        // nor a ScrollRect, so the 15 instantiated cells all landed at the same position and
-        // overlapped instead of laying out in a scrollable row (GDD: "due file di caselle
-        // scorrevoli orizzontalmente"). Ensured here in code rather than assumed from the prefab
-        // - same "don't depend on Editor setup being exactly right" approach already used for
-        // WellCellRenderer's fallback cube / BlockoutWellWireframe's runtime-built lines. Existing
-        // Inspector-authored components (if Bezi already added some of these) are left as-is;
-        // only what's actually missing gets added.
-        private void EnsureSeriesSubViewIsScrollable()
-        {
-            if (_seriesSubViewContainer == null) return;
-
-            var layoutGroup = _seriesSubViewContainer.GetComponent<HorizontalLayoutGroup>();
-            if (layoutGroup == null) layoutGroup = _seriesSubViewContainer.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layoutGroup.childControlWidth = false;
-            layoutGroup.childControlHeight = true;
-            layoutGroup.childForceExpandWidth = false;
-            layoutGroup.childForceExpandHeight = true;
-            layoutGroup.childAlignment = TextAnchor.MiddleLeft;
-            layoutGroup.spacing = 8f;
-
-            var sizeFitter = _seriesSubViewContainer.GetComponent<ContentSizeFitter>();
-            if (sizeFitter == null) sizeFitter = _seriesSubViewContainer.gameObject.AddComponent<ContentSizeFitter>();
-            sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            // The prefab owns the series ScrollRect. Resolve it even while the series panel is inactive;
-            // otherwise GetComponentInParent without includeInactive falls through to a duplicate setup.
-            if (!(_seriesSubViewContainer.parent is RectTransform viewport)) return;
-
-            var scrollRect = _seriesSubViewContainer.GetComponentInParent<ScrollRect>(true);
-            if (scrollRect == null) scrollRect = viewport.GetComponent<ScrollRect>();
-            if (scrollRect == null)
-            {
-                Debug.LogError("[UIPeriodicTableShopPage] Series ScrollRect is not configured.", this);
-                return;
-            }
-
-            scrollRect.content = _seriesSubViewContainer;
-            scrollRect.viewport = viewport;
-            scrollRect.horizontal = true;
-            scrollRect.vertical = false;
-            scrollRect.movementType = ScrollRect.MovementType.Elastic;
         }
 
         // Rebuilds the whole main grid from the current shop state - cheap enough at 118 entries
