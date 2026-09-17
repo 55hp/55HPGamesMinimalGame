@@ -20,8 +20,7 @@ namespace hp55games.Blockout.Gameplay
     // the well's X/Z in the scene) still costs frustum on BOTH edges - the fit uses whichever of
     // the two opposing insets/offsets is larger. Good enough to guarantee full, unoccluded
     // visibility; the well won't be perfectly re-centered in frame for a non-zero horizontal
-    // offset, only fully visible with the original padding preserved on its tightest side. A
-    // future asymmetric fit would need physical-camera lens shift instead.
+    // offset. A future asymmetric fit would need physical-camera lens shift instead.
     [RequireComponent(typeof(Camera))]
     public sealed class BlockoutWellCamera : MonoBehaviour
     {
@@ -31,9 +30,6 @@ namespace hp55games.Blockout.Gameplay
 
         [Tooltip("World-space origin of the well's (0,0,0) grid cell. Defaults to world origin, matching BlockoutSpawner's convention, if left empty.")]
         [SerializeField] private Transform _wellOrigin;
-
-        [Tooltip("Extra world-space padding added around the well's exact bounds so it doesn't render flush against the frame edge.")]
-        [SerializeField] private float _worldPadding = 0.5f;
 
         [Tooltip("UIGameHUD.prefab's Header RectTransform sizeDelta.y, in CanvasScaler reference-resolution units - currently the only screen space the gameplay HUD reserves (score/lives/pause all live inside that one top bar). Keep this in sync if Header's height ever changes.")]
         [SerializeField] private float _hudTopReservedCanvasUnits = 100f;
@@ -88,11 +84,10 @@ namespace hp55games.Blockout.Gameplay
             // for the intended scene-authored position, e.g. (2, 18, 2) over a 5x5 well centered
             // at (2, 2)) - if Bezi's scene Transform ever drifts from that, the frustum widens by
             // however far the camera actually is from that center, on each axis, to keep both of
-            // the well's edges in frame from its real position. This keeps the well fully visible
-            // with at least the original _worldPadding margin on every side, not perfectly
-            // re-centered in the frame - a symmetric FOV/aspect fit can't re-center for an
-            // off-axis camera without lens shift (see the class's own "Symmetric-frustum
-            // limitation" remarks - same constraint, different axis).
+            // the well's edges in frame from its real position. This keeps the well fully
+            // visible, not perfectly re-centered in the frame - a symmetric FOV/aspect fit can't
+            // re-center for an off-axis camera without lens shift (see the class's own
+            // "Symmetric-frustum limitation" remarks - same constraint, different axis).
             float wellCenterX = origin.x + (wellConfig.Width - 1) / 2f;
             float wellCenterZ = origin.z + (wellConfig.Depth - 1) / 2f;
             float cameraOffsetX = transform.position.x - wellCenterX;
@@ -101,17 +96,18 @@ namespace hp55games.Blockout.Gameplay
             // Horizontal (screen-width) padding is percentage-based, not world-space: a fixed
             // world-unit margin can't give a constant on-screen fraction on its own, since the
             // world-units-to-screen-fraction relationship depends on the FOV that the padding
-            // itself feeds into - circular in world-space. Instead, scale the offset-compensated
+            // itself feeds into - circular in world-space. Scale the offset-compensated
             // half-extent up so it sits at (1 - 2*fraction) of the way to the frame edge: the
             // well's own width (2x that half-extent) then occupies exactly (1 - 2*fraction) of
             // the frame width by construction, as a ratio - independent of FOV/aspect/distance.
-            // _worldPadding remains a minimum floor only, per BlockoutWellConfig's field doc.
             float rawHalfExtentX = wellConfig.Width / 2f + Mathf.Abs(cameraOffsetX);
             float horizontalPaddingFraction = Mathf.Clamp(wellConfig.HorizontalPaddingScreenFraction, 0f, 0.45f);
             float halfExtentX = rawHalfExtentX / (1f - 2f * horizontalPaddingFraction);
-            halfExtentX = Mathf.Max(halfExtentX, rawHalfExtentX + _worldPadding);
 
-            float halfExtentZ = wellConfig.Depth / 2f + _worldPadding + Mathf.Abs(cameraOffsetZ);
+            // Vertical/depth axis has no padding at all - only the horizontal axis gets a margin
+            // (HorizontalPaddingScreenFraction, above). The well's depth edge sits exactly at the
+            // frame boundary when the camera is centered on Z.
+            float halfExtentZ = wellConfig.Depth / 2f + Mathf.Abs(cameraOffsetZ);
             float wellTopY = origin.y + (wellConfig.Height - 1 + CellHalfExtent);
 
             // The well's top opening is nearest the camera (which looks straight down), so it
