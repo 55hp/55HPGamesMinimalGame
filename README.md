@@ -1,11 +1,36 @@
 # Blockout — Documento di progetto
 
-Tetris 3D con policubi in un pozzo 3D, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
+Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
-- Repo: `55hp/55HPGamesMinimalGame` — sviluppo su `develop`, `main` solo a milestone chiuse
-- Snapshot verificato sul codice: `develop` @ `91974d1` (17/09/2026)
-- Questo file sostituisce: `README.md` (overview generica del template), `TEMPLATE_REFERENCE.md`, `Blockout_Skin_System_GDD/Technical.md`, `Blockout_Periodic_Table_GDD/Technical.md`, `Blockout_Periodic_Table_Shop_GDD/Technical.md`
-- Fonti di design autorevoli: GDD e Documentazione Tecnica su Notion. Se questo file e il codice non coincidono, **vale il codice**. Aggiorna questo file quando cambia qualcosa di strutturale.
+- **Repo**: `55hp/55HPGamesMinimalGame`. Si lavora su `develop`; `main` riceve solo milestone chiuse.
+- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `61ecd21`.
+- **Fonti di verità**: il design (GDD e documentazione tecnica) sta su Notion. Se questo file e il codice non coincidono, **vale il codice**, e questo file va corretto nello stesso commit.
+- **Voci ⏳**: descrivono lo **stato target** del refactor authoring (§9). Finché il refactor non è chiuso, il codice può ancora non corrispondere.
+
+---
+
+## 0. Workflow e ownership (leggere prima di tutto)
+
+| Attore | Possiede | Non tocca |
+|---|---|---|
+| **Claude Code** (fuori Editor) | Script C#, test, asmdef, questo README | Scene, prefab, file `.asset`, impostazioni Addressables |
+| **Bezi** (dentro Unity Editor) | Scene, prefab, riferimenti in Inspector, valori negli asset, layout UI, Addressables | Logica C# (salvo richiesta esplicita) |
+| **Franci** | Decisioni di design, priorità, push, playtest su device | — |
+
+### Regole per Claude Code
+
+1. **Il confine tra codice e scena appartiene a Bezi.** Se uno script ha bisogno di un oggetto di scena o prefab, dichiara un `[SerializeField]`. Il collegamento in Inspector lo fa Bezi.
+2. **Vietato collegare a runtime oggetti che si possono autorare.** Niente `AddComponent`, `FindObjectOfType`, `GameObject.Find`, `transform.Find`, e niente `Camera.main` usato per trovare o attaccare componenti.
+   - Eccezione: oggetti generati dinamicamente per natura (pezzi, celle, sferule, linee procedurali). Se si ripetono, passano dal pool.
+3. **Setup Editor mancante: si segnala, non si compensa.**
+   - Se un riferimento è nullo: `Debug.LogError` chiaro (cosa manca e dove), poi il componente si disabilita.
+   - Vietato ricostruire da codice layout, anchor, componenti UI o valori che dovrebbero stare nel prefab.
+   - Se serve lavoro in Editor, fermati e scrivilo nel report come richiesta per Bezi.
+4. **Una sola fonte di verità per ogni valore.** Un parametro vive o nel prefab/scena o in un config asset, mai in entrambi. Il codice non sovrascrive valori autorati.
+5. **Mai `ServiceRegistry.Resolve<>`**, che lancia eccezione. Usa `TryResolve` e gestisci l'errore.
+6. **Commit locali, push solo su conferma di Franci.** Se il task coinvolge anche Bezi, si pusha quando sono pronte entrambe le parti.
+7. **Nessun riferimento a file che non esistono nel repo.**
+8. **Aggiorna questo README** quando cambiano architettura, contratti o voci di §9.
 
 ---
 
@@ -14,31 +39,35 @@ Tetris 3D con policubi in un pozzo 3D, mobile portrait, sessione infinita. Costr
 ### Layer
 | Layer | Percorso | Namespace | Regola |
 |---|---|---|---|
-| Core (template) | `Assets/Core/` | `hp55games.Mobile.Core.*` | Generico. Fix qui sono fix del template, niente logica Blockout |
-| Polycubes (game-agnostic) | `Assets/GameSpecific/Features/Polycubes/` | `hp55games.Polycubes.*` | Griglia voxel, forme, curve di timing. Niente riferimenti a Blockout |
+| Core (template) | `Assets/Core/`, `Assets/Content/` | `hp55games.Mobile.*` | Generico. **Niente logica né contenuti Blockout**, prefab compresi |
+| Polycubes | `Assets/GameSpecific/Features/Polycubes/` | `hp55games.Polycubes.*` | Game-agnostic: griglia voxel, forme, timing |
 | Blockout | `Assets/GameSpecific/Features/Blockout/` | `hp55games.Blockout.*` | Tutto ciò che è specifico del gioco |
-| Contenuti | `Assets/GameSpecific/Content/` | — | Config asset, skin, dataset elementi |
+| Contenuti Blockout | `Assets/GameSpecific/Content/` | — | Config asset, skin, dataset, prefab UI Blockout |
 | Test | `Assets/Tests/PlayMode/{Blockout,Polycubes}` | — | PlayMode, uno per sistema |
 
-### Vincoli (non negoziabili)
-- Nessun singleton né stato statico mutabile: tutto via `ServiceRegistry.Register/Resolve/TryResolve`.
-- Gameplay ↔ UI disaccoppiati via `IEventBus`.
-- Config: `ScriptableObject` con marker `IConfigAsset`, letti via `IConfigCatalogService.Get<T>()` / `GetAll<T>()` (multi-istanza supportata).
-- Persistenza: solo `ISaveService` / `SaveData`. Estendere `SaveData`, mai sistemi paralleli.
-- Spawn/despawn ripetuti: `IObjectPoolService`.
-- Riferimenti asmdef: solo assembly runtime, mai varianti `.Tests` / `.Editor.Tests` dei package.
+### Vincoli
+- **Niente singleton né stato statico mutabile.** Tutto passa da `ServiceRegistry`.
+- **Gameplay ↔ UI solo via `IEventBus`.** Gli stati FSM navigano verso le pagine, non manipolano oggetti UI.
+- **Config**: `ScriptableObject` con `IConfigAsset`, letti via `IConfigCatalogService.Get<T>()` / `GetAll<T>()`.
+- **Persistenza**: solo `ISaveService` / `SaveData`, estendendoli.
+- **Spawn/despawn ripetuti**: `IObjectPoolService`.
+- **asmdef**: solo assembly runtime, mai `.Tests` / `.Editor.Tests`.
+- **Log di debug rumorosi**: dietro uno scripting define (es. `HP55_INPUT_DEBUG`), mai dietro flag statici.
 
-### Servizi del template riusati (non duplicare)
-- **Score**: `IGameContextService.Score` / `BestScore`. Muta il valore, poi pubblica `ScoreChangedEvent` (senza payload). `UIGameplayHUD` rilegge da solo.
-- **FSM**: `IGameStateMachine`, stati `MainMenuState`, `GameplayState`, `PauseState`, `ResultState`. `BlockoutGameplayState` prende il posto di `GameplayState` tramite `IGameplayStateFactory`, non lo estende.
-- **Bootstrap**: `00_Bootstrap.unity` → `ServiceRegistry.InstallDefaults()` (~15 servizi). Scene: `01_Menu`, `02_Gameplay`, `03_Results`.
-- **Gap noto del template**: `IConfigCatalogService` / `ConfigCatalogInstaller` **non** è in `InstallDefaults()` e richiede wiring per scena. Il fix giusto è upstream nel template, non workaround ripetuti qui.
+### Servizi del template riusati
+- **Score**: `IGameContextService.Score` / `BestScore`. Aggiorna il valore, poi pubblica `ScoreChangedEvent` (senza payload).
+- **FSM**: `IGameStateMachine`. `BlockoutGameplayState` prende il posto di `GameplayState` via `IGameplayStateFactory`. Il fine partita usa `ResultState` del template.
+- **Navigazione**: `IUINavigationService`. Push, Replace e Pop sono serializzati da un semaforo, quindi sicuri anche se chiamati in concorrenza.
+- **Overlay**: `IUIOverlayService`. Il fade è precaricato (`PrewarmAsync`) in `UIServiceInstaller.Awake`; le chiamate concorrenti condividono lo stesso task di istanziazione.
+- **Input**: `IInputService`. Un press che inizia sopra un elemento UI appartiene alla UI e non genera gesti di gioco.
+- **Bootstrap**: `00_Bootstrap` → `ServiceRegistry.InstallDefaults()`. Scene: `01_Menu`, `02_Gameplay`, `03_Results`. In Editor si fa Play sempre da `00_Bootstrap`.
+- **Gap noto del template**: `IConfigCatalogService` non è in `InstallDefaults()` e richiede un `ConfigCatalogInstaller` in scena. La correzione va fatta nel template.
 
 ### Servizi Blockout
 Registrati da `BlockoutGameplayStateInstaller`:
-- `IGameplayStateFactory` → `BlockoutGameplayStateFactory`
-- `IBlockoutSkinService` → `BlockoutSkinService`
-- `IBlockoutAchievementService` → `BlockoutAchievementService`
+- `IGameplayStateFactory`
+- `IBlockoutSkinService`
+- `IBlockoutAchievementService`
 
 ---
 
@@ -46,160 +75,199 @@ Registrati da `BlockoutGameplayStateInstaller`:
 
 | Parametro | Valore | Dove |
 |---|---|---|
-| Pozzo | 5 × 5 × 12 (W × D × H) | `BlockoutWell.asset` (default nel codice: H=10, l'asset vince) |
+| Pozzo | 5 × 5 × 12 (W × D × H) | `BlockoutWell.asset` |
 | Forme | 12: 8 tetracubi + 4 pentacubi | `BlockoutShapeSet` |
 | Movimento | a step, transizione 0.3s | `BlockoutFallCurve.asset` |
-| Camera | prospettica dentro il pozzo, adattiva, griglia wireframe | `BlockoutWellCamera`, `BlockoutWellWireframe` |
-| Punteggio | `100 × N²` (N = strati eliminati insieme) | `ScoreCalculator` |
+| Punteggio | `100 × N²`, con N = strati eliminati insieme | `ScoreCalculator` |
 
-`BlockoutWellCamera` tocca solo il FOV; rotazione e posizione restano quelle impostate a mano sulla camera in scena, salvo `BlockoutWell.asset` → `Camera Position Offset` (`Vector3`, default zero), sommato una sola volta alla posizione a `Start()`. Per trovare i valori: Play da `00_Bootstrap`, pausa, sposta a mano la camera, riporta il delta nell'asset.
+### Camera — `BlockoutWellCamera`
+- ⏳ Componente autorato sulla Main Camera di `02_Gameplay` (da verificare/completare in Editor, §9). La posizione è solo il Transform in scena, centrato sul pozzo: `(2, 20, 2)` con origine a zero — nessun offset da codice (`CameraPositionOffset` rimosso il 17/09, §9).
+- Il FOV viene ricalcolato a runtime da: dimensioni del pozzo, aspect ratio, safe area, spazio HUD.
+- Il padding orizzontale è `BlockoutWellConfig.HorizontalPaddingScreenFraction`: frazione della larghezza schermo **per lato** (default 0.1), costante su qualsiasi aspect ratio.
+- Se la camera non è centrata in X/Z, il frustum si allarga per tenere il pozzo in frame, ma non ricentra (impossibile con un frustum simmetrico senza lens shift).
 
-### Input touch (`BlockoutInputHandler`)
-Ogni gesto viene risolto con un raycast contro il pezzo attivo:
-- **Swipe che parte sul pezzo** → rotazione. Orizzontale = AxisA → **Z**, verticale = AxisB → **X**. Y escluso (asse di caduta). Mapping in `PieceController` (`AxisAMapsTo` / `AxisBMapsTo`).
-- **Swipe fuori dal pezzo** → traslazione nella direzione risolta.
-- **Tap fuori dal pezzo** → traslazione (applicata dopo la finestra double-tap).
+### Input — gesti (`BlockoutInputHandler`)
+Ogni gesto viene proiettato sul piano orizzontale **all'altezza del pezzo attivo**. La mappatura:
+- **Swipe che parte sul pezzo** → rotazione. Orizzontale = AxisA (asse Z), verticale = AxisB (asse X). L'asse Y è escluso.
+- **Swipe fuori dal pezzo** → traslazione.
+- **Tap fuori dal pezzo** → traslazione.
 - **Tap sul pezzo** → nessun effetto.
-- **Double-tap** (entro 0.3s) → hard drop.
-- Se il raycast non si risolve (nessun pezzo o camera) lo swipe fa rotazione come fallback.
-- Editor: `BlockoutKeyboardInputHandler`.
-- Log TAP/SWIPE/IGNORED per-gesto dietro `#if HP55_INPUT_DEBUG` in `InputService` (nessuno stato statico, vedi §1): aggiungi lo scripting define per riattivarli quando serve diagnosticare la detection.
+- **Doppio tap** → **rimosso**.
+
+### Input — bottoni HUD
+Barra inferiore in horizontal layout. Ogni bottone è alto 1/10 dello schermo e largo 1/4, con un piccolo padding dal bordo.
+
+| Bottone | Evento pubblicato |
+|---|---|
+| `BTN_RotateLeft` | `PieceRotateRequestedEvent(AxisA)` |
+| `BTN_HardDrop` | `HardDropRequestedEvent` (unico modo per l'hard drop) |
+| `BTN_RotateRight` | `PieceRotateRequestedEvent(AxisB)` |
+
+- I bottoni si aggiungono ai gesti, non li sostituiscono.
+- Pubblicano gli stessi eventi dei gesti: non esiste un percorso di input parallelo.
+- In Editor c'è anche `BlockoutKeyboardInputHandler`.
 
 ### Difficoltà
-Due componenti combinati come moltiplicatore:
-1. **Curva per pezzo** (`PhasedIntervalCurve`, `BlockoutFallCurve.asset`): base 3.0s, ÷1.2 fino al pezzo 10, ÷1.1 fino al 20.
-2. **Modificatore temporale** (`BlockoutTimeDifficultyModifier`, `BlockoutTimeDifficulty.asset`): base sessione 2.0s, tick ogni 15s con −0.15s, −0.1s per ogni evento di clear, floor combinato 0.5s.
+Due componenti che si moltiplicano:
+1. **Curva per pezzo** (`PhasedIntervalCurve`): intervallo base 3.0s, ÷1.2 fino al pezzo 10, ÷1.1 fino al pezzo 20.
+2. **Modificatore temporale** (`BlockoutTimeDifficultyModifier`): intervallo base 2.0s, −0.15s ogni 15s, −0.1s per ogni clear. Minimo combinato 0.5s.
 
-> ⚠️ `_timerDecrementPerTick = 0.15` è stato scelto dall'agente e non è mai stato confermato. Va deciso dopo il playtest su device.
+> ⚠️ Il valore `_timerDecrementPerTick = 0.15` non è mai stato confermato. Si decide dopo il playtest.
 
-Eventi: `PieceLockedEvent`, `LayersClearedEvent`, `FallIntervalChangedEvent`, `BlockoutGameOverEvent`, `PieceMoveRequestedEvent`, `PieceRotateRequestedEvent`, `HardDropRequestedEvent`.
+### Eventi
+`PieceLockedEvent`, `LayersClearedEvent`, `FallIntervalChangedEvent`, `BlockoutGameOverEvent`, `PieceMoveRequestedEvent`, `PieceRotateRequestedEvent`, `HardDropRequestedEvent`.
 
 ---
 
-## 3. Sistema skin
+## 3. UI Blockout
 
-Un `BlockoutSkin` (`IConfigAsset`) accoppia sempre **estetica** e **comportamento al clear**, che non sono separabili. C'è un solo skin attivo alla volta ed è puramente cosmetico: non tocca regole, difficoltà o punteggio.
+### ⏳ HUD — `UIBlockoutHUD`
+- **Prefab**: `Assets/GameSpecific/Content/UI/BlockoutHUD.prefab`
+- **Chiave Addressables**: `content/ui/screens/blockout_hud`
+- **Contenuto**: score, bottone pausa, barra inferiore con `BTN_RotateLeft` / `BTN_HardDrop` / `BTN_RotateRight`. **Niente Lives.**
+- **Riferimenti**: tutti `[SerializeField]`, collegati da Bezi.
+- **Comportamento**: aggiorna lo score su `ScoreChangedEvent`; i bottoni pubblicano gli eventi di input.
+- **Navigazione**: `BlockoutGameplayState` ci arriva con `ReplaceAsync` e non gli attacca nulla.
+- Il `UIGameHUD.prefab` del template resta generico.
 
-### `BlockoutSkin` — campi
-`SkinId`, `DisplayName`, `CostInCoins` (`-1` = `CostNotSetValue`, vedi `HasCostSet`), `UnlockedByDefault`, `PieceColors`, `ClearBehaviour`. Per gli elementi chimici anche: `ElementSymbol`, `AtomicNumber` (>0 solo per gli elementi), `MaterialCategory` (`Metallic` / `Opaque` / `Translucent`), `DensityNormalized`, `UnlockMethod` (`Default` / `Coins` / `Achievement`), `UnlockAchievementId`.
+### Shop Tavola Periodica
+Classi: `UIPeriodicTableShopPage`, `UIPeriodicElementCell`, `UIPeriodicSeriesPlaceholderCell`, `UIPeriodicElementCard`.
+- UI 2D, griglia fedele alla tavola reale: 18 gruppi × 7 periodi, buchi compresi, scroll orizzontale.
+- Lantanidi (57–71) e attinidi (89–103) si aprono da due placeholder nel gruppo 3, in una vista con due file scorrevoli.
+- Il tap su una cella apre una card con animazione di scala.
+- Tre stati visivi per cella: bloccata / sbloccata / attiva.
+- ⏳ Layout group, ContentSizeFitter, ScrollRect e anchor della pagina sono autorati nel prefab, non forzati da codice.
 
-### Comportamenti al clear (`IBlockoutClearBehaviour`, base `BlockoutClearBehaviour` ScriptableObject)
-Polimorfici: un nuovo skin non deve toccare il codice condiviso del clear.
-- `NeutralClearBehaviour`: gli strati spariscono e basta.
-- `JuicyClearBehaviour`: le celle diventano oggetti fisici pooled (`_launchSpeed` 4, `_horizontalScatterSpeed` 1.5).
-- `PeriodicMeltClearBehaviour`: effetto "melt" più 24 sferule pooled (6 per lato) generate dal perimetro del pozzo all'altezza dello strato. Ereditano colore e materiale dell'elemento. L'impulso verticale deriva da `DensityNormalized` tramite la curva `_densityToVerticalImpulse` (bassa densità → verso l'alto, alta → verso il basso). Altri parametri: `_outwardEjectSpeed` 2.4, `_horizontalScatterSpeed` 0.65.
+---
+
+## 4. Sistema skin
+
+Un `BlockoutSkin` (`IConfigAsset`) accoppia sempre **estetica** e **comportamento al clear**, non separabili. Uno solo è attivo alla volta ed è puramente cosmetico.
+
+### Campi di `BlockoutSkin`
+- **Comuni**: `SkinId`, `DisplayName`, `CostInCoins` (`-1` = non impostato), `UnlockedByDefault`, `PieceColors`, `ClearBehaviour`.
+- **Solo elementi chimici**: `ElementSymbol`, `AtomicNumber` (>0 solo per gli elementi), `MaterialCategory` (Metallic / Opaque / Translucent), `DensityNormalized`, `UnlockMethod` (Default / Coins / Achievement), `UnlockAchievementId`.
+
+### Comportamenti al clear
+Implementano `IBlockoutClearBehaviour` (ScriptableObject). Sono polimorfici: un nuovo skin non tocca il codice condiviso.
+- **`NeutralClearBehaviour`**: gli strati spariscono e basta.
+- **`JuicyClearBehaviour`**: le celle diventano oggetti fisici, presi dal pool.
+- **`PeriodicMeltClearBehaviour`**: effetto melt più 24 sferule dal pool (6 per lato), generate dal perimetro del pozzo.
+  - Colore e materiale sono quelli dell'elemento.
+  - L'impulso verticale deriva da `DensityNormalized` tramite una curva configurabile: densità bassa → verso l'alto, alta → verso il basso.
 
 ### Skin presenti (`Content/Skins/`)
-- `BlockoutSkin_Default`: palette a 12 colori, sempre sbloccato, gratis.
-- `BlockoutSkin_Profondita`: 300 coins, clear neutro.
-- `BlockoutSkin_JuicyClear`: 500 coins, clear fisico.
-- `Elements/`: 118 skin-elemento generati da `blockout_periodic_elements.json` con `BlockoutPeriodicElementImporter` (Editor). **Rigenerare con l'importer, non modificare gli asset a mano.**
+- `Default`: palette a 12 colori, gratis, sempre sbloccato.
+- `Profondita`: 300 coins.
+- `JuicyClear`: 500 coins.
+- `Elements/`: 118 skin elemento generati da `blockout_periodic_elements.json` con `BlockoutPeriodicElementImporter`. **Si rigenerano con l'importer, non si modificano a mano.**
 
 ### `IBlockoutSkinService`
-- `ActiveSkin`: mai null se il catalogo ha almeno uno skin; fallback sul default.
-- `IsUnlocked(skin)`: vero per `UnlockedByDefault` oppure se l'id è in `SaveData.unlockedSkinIds`.
-- `SetActiveSkin(id)`: no-op con warning se lo skin è sconosciuto o bloccato.
-- `TryUnlockSkin(id)` → `UnlockSkinResult`: `Success`, `UnknownSkinId`, `AlreadyUnlocked`, `NotEnoughCoins`, `CostNotSet`. Spende coins. È il percorso per lo sblocco a coins.
-- `GrantUnlock(id)`: sblocco gratuito e idempotente. Lo usa solo il servizio achievement.
-- `GetElementShopEntries()`: i 118 elementi ordinati per numero atomico, con stato sbloccato/attivo e `PeriodicTablePosition` (da `PeriodicTableLayout`).
+- **`ActiveSkin`**: con fallback sul default.
+- **`IsUnlocked`**
+- **`SetActiveSkin(id)`**: no-op se lo skin è sconosciuto o bloccato.
+- **`TryUnlockSkin(id)`**: restituisce `Success` / `UnknownSkinId` / `AlreadyUnlocked` / `NotEnoughCoins` / `CostNotSet`.
+- **`GrantUnlock(id)`**: sblocco gratuito e idempotente, usato solo dagli achievement.
+- **`GetElementShopEntries()`**: i 118 elementi ordinati per numero atomico, con la loro posizione nella tavola.
 
 ---
 
-## 4. Tema "Tavola Periodica"
+## 5. Tema Tavola Periodica
 
-118 elementi, ognuno è un `BlockoutSkin`. Ogni run usa un solo elemento attivo.
+### Dataset
+File: `Content/Skins/blockout_periodic_elements.json`.
+- **Campi**: `atomicNumber`, `symbol`, `nameIt`, `densityGCm3`, `densityIsPredicted`, `densityNormalized`, `shaderCategory`, `stateAtRoomTemp`, `colorHex`, `unlockCostCoins`, `discoveryYear`, `knownSinceAntiquity`, `unlockMethod`.
+- **Categorie shader**: 92 metallic, 14 translucent, 12 opaque. La proporzione riflette la chimica reale.
+- **Sferule**: il comportamento dipende dalla densità, non dalla massa atomica.
 
-### Dataset `Content/Skins/blockout_periodic_elements.json`
-Campi per elemento: `atomicNumber`, `symbol`, `nameIt`, `densityGCm3`, `densityIsPredicted`, `densityNormalized` (log, 0–1), `shaderCategory`, `stateAtRoomTemp`, `colorHex`, `unlockCostCoins`, `discoveryYear`, `knownSinceAntiquity`, `unlockMethod`.
-- Categorie shader: 92 metallic, 14 translucent, 12 opaque. Lo sbilanciamento riflette la chimica reale ed è voluto.
-- Il criterio fisico delle sferule è la **densità**, non la massa atomica.
-
-### Sblocco: tre meccanismi
+### Sblocco
 | Metodo | Elementi | Regola |
 |---|---|---|
-| `default` | 1 — Carbonio | Sempre sbloccato, costo 0 |
-| `coins` | 106 | Costo = anno di scoperta (es. H = 1766) |
-| `achievement` | 11 antichi | Sblocco automatico al completamento dell'achievement |
+| `default` | Carbonio | Sempre sbloccato |
+| `coins` | 106 | Costo = anno di scoperta |
+| `achievement` | 11 antichi | Sblocco automatico al completamento |
 
-| Elemento | Achievement id | Condizione |
+### Achievement
+Le soglie sono placeholder, non ancora bilanciate.
+
+| Elemento | Id | Condizione |
 |---|---|---|
-| Fe | `first_run_completed` | Prima run completata |
-| Cu | `runs_completed_10` | 10 run |
-| Zn | `runs_completed_50` | 50 run |
-| Sn | `runs_completed_100` | 100 run |
-| Pb | `login_streak_2` | 2 giorni consecutivi |
-| Ag | `login_streak_5` | 5 giorni consecutivi |
-| Au | `login_streak_14` | 14 giorni consecutivi |
-| Hg | `single_run_score_5000` | ≥ 5.000 punti in una run |
-| Sb | `single_run_score_15000` | ≥ 15.000 punti in una run |
-| As | `multi_clear_3plus` | Un clear da ≥ 3 strati |
-| S | `elements_unlocked_20` | ≥ 20 elementi sbloccati |
-
-> ⚠️ Le soglie sono placeholder non bilanciati.
+| Fe | `first_run_completed` | Prima run |
+| Cu / Zn / Sn | `runs_completed_10/50/100` | 10 / 50 / 100 run |
+| Pb / Ag / Au | `login_streak_2/5/14` | 2 / 5 / 14 giorni consecutivi |
+| Hg / Sb | `single_run_score_5000/15000` | Punteggio in una singola run |
+| As | `multi_clear_3plus` | Clear da almeno 3 strati |
+| S | `elements_unlocked_20` | Almeno 20 elementi sbloccati |
 
 ### `IBlockoutAchievementService`
-`IsCompleted`, `GetDescription`, `RecordRunCompleted`, `RecordRunScore`, `RecordMultiClear`, `RecordLoginForToday` (una volta per sessione nuova, non al resume), `RecheckElementsUnlockedThreshold`. Al completamento cerca lo skin con quel `UnlockAchievementId` e chiama `GrantUnlock`. Lo stato è persistito in `SaveData`.
-
-### Shop (`UI/`)
-UI **2D** (il 3D è stato scartato per costo di performance e di lavoro Editor): `UIPeriodicTableShopPage`, `UIPeriodicElementCell`, `UIPeriodicSeriesPlaceholderCell`, `UIPeriodicElementCard`.
-- Griglia fedele alla tavola reale: 18 gruppi × 7 periodi, con i buchi veri, scroll orizzontale.
-- Lantanidi (57–71) e attinidi (89–103) hanno due placeholder nel gruppo 3 che aprono una vista dedicata con due file scorrevoli.
-- Tap su una casella apre la card di dettaglio con animazione di scala (non zoom di camera): simbolo, nome, numero atomico, stato, costo o condizione, azione seleziona/sblocca.
-- La card ha tre stati visivi: bloccata (spenta/desaturata), sbloccata (colore pieno e glow), attiva (indicatore distinto).
+- Metodi: `IsCompleted`, `GetDescription`, `RecordRunCompleted`, `RecordRunScore`, `RecordMultiClear`, `RecordLoginForToday`, `RecheckElementsUnlockedThreshold`.
+- Al completamento di un achievement chiama `GrantUnlock` sullo skin collegato.
 
 ---
 
-## 5. Economia
+## 6. Economia
 
-- **Guadagno a fine run** (`BlockoutGameplayState.OnWellFull`): `floor(score / 100)` + `5 × N` per ogni clear con N ≥ 2. Aggiorna `SaveData.coins` e `progress.lifetimeCoins`.
+- **Guadagno a fine run**: `floor(score / 100)` + `5 × N` per ogni clear con N ≥ 2. Calcolato in `BlockoutGameplayState.OnWellFull`.
 - **Spesa**: solo tramite `TryUnlockSkin`.
-- **Bonus record personale**: non deciso, non implementato.
+- **Bonus record personale**: non ancora deciso.
+- **`SaveData`**: `coins`, `activeSkinId`, `unlockedSkinIds`, `completedAchievementIds`, `runsCompleted`, `loginStreakDays`, `progress.lifetimeCoins`.
 
-### `SaveData` (campi Blockout)
-`coins`, `activeSkinId`, `unlockedSkinIds`, `completedAchievementIds`, `runsCompleted`, `loginStreakDays`. `PlayerProgressData.lifetimeCoins` sta nel template.
-
-> ⚠️ `coins = 4000` iniziali è un valore di **test**. Va riportato al valore reale prima del rilascio.
+> ⚠️ `coins = 4000` iniziali è un valore di test da ripristinare prima del rilascio.
 
 ---
 
-## 6. Build mobile e lezioni dal device
+## 7. Build mobile e lezioni dal device
 
-- Android: `com.hp55games.blockout`, product `Blockout`, company `55hpgames`, portrait.
-- Primo build su device il 16/09/2026.
-- **Regola: non usare `AsyncOperation.allowSceneActivation = false`** mentre girano caricamenti Addressables. Su device una scena ferma al 90% blocca tutta la pipeline di caricamento condivisa, comprese le pagine UI. Il preload di gameplay ora completa il load e disattiva la scena (`SceneFlowService`, `MainMenuState`).
-- `AddressablesContentLoader` emette un warning se un `InstantiateAsync` resta pending oltre 3s: serve come diagnostico di questo tipo di stallo.
-- Il warning "Overlay FadeIn timed out" (`SceneFlowService`) compariva a quasi ogni sessione: `UIOverlayService` instanziava il prefab del fade via Addressables al primo `FadeInAsync` reale, che coincide sempre col tap su Play — proprio mentre il preload di `02_Gameplay` compete per la stessa pipeline Addressables, tutto dentro il budget di 1s pensato solo per il tween. Fix: `IUIOverlayService.PrewarmAsync()`, chiamato da `UIServiceInstaller.Awake()` appena i servizi UI sono registrati, instanzia il fade in anticipo mentre il menu sta ancora caricando.
-- Il race FSM/Shop push è stato corretto lato chiamante (`ff7b992`); `UINavigationService` ora serializza anche Push/Replace/Pop internamente (`SemaphoreSlim`), quindi la difesa non dipende più dal solo call site.
+- **Android**: `com.hp55games.blockout`, portrait. Primo test su device: 16/09/2026.
+- **Mai `AsyncOperation.allowSceneActivation = false`** mentre sono in corso caricamenti Addressables. Su device blocca l'intera pipeline, pagine UI comprese.
+- **Diagnostica**: `AddressablesContentLoader` emette un warning se un `InstantiateAsync` resta pending oltre 3s.
+- **Validazione camera e input**: solo su device reale. Il Game View non basta.
 
 ---
 
-## 7. Test
+## 8. Test
 
-PlayMode, uno per sistema. Blockout: `ScoreCalculator`, `BlockoutFallCurve`, `BlockoutTimeDifficultyModifier`, `BlockoutWell`, `BlockoutShapeSet`, `BlockoutSpawner`, `PieceController`, `WellCellRenderer`, `BlockoutClearBehaviour`, `JuicyClearBehaviour`, `PeriodicMeltClearBehaviour`, `PeriodicTableLayout`, `BlockoutSkinService`, `BlockoutAchievementService`, `BlockoutGameplayState`. Polycubes: `VoxelGrid`, `PlacementRules`, `PolycubeGenerator`, `PhasedIntervalCurve`.
-
-Per feature multi-fase: test mirati sui pezzi più rischiosi (es. idempotenza con un contatore reale di chiamate) e QA in scena con dati reali completi, non mock.
+Test PlayMode, uno per sistema:
+- **Blockout**: ScoreCalculator, FallCurve, TimeDifficultyModifier, Well, ShapeSet, Spawner, PieceController, WellCellRenderer, ClearBehaviour, JuicyClear, PeriodicMeltClear, PeriodicTableLayout, SkinService, AchievementService, GameplayState.
+- **Polycubes**: VoxelGrid, PlacementRules, PolycubeGenerator, PhasedIntervalCurve.
+- **Core**: UINavigationService, UIOverlayService.
 
 ---
 
-## 8. Aperti (al 17/09/2026)
+## 9. Aperti
+
+### ✅ Refactor authoring — lato codice (chiuso 17/09)
+Rimossi i workaround a runtime che violavano §0:
+- `BlockoutGameplayState`: niente più `AddComponent<BlockoutWellCamera>` su `Camera.main` né `FindObjectOfType<UIGameplayHUD>`/`AddComponent<BlockoutHUDInputButtons>`. Naviga a `blockout_hud` e basta.
+- `BlockoutHUDInputButtons` eliminato, sostituito da `UIBlockoutHUD` (score, pausa, 3 bottoni azione — tutti riferimenti `[SerializeField]`).
+- `BlockoutSpawner` si registra in `ServiceRegistry` (non più cercato con `FindObjectOfType` da `BlockoutGameplayState`/`BlockoutInputHandler`); il suo `_cellRenderer` è ora `[SerializeField]` invece di un `FindObjectOfType` interno.
+- `BlockoutWellCamera`: nessun `FindObjectOfType`/`Camera.main` da sostituire (non ce n'erano — l'unico lookup, `UIRoot.FindOrCache()` per il `CanvasScaler`, resta: `UIRoot` vive nella scena separata `91_UI_Root`, un riferimento diretto non è possibile cross-scene).
+- `CameraPositionOffset` rimosso (campo, uso, nessun test lo referenziava): la posizione ha ora una sola fonte, il Transform in scena.
+- Shop: rimossi `EnsureFullScreenRect`, `EnsureSeriesSubViewIsScrollable`, il fallback `AddComponent<Outline>` in `UIPeriodicElementCell`.
+- `Resolve<>` che lanciavano eccezione sistemati: `BlockoutSkinService` (3), `BlockoutAchievementService` (2), `BlockoutGameplayState` (1).
+- Commenti morti (`02_camera_investigation.md`, `03_input_translation_raycast.md`) e nomi `(TEMP)` negli oggetti runtime rimossi.
+
+### ⏳ Refactor authoring — lato Editor (Bezi, ancora aperto)
+- **`BlockoutHUD.prefab`** (nuovo, `Assets/GameSpecific/Content/UI/`, chiave Addressables `content/ui/screens/blockout_hud`): componente `UIBlockoutHUD` con `_scoreLabel`, `_pauseButton`, `_rotateLeftButton`/`_hardDropButton`/`_rotateRightButton` da collegare.
+- **`UIGameHUD.prefab`** (template): va riportato allo stato originale — i bottoni aggiunti in `b8c299d` appartengono al nuovo `BlockoutHUD.prefab`, non al prefab generico.
+- **`BlockoutSpawner`** (scena `02_Gameplay`): collegare `_cellRenderer` (`WellCellRenderer`) in Inspector — oggi senza reference non c'è visuale, ma il gioco funziona lo stesso.
+- **`BlockoutWellCamera`**: da verificare che sia autorato sulla Main Camera di `02_Gameplay` con `_wellOrigin`/`_worldPadding`/`_hudTopReservedCanvasUnits` collegati.
+- **Shop** (`UIPeriodicTableShopPage`/`UIPeriodicElementCell`, nel prefab): pagina root full-stretch (anchorMin 0,0 / anchorMax 1,1 / offset 0,0 / pivot 0.5,0.5); `_seriesSubViewContainer` con `HorizontalLayoutGroup` (childControlWidth=false, childControlHeight=true, childForceExpandWidth=false, childForceExpandHeight=true, childAlignment=MiddleLeft, spacing=8) + `ContentSizeFitter` (horizontalFit=PreferredSize); il suo genitore con uno `ScrollRect` (content = il container, viewport = se stesso, horizontal=true, vertical=false, movementType=Elastic); `UIPeriodicElementCell._activeIndicator` ora obbligatorio (es. `Outline` su `_elementColor`, effectColor ~(255,214,51), effectDistance (3,-3)).
 
 ### Tecnici
-- `BlockoutDebugOverlay` (TEMP) e oggetti runtime TEMP ancora in scena.
-- Bundle ID di iOS e Standalone ancora quelli del template URP.
-- `Game.Content.asmdef` senza script.
-- Chiave di localizzazione `ui.main.shop` mancante; il tasto Credits punta a una pagina inesistente.
-- Diversi `Resolve<>` diretti lanciano eccezione se il servizio manca, invece di fallire in modo gestito.
-- I commenti di `BlockoutInputHandler` citano `03_input_translation_raycast.md`, che non è nel repo.
-- `GetElementShopEntries` esclude Default/Profondità/Juicy Clear rimandando a uno "shop skin separato": nel repo non esiste una pagina UI per quello shop.
+- `PieceController` viene creato e distrutto a ogni pezzo, senza pool.
+- **Trovato (17/09)**: `BlockoutSpawner`'s il timer di difficoltà (`_timeDifficulty.Tick`) usa `Time.unscaledDeltaTime` e **non rispetta la pausa** (avanza comunque mentre `Time.timeScale = 0`) — `PieceController` invece usa `Time.deltaTime` (scaled), corretto, si ferma in pausa. Da decidere se il timer di difficoltà deve fermarsi anche lui.
+- Bundle ID di iOS e Standalone ancora quelli del template.
+- Chiave di localizzazione `ui.main.shop` mancante; Credits punta a una pagina inesistente.
+- Gli skin non elemento non hanno una UI di acquisto.
 
 ### Design e bilanciamento
-- Da decidere dopo il playtest: `_timerDecrementPerTick`, soglie achievement, saldo iniziale coins.
-- Bonus record personale.
-- Polish shop: glow per lo stato sbloccato, animazione della card, illustrazioni solido/gas/liquido. Rimandato insieme al polish UI generale.
-- Game feel del core (audio, haptics, camera feedback).
+- **Dopo il playtest**: `_timerDecrementPerTick`, soglie achievement, saldo iniziale coins, verso di rotazione dei bottoni.
+- **Da decidere**: bonus record personale.
+- **Rimandati**: polish dello shop, game feel (audio, haptics).
 
-### Fuori scope esplicito
-Palette per-pezzo (elementi diversi nella stessa run), direzione laterale delle sferule, achievement "invita un amico", teche 3D, ads.
+### Fuori scope
+Palette diversa per ogni pezzo, direzione laterale delle sferule, achievement "invita un amico", teche 3D, ads.
 
 ### Roadmap
-Fasi P0 → P4 con gate go/no-go, su Notion sotto *Remake Minimal*. Fase attuale: **P0**, cioè validazione del core su device (controlli, camera, framerate) e pulizia tecnica.
+Fasi P0 → P4 con gate go/no-go (Notion, *Remake Minimal*). Fase attuale: **P0**, validazione del core su device.
