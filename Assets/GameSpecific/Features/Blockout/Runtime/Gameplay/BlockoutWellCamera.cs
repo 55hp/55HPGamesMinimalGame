@@ -117,7 +117,19 @@ namespace hp55games.Blockout.Gameplay
             float cameraOffsetX = transform.position.x - wellCenterX;
             float cameraOffsetZ = transform.position.z - wellCenterZ;
 
-            float halfExtentX = wellConfig.Width / 2f + _worldPadding + Mathf.Abs(cameraOffsetX);
+            // Horizontal (screen-width) padding is percentage-based, not world-space: a fixed
+            // world-unit margin can't give a constant on-screen fraction on its own, since the
+            // world-units-to-screen-fraction relationship depends on the FOV that the padding
+            // itself feeds into - circular in world-space. Instead, scale the offset-compensated
+            // half-extent up so it sits at (1 - 2*fraction) of the way to the frame edge: the
+            // well's own width (2x that half-extent) then occupies exactly (1 - 2*fraction) of
+            // the frame width by construction, as a ratio - independent of FOV/aspect/distance.
+            // _worldPadding remains a minimum floor only, per BlockoutWellConfig's field doc.
+            float rawHalfExtentX = wellConfig.Width / 2f + Mathf.Abs(cameraOffsetX);
+            float horizontalPaddingFraction = Mathf.Clamp(wellConfig.HorizontalPaddingScreenFraction, 0f, 0.45f);
+            float halfExtentX = rawHalfExtentX / (1f - 2f * horizontalPaddingFraction);
+            halfExtentX = Mathf.Max(halfExtentX, rawHalfExtentX + _worldPadding);
+
             float halfExtentZ = wellConfig.Depth / 2f + _worldPadding + Mathf.Abs(cameraOffsetZ);
             float wellTopY = origin.y + (wellConfig.Height - 1 + CellHalfExtent);
 
