@@ -104,7 +104,7 @@ namespace hp55games.Blockout.Gameplay
 
         private void CreateLine(Vector3 origin, Material material, Vector3 localA, Vector3 localB)
         {
-            var lineObject = new GameObject("BlockoutWellWireframeLine (TEMP)");
+            var lineObject = new GameObject("BlockoutWellWireframeLine");
             lineObject.transform.SetParent(transform, false);
 
             var line = lineObject.AddComponent<LineRenderer>();

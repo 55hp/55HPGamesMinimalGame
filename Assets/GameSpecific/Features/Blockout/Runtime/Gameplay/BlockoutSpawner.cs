@@ -202,7 +202,7 @@ namespace hp55games.Blockout.Gameplay
                 ? _pieceColors[shapeIndex % _pieceColors.Count]
                 : Color.white;
 
-            var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
+            var pieceObject = new GameObject("BlockoutPieceController");
             _controller = pieceObject.AddComponent<PieceController>();
             _controller.Locked += OnPieceLocked;
             _controller.Initialize(shape, startPosition, _fallCurve, _grid, _timeDifficulty);

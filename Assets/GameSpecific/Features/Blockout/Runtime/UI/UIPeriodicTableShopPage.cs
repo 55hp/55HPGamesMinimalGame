@@ -134,7 +134,7 @@ namespace hp55games.Blockout.UI
         // BlockoutWellWireframe's lines / WellCellRenderer's fallback cube.
         private static void CreateEmptySlot(Transform parent)
         {
-            var go = new GameObject("PeriodicTableShop Empty Slot (TEMP)", typeof(RectTransform));
+            var go = new GameObject("PeriodicTableShop Empty Slot", typeof(RectTransform));
             go.transform.SetParent(parent, false);
         }
 
