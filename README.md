@@ -3,7 +3,7 @@
 Tetris 3D con policubi in un pozzo 3D, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
 - Repo: `55hp/55HPGamesMinimalGame` — sviluppo su `develop`, `main` solo a milestone chiuse
-- Snapshot verificato sul codice: `develop` @ `a87ef33` (16/09/2026)
+- Snapshot verificato sul codice: `develop` @ `91974d1` (17/09/2026)
 - Questo file sostituisce: `README.md` (overview generica del template), `TEMPLATE_REFERENCE.md`, `Blockout_Skin_System_GDD/Technical.md`, `Blockout_Periodic_Table_GDD/Technical.md`, `Blockout_Periodic_Table_Shop_GDD/Technical.md`
 - Fonti di design autorevoli: GDD e Documentazione Tecnica su Notion. Se questo file e il codice non coincidono, **vale il codice**. Aggiorna questo file quando cambia qualcosa di strutturale.
 
@@ -61,6 +61,7 @@ Ogni gesto viene risolto con un raycast contro il pezzo attivo:
 - **Double-tap** (entro 0.3s) → hard drop.
 - Se il raycast non si risolve (nessun pezzo o camera) lo swipe fa rotazione come fallback.
 - Editor: `BlockoutKeyboardInputHandler`.
+- `InputService.VerboseLoggingEnabled` (static, default `false`): riattiva i log TAP/SWIPE/IGNORED per-gesto se serve diagnosticare la detection.
 
 ### Difficoltà
 Due componenti combinati come moltiplicatore:
@@ -165,7 +166,8 @@ UI **2D** (il 3D è stato scartato per costo di performance e di lavoro Editor):
 - Primo build su device il 16/09/2026.
 - **Regola: non usare `AsyncOperation.allowSceneActivation = false`** mentre girano caricamenti Addressables. Su device una scena ferma al 90% blocca tutta la pipeline di caricamento condivisa, comprese le pagine UI. Il preload di gameplay ora completa il load e disattiva la scena (`SceneFlowService`, `MainMenuState`).
 - `AddressablesContentLoader` emette un warning se un `InstantiateAsync` resta pending oltre 3s: serve come diagnostico di questo tipo di stallo.
-- Il race FSM/Shop push è stato corretto lato chiamante (`ff7b992`). La coda seriale in `UINavigationService` è ancora aperta (vedi §8).
+- Il warning "Overlay FadeIn timed out" (`SceneFlowService`) compariva a quasi ogni sessione: `UIOverlayService` instanziava il prefab del fade via Addressables al primo `FadeInAsync` reale, che coincide sempre col tap su Play — proprio mentre il preload di `02_Gameplay` compete per la stessa pipeline Addressables, tutto dentro il budget di 1s pensato solo per il tween. Fix: `IUIOverlayService.PrewarmAsync()`, chiamato da `UIServiceInstaller.Awake()` appena i servizi UI sono registrati, instanzia il fade in anticipo mentre il menu sta ancora caricando.
+- Il race FSM/Shop push è stato corretto lato chiamante (`ff7b992`); `UINavigationService` ora serializza anche Push/Replace/Pop internamente (`SemaphoreSlim`), quindi la difesa non dipende più dal solo call site.
 
 ---
 
@@ -177,12 +179,9 @@ Per feature multi-fase: test mirati sui pezzi più rischiosi (es. idempotenza co
 
 ---
 
-## 8. Aperti (al 16/09/2026)
+## 8. Aperti (al 17/09/2026)
 
 ### Tecnici
-- `UINavigationService`: manca la coda seriale per operazioni concorrenti. È un difetto del template.
-- `InputService`: `Debug.Log` sempre attivi su ogni tap/swipe.
-- Warning "Overlay FadeIn timed out" (`SceneFlowService`) a ogni Play: causa non indagata.
 - `BlockoutDebugOverlay` (TEMP) e oggetti runtime TEMP ancora in scena.
 - Bundle ID di iOS e Standalone ancora quelli del template URP.
 - `Game.Content.asmdef` senza script.
