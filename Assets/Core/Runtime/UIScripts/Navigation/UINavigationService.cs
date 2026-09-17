@@ -151,7 +151,7 @@ namespace hp55games.Mobile.UI
                 if (current.GameObject != null)
                 {
                     await FadeOut(current.GameObject);
-                    Object.Destroy(current.GameObject);
+                    UnityEngine.Object.Destroy(current.GameObject);
                 }
             }
 
