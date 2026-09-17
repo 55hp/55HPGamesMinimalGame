@@ -22,17 +22,9 @@ namespace hp55games.Blockout.InputSystem
         // half-unit each placeholder cube physically occupies around its integer grid position.
         private const float CellHalfExtent = 0.5f;
 
-        // Double tap must land within this window to count as one gesture; a lone tap only
-        // resolves into a move once this window passes without a second tap.
-        private const float DoubleTapWindowSeconds = 0.3f;
-
         private IInputService _input;
         private IEventBus _eventBus;
         private BlockoutSpawner _spawner;
-
-        private bool _tapPending;
-        private float _tapPendingSince;
-        private Vector2 _tapPendingScreenPosition;
 
         private void Awake()
         {
@@ -67,38 +59,17 @@ namespace hp55games.Blockout.InputSystem
             }
         }
 
-        private void Update()
-        {
-            // A pending tap resolves into a move only once the double-tap window has passed
-            // without a second tap - see HandleTap.
-            if (_tapPending && Time.unscaledTime - _tapPendingSince > DoubleTapWindowSeconds)
-            {
-                _tapPending = false;
-
-                // A tap has no directional delta to rotate by, so a tap landing on the piece's
-                // own footprint is simply consumed with no effect - only a miss resolves into a
-                // move. See 03_input_translation_raycast.md.
-                if (TryResolveGestureAgainstPiece(_tapPendingScreenPosition, out bool hitPiece, out var direction) && !hitPiece)
-                {
-                    _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
-                }
-            }
-        }
-
         private void HandleTap(Vector2 screenPosition)
         {
-            if (_tapPending && Time.unscaledTime - _tapPendingSince <= DoubleTapWindowSeconds)
+            // A tap has no directional delta to rotate by, so a tap landing on the piece's own
+            // footprint is simply consumed with no effect - only a miss resolves into a move. See
+            // 03_input_translation_raycast.md. Hard drop no longer has a gesture of its own (the
+            // double-tap that used to buffer this resolution waiting for a follow-up tap is gone
+            // - hard drop is button-only now) - a tap resolves immediately.
+            if (TryResolveGestureAgainstPiece(screenPosition, out bool hitPiece, out var direction) && !hitPiece)
             {
-                _tapPending = false;
-                _eventBus.Publish(new HardDropRequestedEvent());
-                return;
+                _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
             }
-
-            // Buffer this tap - it either becomes a move (if the window passes with no follow-up
-            // tap) or gets consumed as a hard drop above.
-            _tapPending = true;
-            _tapPendingSince = Time.unscaledTime;
-            _tapPendingScreenPosition = screenPosition;
         }
 
         private void HandleSwipe(Vector2 start, Vector2 end)
