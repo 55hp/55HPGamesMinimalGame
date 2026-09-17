@@ -74,29 +74,26 @@ namespace hp55games.Blockout.InputSystem
 
         private void HandleSwipe(Vector2 start, Vector2 end)
         {
-            // Raycast-gated: a swipe starting on the active piece rotates (existing logic below,
-            // unchanged); a swipe starting off the piece translates instead. If the raycast can't
-            // resolve at all (no active piece / no camera yet), fall back to the old
-            // unconditional-rotate behavior rather than dropping the input.
-            if (TryResolveGestureAgainstPiece(start, out bool hitPiece, out var direction) && !hitPiece)
+            // Both swipe-on-piece and swipe-off-piece translate now - rotation is button-only
+            // (BTN_RotateLeft/BTN_RotateRight), no gesture triggers it anymore. Reuses
+            // TryResolveGestureAgainstPiece's pivot-relative direction for both cases (it used to
+            // only be read for the off-piece case; a hit used to rotate based on swipe delta
+            // instead). If the raycast can't resolve at all (no active piece / no camera yet),
+            // fall back to a delta-based direction (same dominant-axis-then-sign shape as the
+            // raycast one, just from the swipe's start->end vector) rather than dropping the
+            // input - never rotate here either.
+            if (TryResolveGestureAgainstPiece(start, out _, out var direction))
             {
                 _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
                 return;
             }
 
             var delta = end - start;
+            var fallbackDirection = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
+                ? (delta.x >= 0f ? MoveDirection.Right : MoveDirection.Left)
+                : (delta.y >= 0f ? MoveDirection.Forward : MoveDirection.Back);
 
-            // Swipe left/right -> AxisA, swipe up/down -> AxisB (per spec). Which physical
-            // PolycubeShape axis each of AxisA/AxisB actually rotates is decided in
-            // PieceController (AxisAMapsTo / AxisBMapsTo) - a single swap point for Franci.
-            if (Mathf.Abs(delta.x) >= Mathf.Abs(delta.y))
-            {
-                _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = delta.x >= 0 ? 1 : -1 });
-            }
-            else
-            {
-                _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisB, Steps90 = delta.y >= 0 ? 1 : -1 });
-            }
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = fallbackDirection });
         }
 
         // Raycasts a screen point (camera-relative so it's correct regardless of camera
@@ -104,12 +101,14 @@ namespace hp55games.Blockout.InputSystem
         // own height - not the well floor, since the camera isn't orthographic: the same screen
         // ray hits different world X/Z depending on which height it's projected onto, so a
         // floor-only intersection was systematically off for any piece not already on the floor
-        // (i.e. most of the time, since pieces start near the well's top and fall). A hit means
-        // the point landed on the piece's own X/Z footprint; a miss returns the direction from
-        // the piece's pivot (GridPosition - the shape's local-space anchor, per
-        // PolycubeShape/PieceController) to the point instead - no dead zone, works from anywhere
-        // on screen including edges. Returns false only when there's nothing to resolve against
-        // (no camera, or no active piece - e.g. between spawns).
+        // (i.e. most of the time, since pieces start near the well's top and fall). hitPiece
+        // means the point landed on the piece's own X/Z footprint; direction (the pivot ->
+        // GridPosition, the shape's local-space anchor, per PolycubeShape/PieceController -> the
+        // point vector, dominant axis then sign) is always resolved regardless of hit/miss -
+        // callers decide what to do with each (e.g. HandleTap ignores it on a hit, HandleSwipe now
+        // uses it either way). No dead zone, works from anywhere on screen including edges.
+        // Returns false only when there's nothing to resolve against (no camera, or no active
+        // piece - e.g. between spawns).
         private bool TryResolveGestureAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
         {
             hitPiece = false;
@@ -151,8 +150,6 @@ namespace hp55games.Blockout.InputSystem
                     break;
                 }
             }
-
-            if (hitPiece) return true;
 
             float dx = local.x - gridPosition.x;
             float dz = local.z - gridPosition.z;

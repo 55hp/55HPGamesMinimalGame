@@ -88,8 +88,7 @@ Registrati da `BlockoutGameplayStateInstaller`:
 
 ### Input — gesti (`BlockoutInputHandler`)
 Ogni gesto viene proiettato sul piano orizzontale **all'altezza del pezzo attivo**. La mappatura:
-- **Swipe che parte sul pezzo** → rotazione. Orizzontale = AxisA (asse Z), verticale = AxisB (asse X). L'asse Y è escluso.
-- **Swipe fuori dal pezzo** → traslazione.
+- **Swipe** (sul pezzo o fuori, stessa risoluzione di direzione via raycast) → traslazione, sempre. Nessun gesto ruota più il pezzo (17/09) — la rotazione è solo bottoni, vedi sotto.
 - **Tap fuori dal pezzo** → traslazione.
 - **Tap sul pezzo** → nessun effetto.
 - **Doppio tap** → **rimosso**.
@@ -99,11 +98,11 @@ Barra inferiore in horizontal layout. Ogni bottone è alto 1/10 dello schermo e 
 
 | Bottone | Evento pubblicato |
 |---|---|
-| `BTN_RotateLeft` | `PieceRotateRequestedEvent(AxisA)` |
+| `BTN_RotateLeft` | `PieceRotateRequestedEvent(AxisA)` — **unico modo per ruotare** |
 | `BTN_HardDrop` | `HardDropRequestedEvent` (unico modo per l'hard drop) |
-| `BTN_RotateRight` | `PieceRotateRequestedEvent(AxisB)` |
+| `BTN_RotateRight` | `PieceRotateRequestedEvent(AxisB)` — **unico modo per ruotare** |
 
-- I bottoni si aggiungono ai gesti, non li sostituiscono.
+- I bottoni si aggiungono ai gesti (traslazione), non li sostituiscono.
 - Pubblicano gli stessi eventi dei gesti: non esiste un percorso di input parallelo.
 - In Editor c'è anche `BlockoutKeyboardInputHandler`.
 
