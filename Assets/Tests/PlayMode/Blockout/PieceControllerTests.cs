@@ -289,15 +289,54 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
-        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitGridBounds()
+        public void HandleRotateRequested_Rotates_WhenTargetOrientationOnlyExceedsTheOpenTop()
         {
-            // Shape's bounding box exactly fills this grid unrotated; any 90-degree turn about
-            // any axis needs a dimension the grid doesn't have.
+            // LShape is flat (Y-extent 1) - rotating about either exposed axis preserves that
+            // axis's own extent and swaps the other two, so the previously-flat dimension always
+            // becomes the one that grows (see PlacementRules.CanPlaceAt's allowAboveTop remarks -
+            // this is exactly the "piece stands up through the well's open top" case). A Height=1
+            // grid used to reject this; it's now allowed - only the side walls/floor still block
+            // rotation, see the two tests below.
             var grid = new VoxelGrid(2, 1, 2);
             var shape = LShape();
             var controller = CreateController(shape, Vector3Int.zero, grid);
 
             _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreNotSame(shape, controller.Shape); // committed - a new (rotated) shape instance
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitASideWall()
+        {
+            // A 3-cell vertical line: rotating about Z (AxisA) turns Y into X with a sign flip
+            // (RotatedZ: x' = -y), landing two cells at negative X - out of bounds regardless of
+            // grid width, a genuine side-wall violation unrelated to the open-top exemption
+            // (which only ever relaxes the upper Y bound).
+            var grid = new VoxelGrid(2, 3, 1);
+            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0), new Vector3Int(0, 2, 0) });
+            var controller = CreateController(shape, Vector3Int.zero, grid);
+
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreSame(shape, controller.Shape); // rejected - still the exact original instance
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitTheFloor()
+        {
+            // AxisB (X rotation) turns LShape's Z-extent into the new Y-extent with a sign flip -
+            // one cell lands at Y = -1. The open-top exemption only ever relaxes the upper bound
+            // (Y >= Height); Y < 0 (the floor) is still enforced.
+            var grid = new VoxelGrid(2, 3, 2);
+            var shape = LShape();
+            var controller = CreateController(shape, Vector3Int.zero, grid);
+
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisB, Steps90 = 1 });
 
             Assert.AreSame(shape, controller.Shape); // rejected - still the exact original instance
 

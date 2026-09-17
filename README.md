@@ -3,7 +3,7 @@
 Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
 - **Repo**: `55hp/55HPGamesMinimalGame`. Si lavora su `develop`; `main` riceve solo milestone chiuse.
-- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `38eec16`.
+- **Ultimo aggiornamento**: 18/09/2026, base `develop` @ `004e773`.
 - **Fonti di verità**: il design (GDD e documentazione tecnica) sta su Notion. Se questo file e il codice non coincidono, **vale il codice**, e questo file va corretto nello stesso commit.
 - **Voci ⏳**: descrivono lo **stato target** del refactor authoring (§9). Finché il refactor non è chiuso, il codice può ancora non corrispondere.
 
@@ -111,6 +111,9 @@ Barra inferiore in horizontal layout. Ogni bottone è alto 1/10 dello schermo e 
 - I bottoni si aggiungono ai gesti (traslazione), non li sostituiscono.
 - Pubblicano gli stessi eventi dei gesti: non esiste un percorso di input parallelo.
 - In Editor c'è anche `BlockoutKeyboardInputHandler`.
+
+### Rotazione — vincoli (`PlacementRules.CanPlaceAt`)
+Una rotazione è rifiutata (il pezzo resta nell'orientamento precedente) se farebbe sforare **le pareti laterali o il pavimento** del pozzo. **Eccezione (18/09): la faccia superiore no** — quella senza wireframe (§2, Camera) — quindi un pezzo può sporgere sopra il pozzo ruotando, non solo cadendo. `PlacementRules.CanPlaceAt(grid, shape, origin, allowAboveTop: true)` è l'overload usato solo da `PieceController.HandleRotateRequested`; ogni altro controllo di piazzamento (caduta, movimento, hard drop, lock) resta rigoroso su tutti i lati, overload a 3 argomenti invariato.
 
 ### Difficoltà
 Due componenti che si moltiplicano:
