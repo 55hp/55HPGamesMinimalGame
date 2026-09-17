@@ -11,6 +11,7 @@ using hp55games.Mobile.Core.UI;
 using hp55games.Blockout.Achievements;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay.Events;
+using hp55games.Blockout.UI;
 
 namespace hp55games.Blockout.Gameplay
 {
@@ -82,6 +83,16 @@ namespace hp55games.Blockout.Gameplay
 
                 var navigation = ServiceRegistry.Resolve<IUINavigationService>();
                 await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
+
+                // Wires the bottom action bar's rotate-left/hard-drop/rotate-right buttons to the
+                // same events BlockoutInputHandler already publishes for swipe/tap - see
+                // BlockoutHUDInputButtons. Must run after ReplaceAsync above: UIGameplayHUD's
+                // GameObject (and its button children) don't exist until that page is loaded.
+                var hud = UnityEngine.Object.FindObjectOfType<hp55games.Mobile.Game.UI.UIGameplayHUD>();
+                if (hud != null && hud.GetComponent<BlockoutHUDInputButtons>() == null)
+                {
+                    hud.gameObject.AddComponent<BlockoutHUDInputButtons>();
+                }
 
                 StartSpawning();
             }
