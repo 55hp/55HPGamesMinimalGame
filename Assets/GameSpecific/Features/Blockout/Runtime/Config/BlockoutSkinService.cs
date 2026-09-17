@@ -147,7 +147,7 @@ namespace hp55games.Blockout.Config
             if (save == null) return;
 
             save.activeSkinId = skinId;
-            ServiceRegistry.Resolve<ISaveService>().Save();
+            ResolveSaveService()?.Save();
         }
 
         public UnlockSkinResult TryUnlockSkin(string skinId)
@@ -182,7 +182,7 @@ namespace hp55games.Blockout.Config
 
             save.coins -= skin.CostInCoins;
             save.unlockedSkinIds.Add(skinId);
-            ServiceRegistry.Resolve<ISaveService>().Save();
+            ResolveSaveService()?.Save();
 
             // The one unlock path the achievement service has no other way to observe (GrantUnlock
             // is achievements' own doing, so they already know) - a coin purchase can still be the
@@ -210,7 +210,7 @@ namespace hp55games.Blockout.Config
             if (save == null) return;
 
             save.unlockedSkinIds.Add(skinId);
-            ServiceRegistry.Resolve<ISaveService>().Save();
+            ResolveSaveService()?.Save();
         }
 
         public IReadOnlyList<BlockoutSkinShopEntry> GetElementShopEntries()
@@ -259,9 +259,11 @@ namespace hp55games.Blockout.Config
             return null;
         }
 
-        private static SaveData ResolveSaveData()
+        private static SaveData ResolveSaveData() => ResolveSaveService()?.Data;
+
+        private static ISaveService ResolveSaveService()
         {
-            if (ServiceRegistry.TryResolve<ISaveService>(out var service)) return service.Data;
+            if (ServiceRegistry.TryResolve<ISaveService>(out var service)) return service;
             Debug.LogError("[BlockoutSkinService] ISaveService is not registered.");
             return null;
         }
