@@ -1,342 +1,204 @@
-# 🧱 55HP Unity Mobile Template – Core Template Overview v1
+# Blockout — Documento di progetto
 
-*A flexible, production-ready foundation for Unity mobile games.*
+Tetris 3D con policubi in un pozzo 3D, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
----
-
-## **1. Introduction**
-
-The **55HP Core Template** is a modular, scalable foundation for creating **99% of Unity mobile games**, from hypercasual prototypes to mid-core arcade titles and lightweight roguelites.
-
-The template focuses on:
-
-- **Consistency** – shared architecture across all projects
-- **Reusability** – mechanics and systems reusable across genres
-- **Simplicity** – low cognitive overhead, clean API surface
-- **Extensibility** – every module can grow independently
-- **Fast Iteration** – ideal for rapid prototyping, soft-launch testing, and mobile-friendly workflows
-
-This document provides a complete overview of the template’s architecture and how each subsystem works together.
+- Repo: `55hp/55HPGamesMinimalGame` — sviluppo su `develop`, `main` solo a milestone chiuse
+- Snapshot verificato sul codice: `develop` @ `a87ef33` (16/09/2026)
+- Questo file sostituisce: `README.md` (overview generica del template), `TEMPLATE_REFERENCE.md`, `Blockout_Skin_System_GDD/Technical.md`, `Blockout_Periodic_Table_GDD/Technical.md`, `Blockout_Periodic_Table_Shop_GDD/Technical.md`
+- Fonti di design autorevoli: GDD e Documentazione Tecnica su Notion. Se questo file e il codice non coincidono, **vale il codice**. Aggiorna questo file quando cambia qualcosa di strutturale.
 
 ---
 
-## **2. Project Structure**
+## 1. Architettura
 
-A typical project using the template is divided into:
+### Layer
+| Layer | Percorso | Namespace | Regola |
+|---|---|---|---|
+| Core (template) | `Assets/Core/` | `hp55games.Mobile.Core.*` | Generico. Fix qui sono fix del template, niente logica Blockout |
+| Polycubes (game-agnostic) | `Assets/GameSpecific/Features/Polycubes/` | `hp55games.Polycubes.*` | Griglia voxel, forme, curve di timing. Niente riferimenti a Blockout |
+| Blockout | `Assets/GameSpecific/Features/Blockout/` | `hp55games.Blockout.*` | Tutto ciò che è specifico del gioco |
+| Contenuti | `Assets/GameSpecific/Content/` | — | Config asset, skin, dataset elementi |
+| Test | `Assets/Tests/PlayMode/{Blockout,Polycubes}` | — | PlayMode, uno per sistema |
 
-```
-Assets/
- ├── Core/
- │    ├── Runtime/
- │    │    ├── Architecture/       (Services, FSM, SceneFlow)
- │    │    ├── Save/               (SaveService, SaveData, PlayerProgressData)
- │    │    ├── Input/              (InputService + Driver)
- │    │    ├── Events/             (Event Bus)
- │    │    ├── UI/                 (UIRoot, Navigation, Popups, Toasts)
- │    │    ├── Pooling/            (ObjectPoolService, PooledObject)
- │    │    ├── Gameplay/           (Generic components)
- │    │    └── Utils/              (Time, Logging, Helpers)
- │    └── ...
- │
- ├── Game/                          (Project-specific content)
- │    ├── Features/                 (Gameplay logic, controllers, systems)
- │    ├── Content/                  (Prefabs, VFX, Audio, UI Screens)
- │    └── ...
- │
- ├── UI/                            (Canvas, screens, pages, popups)
- ├── Addressables/
- └── Scenes/
-      ├── 01_Menu
-      ├── 02_Gameplay
-      ├── 03_Results
-      └── 91_UI_Root
+### Vincoli (non negoziabili)
+- Nessun singleton né stato statico mutabile: tutto via `ServiceRegistry.Register/Resolve/TryResolve`.
+- Gameplay ↔ UI disaccoppiati via `IEventBus`.
+- Config: `ScriptableObject` con marker `IConfigAsset`, letti via `IConfigCatalogService.Get<T>()` / `GetAll<T>()` (multi-istanza supportata).
+- Persistenza: solo `ISaveService` / `SaveData`. Estendere `SaveData`, mai sistemi paralleli.
+- Spawn/despawn ripetuti: `IObjectPoolService`.
+- Riferimenti asmdef: solo assembly runtime, mai varianti `.Tests` / `.Editor.Tests` dei package.
 
-```
+### Servizi del template riusati (non duplicare)
+- **Score**: `IGameContextService.Score` / `BestScore`. Muta il valore, poi pubblica `ScoreChangedEvent` (senza payload). `UIGameplayHUD` rilegge da solo.
+- **FSM**: `IGameStateMachine`, stati `MainMenuState`, `GameplayState`, `PauseState`, `ResultState`. `BlockoutGameplayState` prende il posto di `GameplayState` tramite `IGameplayStateFactory`, non lo estende.
+- **Bootstrap**: `00_Bootstrap.unity` → `ServiceRegistry.InstallDefaults()` (~15 servizi). Scene: `01_Menu`, `02_Gameplay`, `03_Results`.
+- **Gap noto del template**: `IConfigCatalogService` / `ConfigCatalogInstaller` **non** è in `InstallDefaults()` e richiede wiring per scena. Il fix giusto è upstream nel template, non workaround ripetuti qui.
+
+### Servizi Blockout
+Registrati da `BlockoutGameplayStateInstaller`:
+- `IGameplayStateFactory` → `BlockoutGameplayStateFactory`
+- `IBlockoutSkinService` → `BlockoutSkinService`
+- `IBlockoutAchievementService` → `BlockoutAchievementService`
 
 ---
 
-## **3. Service Architecture**
+## 2. Core gameplay
 
-The template uses a lightweight **Service Registry** to expose global systems without relying on singletons.
+| Parametro | Valore | Dove |
+|---|---|---|
+| Pozzo | 5 × 5 × 12 (W × D × H) | `BlockoutWell.asset` (default nel codice: H=10, l'asset vince) |
+| Forme | 12: 8 tetracubi + 4 pentacubi | `BlockoutShapeSet` |
+| Movimento | a step, transizione 0.3s | `BlockoutFallCurve.asset` |
+| Camera | prospettica dentro il pozzo, adattiva, griglia wireframe | `BlockoutWellCamera`, `BlockoutWellWireframe` |
+| Punteggio | `100 × N²` (N = strati eliminati insieme) | `ScoreCalculator` |
 
-### **Key Principles**
+### Input touch (`BlockoutInputHandler`)
+Ogni gesto viene risolto con un raycast contro il pezzo attivo:
+- **Swipe che parte sul pezzo** → rotazione. Orizzontale = AxisA → **Z**, verticale = AxisB → **X**. Y escluso (asse di caduta). Mapping in `PieceController` (`AxisAMapsTo` / `AxisBMapsTo`).
+- **Swipe fuori dal pezzo** → traslazione nella direzione risolta.
+- **Tap fuori dal pezzo** → traslazione (applicata dopo la finestra double-tap).
+- **Tap sul pezzo** → nessun effetto.
+- **Double-tap** (entro 0.3s) → hard drop.
+- Se il raycast non si risolve (nessun pezzo o camera) lo swipe fa rotazione come fallback.
+- Editor: `BlockoutKeyboardInputHandler`.
 
-- Services register themselves on startup.
-- No hidden singletons, no static state.
-- Consumers request dependencies via:
+### Difficoltà
+Due componenti combinati come moltiplicatore:
+1. **Curva per pezzo** (`PhasedIntervalCurve`, `BlockoutFallCurve.asset`): base 3.0s, ÷1.2 fino al pezzo 10, ÷1.1 fino al 20.
+2. **Modificatore temporale** (`BlockoutTimeDifficultyModifier`, `BlockoutTimeDifficulty.asset`): base sessione 2.0s, tick ogni 15s con −0.15s, −0.1s per ogni evento di clear, floor combinato 0.5s.
 
-```csharp
-ServiceRegistry.TryResolve(out ITimeService time);
-ServiceRegistry.Resolve<IEventBus>().Publish(new X());
-```
+> ⚠️ `_timerDecrementPerTick = 0.15` è stato scelto dall'agente e non è mai stato confermato. Va deciso dopo il playtest su device.
 
-### **Why this approach?**
-
-- Decouples systems
-- Makes testing easier
-- Avoids “god-objects”
-- Provides a clean extensible API for future modules
-
-### **Core services available**
-
-- `IEventBus`
-- `IInputService`
-- `ITimeService`
-- `ISaveService`
-- `ISceneFlowService`
-- `IObjectPoolService`
-- `IUIPopupService`
-- `IUINavigationService`
-- `IUIToastService`
+Eventi: `PieceLockedEvent`, `LayersClearedEvent`, `FallIntervalChangedEvent`, `BlockoutGameOverEvent`, `PieceMoveRequestedEvent`, `PieceRotateRequestedEvent`, `HardDropRequestedEvent`.
 
 ---
 
-## **4. Game State Machine (FSM)**
+## 3. Sistema skin
 
-The FSM organizes gameplay flow across scenes and UI states.
+Un `BlockoutSkin` (`IConfigAsset`) accoppia sempre **estetica** e **comportamento al clear**, che non sono separabili. C'è un solo skin attivo alla volta ed è puramente cosmetico: non tocca regole, difficoltà o punteggio.
 
-It supports async entering/exiting, scene transitions, and UI swap.
+### `BlockoutSkin` — campi
+`SkinId`, `DisplayName`, `CostInCoins` (`-1` = `CostNotSetValue`, vedi `HasCostSet`), `UnlockedByDefault`, `PieceColors`, `ClearBehaviour`. Per gli elementi chimici anche: `ElementSymbol`, `AtomicNumber` (>0 solo per gli elementi), `MaterialCategory` (`Metallic` / `Opaque` / `Translucent`), `DensityNormalized`, `UnlockMethod` (`Default` / `Coins` / `Achievement`), `UnlockAchievementId`.
 
-### **Core states included**
+### Comportamenti al clear (`IBlockoutClearBehaviour`, base `BlockoutClearBehaviour` ScriptableObject)
+Polimorfici: un nuovo skin non deve toccare il codice condiviso del clear.
+- `NeutralClearBehaviour`: gli strati spariscono e basta.
+- `JuicyClearBehaviour`: le celle diventano oggetti fisici pooled (`_launchSpeed` 4, `_horizontalScatterSpeed` 1.5).
+- `PeriodicMeltClearBehaviour`: effetto "melt" più 24 sferule pooled (6 per lato) generate dal perimetro del pozzo all'altezza dello strato. Ereditano colore e materiale dell'elemento. L'impulso verticale deriva da `DensityNormalized` tramite la curva `_densityToVerticalImpulse` (bassa densità → verso l'alto, alta → verso il basso). Altri parametri: `_outwardEjectSpeed` 2.4, `_horizontalScatterSpeed` 0.65.
 
-- `MainMenuState`
-- `GameplayState`
-- `PauseState`
-- `ResultState`
+### Skin presenti (`Content/Skins/`)
+- `BlockoutSkin_Default`: palette a 12 colori, sempre sbloccato, gratis.
+- `BlockoutSkin_Profondita`: 300 coins, clear neutro.
+- `BlockoutSkin_JuicyClear`: 500 coins, clear fisico.
+- `Elements/`: 118 skin-elemento generati da `blockout_periodic_elements.json` con `BlockoutPeriodicElementImporter` (Editor). **Rigenerare con l'importer, non modificare gli asset a mano.**
 
-### **How FSM interacts with SceneFlow**
-
-- Each state defines:
-    - which scene must be active
-    - which UI screen should appear
-    - which metadata to update in GameContext
-
-The FSM is intentionally small and domain-agnostic, so each game can extend it with its own states.
-
----
-
-## **5. Input System**
-
-### **Components**
-
-- **IInputService**
-    
-    High-level abstraction (`IsTap`, `IsPress`, `IsSwipe` if implemented).
-    
-- **InputServiceDriver**
-    
-    The MonoBehaviour that reads Unity’s native input and feeds the service.
-    
-
-### **Goals**
-
-- Centralize input handling
-- Allow easy swapping for virtual joysticks, gestures, UI input
-- Decouple gameplay code from Unity APIs
-
-### **Usage**
-
-```csharp
-if (_input.IsTap)
-    Jump();
-```
+### `IBlockoutSkinService`
+- `ActiveSkin`: mai null se il catalogo ha almeno uno skin; fallback sul default.
+- `IsUnlocked(skin)`: vero per `UnlockedByDefault` oppure se l'id è in `SaveData.unlockedSkinIds`.
+- `SetActiveSkin(id)`: no-op con warning se lo skin è sconosciuto o bloccato.
+- `TryUnlockSkin(id)` → `UnlockSkinResult`: `Success`, `UnknownSkinId`, `AlreadyUnlocked`, `NotEnoughCoins`, `CostNotSet`. Spende coins. È il percorso per lo sblocco a coins.
+- `GrantUnlock(id)`: sblocco gratuito e idempotente. Lo usa solo il servizio achievement.
+- `GetElementShopEntries()`: i 118 elementi ordinati per numero atomico, con stato sbloccato/attivo e `PeriodicTablePosition` (da `PeriodicTableLayout`).
 
 ---
 
-## **6. Event Bus**
+## 4. Tema "Tavola Periodica"
 
-The **Event Bus** is the communication backbone between gameplay systems, UI, and services.
+118 elementi, ognuno è un `BlockoutSkin`. Ogni run usa un solo elemento attivo.
 
-### **Why an event bus?**
+### Dataset `Content/Skins/blockout_periodic_elements.json`
+Campi per elemento: `atomicNumber`, `symbol`, `nameIt`, `densityGCm3`, `densityIsPredicted`, `densityNormalized` (log, 0–1), `shaderCategory`, `stateAtRoomTemp`, `colorHex`, `unlockCostCoins`, `discoveryYear`, `knownSinceAntiquity`, `unlockMethod`.
+- Categorie shader: 92 metallic, 14 translucent, 12 opaque. Lo sbilanciamento riflette la chimica reale ed è voluto.
+- Il criterio fisico delle sferule è la **densità**, non la massa atomica.
 
-- Avoid direct references between UI ↔ gameplay
-- Unidirectional communication
-- Extremely cheap and predictable
-- Works well with pooling and heavy object churn
+### Sblocco: tre meccanismi
+| Metodo | Elementi | Regola |
+|---|---|---|
+| `default` | 1 — Carbonio | Sempre sbloccato, costo 0 |
+| `coins` | 106 | Costo = anno di scoperta (es. H = 1766) |
+| `achievement` | 11 antichi | Sblocco automatico al completamento dell'achievement |
 
-### **Example**
+| Elemento | Achievement id | Condizione |
+|---|---|---|
+| Fe | `first_run_completed` | Prima run completata |
+| Cu | `runs_completed_10` | 10 run |
+| Zn | `runs_completed_50` | 50 run |
+| Sn | `runs_completed_100` | 100 run |
+| Pb | `login_streak_2` | 2 giorni consecutivi |
+| Ag | `login_streak_5` | 5 giorni consecutivi |
+| Au | `login_streak_14` | 14 giorni consecutivi |
+| Hg | `single_run_score_5000` | ≥ 5.000 punti in una run |
+| Sb | `single_run_score_15000` | ≥ 15.000 punti in una run |
+| As | `multi_clear_3plus` | Un clear da ≥ 3 strati |
+| S | `elements_unlocked_20` | ≥ 20 elementi sbloccati |
 
-```csharp
-_bus.Subscribe<ScoreChangedEvent>(OnScoreChanged);
-_bus.Publish(new PlayerDeathEvent());
-```
+> ⚠️ Le soglie sono placeholder non bilanciati.
 
-### **Best use cases**
+### `IBlockoutAchievementService`
+`IsCompleted`, `GetDescription`, `RecordRunCompleted`, `RecordRunScore`, `RecordMultiClear`, `RecordLoginForToday` (una volta per sessione nuova, non al resume), `RecheckElementsUnlockedThreshold`. Al completamento cerca lo skin con quel `UnlockAchievementId` e chiama `GrantUnlock`. Lo stato è persistito in `SaveData`.
 
-- Score updates
-- Player death
-- Level events
-- Power-up events
-- UI notifications
-
----
-
-## **7. Save System**
-
-The save system uses JSON serialization with a structured `SaveData` model.
-
-### **Key elements**
-
-- `SaveService` handles loading/saving, versioning, and disk I/O.
-- `SaveData` is the root object holding all persistent data.
-- `PlayerProgressData` stores generic long-term progress:
-    - `bestScore`
-    - `highestLevel`
-    - `lifetimeCoins`
-    - (extensible for any future game)
-
-### **Reading & writing**
-
-```csharp
-var best = save.Data.progress.bestScore;
-save.Data.progress.bestScore = newBest;
-save.Save();
-```
-
-The system is intentionally minimal to keep overhead low and extensibility high.
+### Shop (`UI/`)
+UI **2D** (il 3D è stato scartato per costo di performance e di lavoro Editor): `UIPeriodicTableShopPage`, `UIPeriodicElementCell`, `UIPeriodicSeriesPlaceholderCell`, `UIPeriodicElementCard`.
+- Griglia fedele alla tavola reale: 18 gruppi × 7 periodi, con i buchi veri, scroll orizzontale.
+- Lantanidi (57–71) e attinidi (89–103) hanno due placeholder nel gruppo 3 che aprono una vista dedicata con due file scorrevoli.
+- Tap su una casella apre la card di dettaglio con animazione di scala (non zoom di camera): simbolo, nome, numero atomico, stato, costo o condizione, azione seleziona/sblocca.
+- La card ha tre stati visivi: bloccata (spenta/desaturata), sbloccata (colore pieno e glow), attiva (indicatore distinto).
 
 ---
 
-## **8. Scene Flow Architecture**
+## 5. Economia
 
-The **SceneFlowService** coordinates transitions between scenes and UI states.
+- **Guadagno a fine run** (`BlockoutGameplayState.OnWellFull`): `floor(score / 100)` + `5 × N` per ogni clear con N ≥ 2. Aggiorna `SaveData.coins` e `progress.lifetimeCoins`.
+- **Spesa**: solo tramite `TryUnlockSkin`.
+- **Bonus record personale**: non deciso, non implementato.
 
-### **Responsibilities**
+### `SaveData` (campi Blockout)
+`coins`, `activeSkinId`, `unlockedSkinIds`, `completedAchievementIds`, `runsCompleted`, `loginStreakDays`. `PlayerProgressData.lifetimeCoins` sta nel template.
 
-- Loading target scenes
-- Ensuring UI Root always exists
-- Showing overlays during loads
-- Triggering FSM state changes
-
-### **Benefits**
-
-- Centralized navigation logic
-- Predictable transitions
-- Works seamlessly with Addressables
-- Clean separation between “gameplay logic” and “scene management”
+> ⚠️ `coins = 4000` iniziali è un valore di **test**. Va riportato al valore reale prima del rilascio.
 
 ---
 
-## **9. UI System**
+## 6. Build mobile e lezioni dal device
 
-The UI is designed to be **page-based**, flexible, and fully decoupled from gameplay code.
-
-### **Components**
-
-- **UIRoot**: top-level canvas, persistent across scenes
-- **IUINavigationService**: push/replace UI screens
-- **IUIPopupService**: modal windows
-- **IUIToastService**: transient notifications
-- **UILocalizedText**: supports prefix/suffix + localization keys
-
-### **UI Page Lifecycle**
-
-Each screen follows:
-
-```csharp
-OnNavigationIn()
-OnNavigationOut()
-OnNavigationReplaced()
-```
-
-This makes transitions predictable and allows animations or cross-fades.
+- Android: `com.hp55games.blockout`, product `Blockout`, company `55hpgames`, portrait.
+- Primo build su device il 16/09/2026.
+- **Regola: non usare `AsyncOperation.allowSceneActivation = false`** mentre girano caricamenti Addressables. Su device una scena ferma al 90% blocca tutta la pipeline di caricamento condivisa, comprese le pagine UI. Il preload di gameplay ora completa il load e disattiva la scena (`SceneFlowService`, `MainMenuState`).
+- `AddressablesContentLoader` emette un warning se un `InstantiateAsync` resta pending oltre 3s: serve come diagnostico di questo tipo di stallo.
+- Il race FSM/Shop push è stato corretto lato chiamante (`ff7b992`). La coda seriale in `UINavigationService` è ancora aperta (vedi §8).
 
 ---
 
-## **10. Object Pooling System**
+## 7. Test
 
-Designed for heavy mobile workloads, where instantiating/destroying objects is expensive.
+PlayMode, uno per sistema. Blockout: `ScoreCalculator`, `BlockoutFallCurve`, `BlockoutTimeDifficultyModifier`, `BlockoutWell`, `BlockoutShapeSet`, `BlockoutSpawner`, `PieceController`, `WellCellRenderer`, `BlockoutClearBehaviour`, `JuicyClearBehaviour`, `PeriodicMeltClearBehaviour`, `PeriodicTableLayout`, `BlockoutSkinService`, `BlockoutAchievementService`, `BlockoutGameplayState`. Polycubes: `VoxelGrid`, `PlacementRules`, `PolycubeGenerator`, `PhasedIntervalCurve`.
 
-### **Components**
-
-- `PooledObject`
-- `ObjectPoolService`
-- **Core gameplay helpers:**
-    - `TimedPooledSpawner2D`
-    - `DespawnWhenOutOfBounds2D`
-    - `DespawnAfterSeconds`
-    - `ConstantMover2D`
-
-### **Typical usage**
-
-```csharp
-var pipe = _pool.Get(pipePrefab);
-pipe.transform.position = spawnPosition;
-
-```
-
-### **Strengths**
-
-- Zero-garbage spawning
-- Works automatically with despawn components
-- Ideal for endless runners, bullet hells, VFX-heavy games
+Per feature multi-fase: test mirati sui pezzi più rischiosi (es. idempotenza con un contatore reale di chiamate) e QA in scena con dati reali completi, non mock.
 
 ---
 
-## **11. Core Gameplay Components**
+## 8. Aperti (al 16/09/2026)
 
-Standard reusable building blocks:
+### Tecnici
+- `UINavigationService`: manca la coda seriale per operazioni concorrenti. È un difetto del template.
+- `InputService`: `Debug.Log` sempre attivi su ogni tap/swipe.
+- Warning "Overlay FadeIn timed out" (`SceneFlowService`) a ogni Play: causa non indagata.
+- `BlockoutDebugOverlay` (TEMP) e oggetti runtime TEMP ancora in scena.
+- Bundle ID di iOS e Standalone ancora quelli del template URP.
+- `Game.Content.asmdef` senza script.
+- Chiave di localizzazione `ui.main.shop` mancante; il tasto Credits punta a una pagina inesistente.
+- Diversi `Resolve<>` diretti lanciano eccezione se il servizio manca, invece di fallire in modo gestito.
+- I commenti di `BlockoutInputHandler` citano `03_input_translation_raycast.md`, che non è nel repo.
+- `GetElementShopEntries` esclude Default/Profondità/Juicy Clear rimandando a uno "shop skin separato": nel repo non esiste una pagina UI per quello shop.
 
-### ✔️ TimedPooledSpawner2D
+### Design e bilanciamento
+- Da decidere dopo il playtest: `_timerDecrementPerTick`, soglie achievement, saldo iniziale coins.
+- Bonus record personale.
+- Polish shop: glow per lo stato sbloccato, animazione della card, illustrazioni solido/gas/liquido. Rimandato insieme al polish UI generale.
+- Game feel del core (audio, haptics, camera feedback).
 
-Periodic spawn of pooled objects (pipes, enemies, coins).
+### Fuori scope esplicito
+Palette per-pezzo (elementi diversi nella stessa run), direzione laterale delle sferule, achievement "invita un amico", teche 3D, ads.
 
-### ✔️ DespawnWhenOutOfBounds2D
-
-Automatic cleanup when objects leave the playable area.
-
-### ✔️ DespawnAfterSeconds
-
-Time-based despawn (ideal for VFX, projectiles).
-
-### ✔️ ConstantMover2D
-
-Uniform translation (endless runner, projectile, conveyor belts).
-
-All designed to be game-agnostic and flexible.
-
----
-
-## **12. Mobile Build & Display Configuration**
-
-### Default orientation
-
-Most games should lock either **portrait** or **landscape** at the project level.
-
-### Recommended mobile settings
-
-- VSync off
-- TargetFrameRate = 60
-- Landscape Left / Right (depending on the game)
-- Flat Colors or 2D URP minimal for performance
-- Safe Area handling via UI root (optional future module)
-
----
-
-## **13. Creating a New Game Using the Template**
-
-1. Clone the template
-2. Choose orientation (portrait/landscape)
-3. Set up scenes:
-    - Menu
-    - Gameplay
-    - Results
-    - UI Root
-4. Create main `GameController`
-5. Use core systems:
-    - InputService
-    - TimeService
-    - EventBus
-    - SaveService
-    - Pooling
-    - FSM & SceneFlow
-6. Build UI pages via NavigationService
-7. Implement gameplay loop
-8. Add results & progression
-9. Polish and publish
-
-This workflow allows you to create new games extremely quickly while maintaining clean, reusable architecture.
-
----
-
-# 🎉 **End of Document – Main Overview Ready**
+### Roadmap
+Fasi P0 → P4 con gate go/no-go, su Notion sotto *Remake Minimal*. Fase attuale: **P0**, cioè validazione del core su device (controlli, camera, framerate) e pulizia tecnica.
