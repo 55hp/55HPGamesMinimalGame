@@ -3,7 +3,7 @@
 Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
 - **Repo**: `55hp/55HPGamesMinimalGame`. Si lavora su `develop`; `main` riceve solo milestone chiuse.
-- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `6c02249`.
+- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `76d164f`.
 - **Fonti di verità**: il design (GDD e documentazione tecnica) sta su Notion. Se questo file e il codice non coincidono, **vale il codice**, e questo file va corretto nello stesso commit.
 - **Voci ⏳**: descrivono lo **stato target** del refactor authoring (§9). Finché il refactor non è chiuso, il codice può ancora non corrispondere.
 
@@ -77,9 +77,15 @@ Registrati da `BlockoutGameplayStateInstaller`:
 | Parametro | Valore | Dove |
 |---|---|---|
 | Pozzo | 5 × 5 × 12 (W × D × H) | `BlockoutWell.asset` |
-| Forme | 12: 8 tetracubi + 4 pentacubi | `BlockoutShapeSet` |
+| Forme | fino a 12: 8 tetracubi + 4 pentacubi | `BlockoutShapeSet` |
 | Movimento | a step, transizione 0.3s | `BlockoutFallCurve.asset` |
 | Punteggio | `100 × N²`, con N = strati eliminati insieme | `ScoreCalculator` |
+
+### Selezione forme — `BlockoutShapeSet`
+- I 12 pezzi canonici (8 tetracubi generati da `PolycubeGenerator`, 4 pentacubi planari selezionati automaticamente) hanno un nome stabile assegnato per ordine di generazione — `Tetracube01`…`08`, `Pentacube01`…`04` — non lettere curate a mano (I/L/T/S), non esiste ancora quella curation. `BlockoutShapeSet.AllPieceNames` espone l'elenco.
+- **`BlockoutShapeSelectionConfig`** (`IConfigAsset`, opzionale): una lista di `(pieceName, enabled)`. Un pezzo non elencato è abilitato di default. `BuildDefault()` filtra i 12 pezzi in base a questo; `GetPieceEntries()` espone la lista completa `(nome, abilitato)` per un'eventuale UI di selezione.
+- Se la config disabilita **tutti** i pezzi, `BuildDefault()` ignora il filtro e torna ai 12 completi (log di errore) — non è possibile lasciare il gioco senza pezzi da generare.
+- ⏳ Nessun asset `BlockoutShapeSelectionConfig` esiste ancora — va creato in Editor solo se/quando serve escludere dei pezzi (Bezi, §9).
 
 ### Camera — `BlockoutWellCamera`
 - ⏳ Componente autorato sulla Main Camera di `02_Gameplay` (da verificare/completare in Editor, §9). La posizione è solo il Transform in scena, centrato sul pozzo: `(2, 20, 2)` con origine a zero — nessun offset da codice (`CameraPositionOffset` rimosso il 17/09, §9).
@@ -258,6 +264,7 @@ Rimossi i workaround a runtime che violavano §0:
 - **`BlockoutWellCamera`**: da verificare che sia autorato sulla Main Camera di `02_Gameplay` con `_wellOrigin`/`_hudTopReservedCanvasUnits` collegati (`_worldPadding` non esiste più, va tolto se presente in scena).
 - **Shop** (`UIPeriodicTableShopPage`/`UIPeriodicElementCell`, nel prefab): pagina root full-stretch (anchorMin 0,0 / anchorMax 1,1 / offset 0,0 / pivot 0.5,0.5); `_seriesSubViewContainer` con `HorizontalLayoutGroup` (childControlWidth=false, childControlHeight=true, childForceExpandWidth=false, childForceExpandHeight=true, childAlignment=MiddleLeft, spacing=8) + `ContentSizeFitter` (horizontalFit=PreferredSize); il suo genitore con uno `ScrollRect` (content = il container, viewport = se stesso, horizontal=true, vertical=false, movementType=Elastic); `UIPeriodicElementCell._activeIndicator` ora obbligatorio (es. `Outline` su `_elementColor`, effectColor ~(255,214,51), effectDistance (3,-3)).
 - **`AndroidBackButtonHandler`** (nuovo, §1): attaccarlo a un GameObject persistente (`GameBootstrap` o simile in `00_Bootstrap`) — nessun `[SerializeField]`, nessun'altra configurazione necessaria.
+- **`BlockoutShapeSelectionConfig`** (nuovo, opzionale, §2): da creare solo se/quando serve escludere dei pezzi dalla rotazione (`hp55games/Blockout/Shape Selection Config`, poi aggiungerlo al `ConfigCatalog`). Nomi validi: `BlockoutShapeSet.AllPieceNames` (`Tetracube01`…`08`, `Pentacube01`…`04`).
 
 ### Tecnici
 - `PieceController` viene creato e distrutto a ogni pezzo, senza pool.
