@@ -3,7 +3,7 @@
 Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
 - **Repo**: `55hp/55HPGamesMinimalGame`. Si lavora su `develop`; `main` riceve solo milestone chiuse.
-- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `61ecd21`.
+- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `6c02249`.
 - **Fonti di verità**: il design (GDD e documentazione tecnica) sta su Notion. Se questo file e il codice non coincidono, **vale il codice**, e questo file va corretto nello stesso commit.
 - **Voci ⏳**: descrivono lo **stato target** del refactor authoring (§9). Finché il refactor non è chiuso, il codice può ancora non corrispondere.
 
@@ -113,6 +113,8 @@ Due componenti che si moltiplicano:
 2. **Modificatore temporale** (`BlockoutTimeDifficultyModifier`): intervallo base 2.0s, −0.15s ogni 15s, −0.1s per ogni clear. Minimo combinato 0.5s.
 
 > ⚠️ Il valore `_timerDecrementPerTick = 0.15` non è mai stato confermato. Si decide dopo il playtest.
+
+> ℹ️ **Il modificatore temporale non si ferma in pausa, di proposito** (`BlockoutSpawner.Update` lo ticka con `Time.unscaledDeltaTime`, non `Time.deltaTime`) — "non pausabile" per spec: mettere in pausa per prendere tempo non deve congelare la rampa di difficoltà. `PieceController` (caduta/step del pezzo attivo) usa invece `Time.deltaTime` scalato e si ferma correttamente con `Time.timeScale = 0`. Verificato e confermato il 17/09 — non è un bug, non toccare senza una decisione di design esplicita.
 
 ### Eventi
 `PieceLockedEvent`, `LayersClearedEvent`, `FallIntervalChangedEvent`, `BlockoutGameOverEvent`, `PieceMoveRequestedEvent`, `PieceRotateRequestedEvent`, `HardDropRequestedEvent`.
@@ -246,17 +248,18 @@ Rimossi i workaround a runtime che violavano §0:
 - Shop: rimossi `EnsureFullScreenRect`, `EnsureSeriesSubViewIsScrollable`, il fallback `AddComponent<Outline>` in `UIPeriodicElementCell`.
 - `Resolve<>` che lanciavano eccezione sistemati: `BlockoutSkinService` (3), `BlockoutAchievementService` (2), `BlockoutGameplayState` (1).
 - Commenti morti (`02_camera_investigation.md`, `03_input_translation_raycast.md`) e nomi `(TEMP)` negli oggetti runtime rimossi.
+- `ServiceRegistry.Unregister<T>()` aggiunto (mancava del tutto); `BlockoutSpawner` e `FeedbackService` (Core) ora si deregistrano in `OnDestroy` invece di contare solo sul sovrascrivere la entry al prossimo `Awake`.
+- `_worldPadding` (world-space, leftover pre-percentuale) rimosso da `BlockoutWellCamera`. Il padding è solo orizzontale (`HorizontalPaddingScreenFraction`) — l'asse verticale/depth non ha alcun margine.
 
 ### ⏳ Refactor authoring — lato Editor (Bezi, ancora aperto)
 - **`BlockoutHUD.prefab`** (nuovo, `Assets/GameSpecific/Content/UI/`, chiave Addressables `content/ui/screens/blockout_hud`): componente `UIBlockoutHUD` con `_scoreLabel`, `_pauseButton`, `_rotateLeftButton`/`_hardDropButton`/`_rotateRightButton` da collegare.
 - **`UIGameHUD.prefab`** (template): va riportato allo stato originale — i bottoni aggiunti in `b8c299d` appartengono al nuovo `BlockoutHUD.prefab`, non al prefab generico.
 - **`BlockoutSpawner`** (scena `02_Gameplay`): collegare `_cellRenderer` (`WellCellRenderer`) in Inspector — oggi senza reference non c'è visuale, ma il gioco funziona lo stesso.
-- **`BlockoutWellCamera`**: da verificare che sia autorato sulla Main Camera di `02_Gameplay` con `_wellOrigin`/`_worldPadding`/`_hudTopReservedCanvasUnits` collegati.
+- **`BlockoutWellCamera`**: da verificare che sia autorato sulla Main Camera di `02_Gameplay` con `_wellOrigin`/`_hudTopReservedCanvasUnits` collegati (`_worldPadding` non esiste più, va tolto se presente in scena).
 - **Shop** (`UIPeriodicTableShopPage`/`UIPeriodicElementCell`, nel prefab): pagina root full-stretch (anchorMin 0,0 / anchorMax 1,1 / offset 0,0 / pivot 0.5,0.5); `_seriesSubViewContainer` con `HorizontalLayoutGroup` (childControlWidth=false, childControlHeight=true, childForceExpandWidth=false, childForceExpandHeight=true, childAlignment=MiddleLeft, spacing=8) + `ContentSizeFitter` (horizontalFit=PreferredSize); il suo genitore con uno `ScrollRect` (content = il container, viewport = se stesso, horizontal=true, vertical=false, movementType=Elastic); `UIPeriodicElementCell._activeIndicator` ora obbligatorio (es. `Outline` su `_elementColor`, effectColor ~(255,214,51), effectDistance (3,-3)).
 
 ### Tecnici
 - `PieceController` viene creato e distrutto a ogni pezzo, senza pool.
-- **Trovato (17/09)**: `BlockoutSpawner`'s il timer di difficoltà (`_timeDifficulty.Tick`) usa `Time.unscaledDeltaTime` e **non rispetta la pausa** (avanza comunque mentre `Time.timeScale = 0`) — `PieceController` invece usa `Time.deltaTime` (scaled), corretto, si ferma in pausa. Da decidere se il timer di difficoltà deve fermarsi anche lui.
 - Bundle ID di iOS e Standalone ancora quelli del template.
 - Chiave di localizzazione `ui.main.shop` mancante; Credits punta a una pagina inesistente.
 - Gli skin non elemento non hanno una UI di acquisto.
