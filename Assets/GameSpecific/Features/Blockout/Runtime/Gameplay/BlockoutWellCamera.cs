@@ -11,17 +11,17 @@ namespace hp55games.Blockout.Gameplay
     // ratio, safe area, and gameplay-HUD footprint -
     // the fixed 40 degree FOV was only ever eyeballed against the Editor Game View's default
     // aspect ratio and clips the well's top opening on unusually tall/narrow screens (e.g. the
-    // Samsung S25 Edge). Rotation (looking straight down at the well) is left exactly as authored
-    // in the scene. Position is left as authored too, except for one config-driven nudge applied
-    // once at Start - see BlockoutWellConfig.CameraPositionOffset.
+    // Samsung S25 Edge). Position and rotation (looking straight down at the well) are left
+    // exactly as authored in the scene - this component only ever touches fieldOfView, the
+    // camera's single source of truth for position stays the Transform (README §0 rule 4).
     //
     // Symmetric-frustum limitation: with no lens shift, an inset on only one edge (e.g. a HUD bar
-    // at the top but nothing at the bottom, or a horizontal CameraPositionOffset moving the
-    // camera off the well's X/Z center) still costs frustum on BOTH edges - the fit uses
-    // whichever of the two opposing insets/offsets is larger. Good enough to guarantee full,
-    // unoccluded visibility; the well won't be perfectly re-centered in frame for a non-zero
-    // horizontal offset, only fully visible with the original padding preserved on its tightest
-    // side. A future asymmetric fit would need physical-camera lens shift instead.
+    // at the top but nothing at the bottom, or the camera simply not sitting exactly centered over
+    // the well's X/Z in the scene) still costs frustum on BOTH edges - the fit uses whichever of
+    // the two opposing insets/offsets is larger. Good enough to guarantee full, unoccluded
+    // visibility; the well won't be perfectly re-centered in frame for a non-zero horizontal
+    // offset, only fully visible with the original padding preserved on its tightest side. A
+    // future asymmetric fit would need physical-camera lens shift instead.
     [RequireComponent(typeof(Camera))]
     public sealed class BlockoutWellCamera : MonoBehaviour
     {
@@ -48,26 +48,7 @@ namespace hp55games.Blockout.Gameplay
             _camera = GetComponent<Camera>();
         }
 
-        private void Start()
-        {
-            ApplyPositionOffset();
-            Recompute();
-        }
-
-        // One-shot nudge on top of the scene-authored position, sourced from
-        // BlockoutWellConfig.CameraPositionOffset - lets a value found by hand (Play from
-        // 00_Bootstrap, pause, drag the camera, note the delta) be applied without editing the
-        // scene. Runs before the first Recompute() so the FOV fit is computed against the
-        // already-offset position, not the original one.
-        private void ApplyPositionOffset()
-        {
-            if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService)) return;
-
-            var wellConfig = catalogService.Get<BlockoutWellConfig>();
-            if (wellConfig == null) return;
-
-            transform.position += wellConfig.CameraPositionOffset;
-        }
+        private void Start() => Recompute();
 
         private void Update()
         {
@@ -103,15 +84,15 @@ namespace hp55games.Blockout.Gameplay
 
             var origin = _wellOrigin != null ? _wellOrigin.position : Vector3.zero;
 
-            // The fit assumed the camera sat exactly above the well's X/Z center (true for the
-            // scene-authored position, e.g. (2, 18, 2) over a 5x5 well centered at (2, 2)) - a
-            // non-zero BlockoutWellConfig.CameraPositionOffset breaks that, so the frustum must
-            // widen by however far the camera has actually drifted from that center, on each
-            // axis, to keep both of the well's edges in frame from its real position. This keeps
-            // the well fully visible with at least the original _worldPadding margin on every
-            // side, not perfectly re-centered in the frame - a symmetric FOV/aspect fit can't
-            // re-center for an off-axis camera without lens shift (see the class's own
-            // "Symmetric-frustum limitation" remarks - same constraint, different axis).
+            // A naive fit would assume the camera sits exactly above the well's X/Z center (true
+            // for the intended scene-authored position, e.g. (2, 18, 2) over a 5x5 well centered
+            // at (2, 2)) - if Bezi's scene Transform ever drifts from that, the frustum widens by
+            // however far the camera actually is from that center, on each axis, to keep both of
+            // the well's edges in frame from its real position. This keeps the well fully visible
+            // with at least the original _worldPadding margin on every side, not perfectly
+            // re-centered in the frame - a symmetric FOV/aspect fit can't re-center for an
+            // off-axis camera without lens shift (see the class's own "Symmetric-frustum
+            // limitation" remarks - same constraint, different axis).
             float wellCenterX = origin.x + (wellConfig.Width - 1) / 2f;
             float wellCenterZ = origin.z + (wellConfig.Depth - 1) / 2f;
             float cameraOffsetX = transform.position.x - wellCenterX;
