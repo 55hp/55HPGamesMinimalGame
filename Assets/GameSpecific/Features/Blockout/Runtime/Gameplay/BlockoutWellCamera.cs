@@ -19,12 +19,6 @@ namespace hp55games.Blockout.Gameplay
     // still costs frustum on BOTH edges - the fit uses whichever of the two opposing insets is
     // larger. Good enough to guarantee full, unoccluded visibility; a future asymmetric fit would
     // need physical-camera lens shift instead.
-    // ExecuteAlways + OnValidate let _worldPadding/_hudTopReservedCanvasUnits/_wellOrigin be tuned
-    // from the Inspector while heuristically testing framing, with the fit recomputed immediately
-    // instead of only on the next resolution/safe-area change. Outside Play, IConfigCatalogService
-    // is normally unavailable (no Bootstrap has run), so Recompute() silently no-ops there rather
-    // than logging - see its guarded Debug.LogError calls.
-    [ExecuteAlways]
     [RequireComponent(typeof(Camera))]
     public sealed class BlockoutWellCamera : MonoBehaviour
     {
@@ -53,15 +47,6 @@ namespace hp55games.Blockout.Gameplay
 
         private void Start() => Recompute();
 
-        // Fires whenever a serialized field is edited in the Inspector (Editor-only, works in
-        // both Edit and Play Mode thanks to ExecuteAlways) - the actual lever for heuristic
-        // tuning, since Update()'s own guard only re-fits on a resolution/safe-area change.
-        private void OnValidate()
-        {
-            if (_camera == null) _camera = GetComponent<Camera>();
-            Recompute();
-        }
-
         private void Update()
         {
             // Cheap guard - only redo the trig when something that actually affects framing has
@@ -83,17 +68,14 @@ namespace hp55games.Blockout.Gameplay
 
             if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService))
             {
-                // Expected outside Play (no Bootstrap has run yet) - only a real problem once playing.
-                if (Application.isPlaying)
-                    Debug.LogError("[BlockoutWellCamera] IConfigCatalogService is not registered - add a ConfigCatalogInstaller (with a populated ConfigCatalog) to the scene.", this);
+                Debug.LogError("[BlockoutWellCamera] IConfigCatalogService is not registered - add a ConfigCatalogInstaller (with a populated ConfigCatalog) to the scene.", this);
                 return;
             }
 
             var wellConfig = catalogService.Get<BlockoutWellConfig>();
             if (wellConfig == null)
             {
-                if (Application.isPlaying)
-                    Debug.LogError("[BlockoutWellCamera] No BlockoutWellConfig found in the catalog.", this);
+                Debug.LogError("[BlockoutWellCamera] No BlockoutWellConfig found in the catalog.", this);
                 return;
             }
 
