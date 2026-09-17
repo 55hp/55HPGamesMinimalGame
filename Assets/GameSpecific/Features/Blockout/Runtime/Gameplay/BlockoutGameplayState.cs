@@ -11,7 +11,6 @@ using hp55games.Mobile.Core.UI;
 using hp55games.Blockout.Achievements;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay.Events;
-using hp55games.Blockout.UI;
 
 namespace hp55games.Blockout.Gameplay
 {
@@ -72,29 +71,17 @@ namespace hp55games.Blockout.Gameplay
                 _bonusCoinsThisRun = 0;
                 _achievements?.RecordLoginForToday(); // Shop GDD login-streak family - once per fresh session, not on resume
 
-                // Attaches the runtime FOV fit (see 02_camera_investigation.md) to whatever camera
-                // is tagged MainCamera in this scene - only needed once per fresh entry, since the
-                // component and its GameObject both survive a pause/resume.
-                var mainCamera = UnityEngine.Camera.main;
-                if (mainCamera != null && mainCamera.GetComponent<BlockoutWellCamera>() == null)
+                // BlockoutWellCamera (FOV fit) and UIBlockoutHUD's buttons are scene/prefab-authored
+                // now (README §2/§3/§9) - nothing to attach here, just navigate to the HUD.
+                if (ServiceRegistry.TryResolve<IUINavigationService>(out var navigation))
                 {
-                    mainCamera.gameObject.AddComponent<BlockoutWellCamera>();
+                    await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.BlockoutHUD);
+                    StartSpawning();
                 }
-
-                var navigation = ServiceRegistry.Resolve<IUINavigationService>();
-                await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
-
-                // Wires the bottom action bar's rotate-left/hard-drop/rotate-right buttons to the
-                // same events BlockoutInputHandler already publishes for swipe/tap - see
-                // BlockoutHUDInputButtons. Must run after ReplaceAsync above: UIGameplayHUD's
-                // GameObject (and its button children) don't exist until that page is loaded.
-                var hud = UnityEngine.Object.FindObjectOfType<hp55games.Mobile.Game.UI.UIGameplayHUD>();
-                if (hud != null && hud.GetComponent<BlockoutHUDInputButtons>() == null)
+                else
                 {
-                    hud.gameObject.AddComponent<BlockoutHUDInputButtons>();
+                    Debug.LogError("[BlockoutGameplayState] IUINavigationService is not registered - cannot show the gameplay HUD, gameplay not started.");
                 }
-
-                StartSpawning();
             }
         }
 
