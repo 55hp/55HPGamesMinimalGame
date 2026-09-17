@@ -26,6 +26,11 @@ namespace hp55games.Mobile.Core.InputSystem
 
         public bool IsReady { get; private set; }
 
+        // Per-gesture TAP/SWIPE/IGNORED logging fired on every input, off by default - it was
+        // drowning out real warnings/errors in the console on every tap/swipe. Flip on from a
+        // debug menu or the immediate window when diagnosing gesture-detection issues.
+        public static bool VerboseLoggingEnabled = false;
+
         // Tunable thresholds (increased for better tap detection)
         const float TapMaxDuration      = 0.35f; // seconds (increased from 0.25f)
         const float TapMaxDistanceSqr  = 100f;   // pixels^2 (10 px, increased from 5 px)
@@ -121,16 +126,19 @@ namespace hp55games.Mobile.Core.InputSystem
                     if (distanceSqr <= TapMaxDistanceSqr && totalTime <= TapMaxDuration)
                     {
                         Tap?.Invoke(_lastPos);
-                        Debug.Log($"[InputService] TAP detected at {_lastPos}, duration: {totalTime:F3}s, distance: {Mathf.Sqrt(distanceSqr):F1}px");
+                        if (VerboseLoggingEnabled)
+                            Debug.Log($"[InputService] TAP detected at {_lastPos}, duration: {totalTime:F3}s, distance: {Mathf.Sqrt(distanceSqr):F1}px");
                     }
                     else if (distanceSqr >= SwipeMinDistanceSqr)
                     {
                         Swipe?.Invoke(_downPos, _lastPos);
-                        Debug.Log($"[InputService] SWIPE detected, distance: {Mathf.Sqrt(distanceSqr):F1}px");
+                        if (VerboseLoggingEnabled)
+                            Debug.Log($"[InputService] SWIPE detected, distance: {Mathf.Sqrt(distanceSqr):F1}px");
                     }
                     else
                     {
-                        Debug.Log($"[InputService] Input IGNORED - duration: {totalTime:F3}s (max {TapMaxDuration}s), distance: {Mathf.Sqrt(distanceSqr):F1}px (max {Mathf.Sqrt(TapMaxDistanceSqr):F1}px for tap, min {Mathf.Sqrt(SwipeMinDistanceSqr):F1}px for swipe)");
+                        if (VerboseLoggingEnabled)
+                            Debug.Log($"[InputService] Input IGNORED - duration: {totalTime:F3}s (max {TapMaxDuration}s), distance: {Mathf.Sqrt(distanceSqr):F1}px (max {Mathf.Sqrt(TapMaxDistanceSqr):F1}px for tap, min {Mathf.Sqrt(SwipeMinDistanceSqr):F1}px for swipe)");
                     }
                 }
             }

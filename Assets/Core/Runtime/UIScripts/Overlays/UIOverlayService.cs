@@ -37,23 +37,35 @@ namespace hp55games.Mobile.UI
             _ui = UIRoot.FindOrCache();
         }
 
+        public async Task PrewarmAsync() => await EnsureFadeGoAsync();
+
         public async Task FadeInAsync(float duration = 0.2f)
         {
+            await EnsureFadeGoAsync();
+            if (_fadeGo == null) return;
+
+            await TweenAlpha(_fadeCg, target: 1f, duration);
+        }
+
+        // Lazily creates and caches the fade overlay's GameObject via Addressables (alpha stays
+        // at 0, invisible). Called both from PrewarmAsync (ahead of time, off the timed path) and
+        // FadeInAsync (which used to do this instantiate inline - see PrewarmAsync's remarks on
+        // IUIOverlayService for why that made the first fade of a session routinely miss
+        // SceneFlowService's OverlayTimeoutMs).
+        private async Task EnsureFadeGoAsync()
+        {
+            if (_fadeGo != null) return;
+
             await EnsureUIRootAsync();
             if (_ui == null) return;
 
-            if (_fadeGo == null)
-            {
-                _fadeGo = await _loader.InstantiateAsync(FADE_ADDR, _ui.overlays);
-                if (_fadeGo == null) { Debug.LogError("[UIOverlayService] Fade prefab non trovato."); return; }
-                _fadeCg = RequireCanvasGroup(_fadeGo);
-                _fadeCg.alpha = 0f;
-                _fadeCg.blocksRaycasts = false; // di solito il fade non blocca input, lo fa Blocker
-                _fadeCg.interactable = false;
-                StretchFull(_fadeGo);
-            }
-
-            await TweenAlpha(_fadeCg, target: 1f, duration);
+            _fadeGo = await _loader.InstantiateAsync(FADE_ADDR, _ui.overlays);
+            if (_fadeGo == null) { Debug.LogError("[UIOverlayService] Fade prefab non trovato."); return; }
+            _fadeCg = RequireCanvasGroup(_fadeGo);
+            _fadeCg.alpha = 0f;
+            _fadeCg.blocksRaycasts = false; // di solito il fade non blocca input, lo fa Blocker
+            _fadeCg.interactable = false;
+            StretchFull(_fadeGo);
         }
 
         public async Task FadeOutAsync(float duration = 0.2f)

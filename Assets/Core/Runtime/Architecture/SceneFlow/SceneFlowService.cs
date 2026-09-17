@@ -19,6 +19,14 @@ namespace hp55games.Mobile.Game.SceneFlow
     public sealed class SceneFlowService : ISceneFlowService
     {
         private const float FadeDuration    = 0.25f;
+
+        // Sized for a plain alpha tween, not for the fade overlay's own Addressables instantiate
+        // - that cost is paid once, ahead of time, by IUIOverlayService.PrewarmAsync (fired from
+        // UIServiceInstaller.Awake), so it never has to fit inside this budget. Before that fix,
+        // the very first FadeInAsync of a session (always the Play tap, since the initial
+        // MainMenuState entry bypasses this class) also had to cold-instantiate the fade prefab
+        // while GoToGameplayAsync's own gameplay-scene preload was competing for the same
+        // Addressables pipeline, which routinely blew past this timeout.
         private const int OverlayTimeoutMs  = 1000;
 
         private readonly IGameStateMachine  _fsm;
