@@ -6,9 +6,9 @@ using hp55games.Ui;
 
 namespace hp55games.Blockout.Gameplay
 {
-    // Replaces the static Inspector field-of-view baked into 02_Gameplay.unity (see
-    // 02_camera_investigation.md) with a value recomputed at runtime from BlockoutWellConfig's
-    // real bounds and the device's actual aspect ratio, safe area, and gameplay-HUD footprint -
+    // Replaces the static Inspector field-of-view baked into 02_Gameplay.unity with a value
+    // recomputed at runtime from BlockoutWellConfig's real bounds and the device's actual aspect
+    // ratio, safe area, and gameplay-HUD footprint -
     // the fixed 40 degree FOV was only ever eyeballed against the Editor Game View's default
     // aspect ratio and clips the well's top opening on unusually tall/narrow screens (e.g. the
     // Samsung S25 Edge). Rotation (looking straight down at the well) is left exactly as authored
@@ -118,11 +118,11 @@ namespace hp55games.Blockout.Gameplay
 
             float effectiveAspect = ComputeEffectiveAspect();
 
-            // FOVAxisMode on this camera is Vertical, and by construction (see
-            // 02_camera_investigation.md) the vertical screen axis maps to world Z (well depth)
-            // while horizontal maps to world X (well width) and is only ever derived from the
-            // vertical FOV via aspect. So solve for whichever vertical half-angle is large enough
-            // to cover BOTH axes once that derivation is accounted for.
+            // FOVAxisMode on this camera is Vertical, and by construction the vertical screen
+            // axis maps to world Z (well depth) while horizontal maps to world X (well width) and
+            // is only ever derived from the vertical FOV via aspect. So solve for whichever
+            // vertical half-angle is large enough to cover BOTH axes once that derivation is
+            // accounted for.
             float requiredVerticalHalfAngle = Mathf.Max(depthHalfAngle, Mathf.Atan(Mathf.Tan(widthHalfAngle) / effectiveAspect));
 
             _camera.fieldOfView = Mathf.Clamp(requiredVerticalHalfAngle * 2f * Mathf.Rad2Deg, 1f, 170f);
