@@ -61,7 +61,7 @@ Ogni gesto viene risolto con un raycast contro il pezzo attivo:
 - **Double-tap** (entro 0.3s) → hard drop.
 - Se il raycast non si risolve (nessun pezzo o camera) lo swipe fa rotazione come fallback.
 - Editor: `BlockoutKeyboardInputHandler`.
-- `InputService.VerboseLoggingEnabled` (static, default `false`): riattiva i log TAP/SWIPE/IGNORED per-gesto se serve diagnosticare la detection.
+- Log TAP/SWIPE/IGNORED per-gesto dietro `#if HP55_INPUT_DEBUG` in `InputService` (nessuno stato statico, vedi §1): aggiungi lo scripting define per riattivarli quando serve diagnosticare la detection.
 
 ### Difficoltà
 Due componenti combinati come moltiplicatore:
