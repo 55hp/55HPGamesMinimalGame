@@ -61,12 +61,13 @@ namespace hp55games.Blockout.InputSystem
 
         private void HandleTap(Vector2 screenPosition)
         {
-            // A tap has no directional delta to rotate by, so a tap landing on the piece's own
-            // footprint is simply consumed with no effect - only a miss resolves into a move.
-            // Hard drop no longer has a gesture of its own (the double-tap that used to buffer
-            // this resolution waiting for a follow-up tap is gone - hard drop is button-only now)
-            // - a tap resolves immediately.
-            if (TryResolveGestureAgainstPiece(screenPosition, out bool hitPiece, out var direction) && !hitPiece)
+            // A tap has no directional delta to resolve a direction from, unlike a swipe - only a
+            // miss (raycast-resolved, see TryResolveTapAgainstPiece) turns into a move; a tap
+            // landing on the piece's own footprint is simply consumed with no effect. Hard drop no
+            // longer has a gesture of its own (the double-tap that used to buffer this resolution
+            // waiting for a follow-up tap is gone - hard drop is button-only now) - a tap resolves
+            // immediately.
+            if (TryResolveTapAgainstPiece(screenPosition, out bool hitPiece, out var direction) && !hitPiece)
             {
                 _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
             }
@@ -74,26 +75,17 @@ namespace hp55games.Blockout.InputSystem
 
         private void HandleSwipe(Vector2 start, Vector2 end)
         {
-            // Both swipe-on-piece and swipe-off-piece translate now - rotation is button-only
-            // (BTN_RotateLeft/BTN_RotateRight), no gesture triggers it anymore. Reuses
-            // TryResolveGestureAgainstPiece's pivot-relative direction for both cases (it used to
-            // only be read for the off-piece case; a hit used to rotate based on swipe delta
-            // instead). If the raycast can't resolve at all (no active piece / no camera yet),
-            // fall back to a delta-based direction (same dominant-axis-then-sign shape as the
-            // raycast one, just from the swipe's start->end vector) rather than dropping the
-            // input - never rotate here either.
-            if (TryResolveGestureAgainstPiece(start, out _, out var direction))
-            {
-                _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
-                return;
-            }
-
+            // Direct screen-delta mapping, independent of the piece's on-screen position or the
+            // well's geometry: swipe up/right/down/left moves the piece in that same screen
+            // direction, always - on-piece and off-piece swipes behave identically (rotation is
+            // button-only now, BTN_RotateLeft/BTN_RotateRight - no gesture triggers it). No
+            // raycast needed for this anymore.
             var delta = end - start;
-            var fallbackDirection = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
+            var direction = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
                 ? (delta.x >= 0f ? MoveDirection.Right : MoveDirection.Left)
                 : (delta.y >= 0f ? MoveDirection.Forward : MoveDirection.Back);
 
-            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = fallbackDirection });
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
         }
 
         // Raycasts a screen point (camera-relative so it's correct regardless of camera
@@ -101,15 +93,15 @@ namespace hp55games.Blockout.InputSystem
         // own height - not the well floor, since the camera isn't orthographic: the same screen
         // ray hits different world X/Z depending on which height it's projected onto, so a
         // floor-only intersection was systematically off for any piece not already on the floor
-        // (i.e. most of the time, since pieces start near the well's top and fall). hitPiece
-        // means the point landed on the piece's own X/Z footprint; direction (the pivot ->
-        // GridPosition, the shape's local-space anchor, per PolycubeShape/PieceController -> the
-        // point vector, dominant axis then sign) is always resolved regardless of hit/miss -
-        // callers decide what to do with each (e.g. HandleTap ignores it on a hit, HandleSwipe now
-        // uses it either way). No dead zone, works from anywhere on screen including edges.
-        // Returns false only when there's nothing to resolve against (no camera, or no active
-        // piece - e.g. between spawns).
-        private bool TryResolveGestureAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
+        // (i.e. most of the time, since pieces start near the well's top and fall). A hit means
+        // the point landed on the piece's own X/Z footprint; a miss returns the direction from the
+        // piece's pivot (GridPosition - the shape's local-space anchor, per
+        // PolycubeShape/PieceController) to the point instead - no dead zone, works from anywhere
+        // on screen including edges. Only HandleTap uses this (a tap has no delta of its own to
+        // resolve a direction from) - HandleSwipe resolves its direction straight from the swipe's
+        // screen delta instead. Returns false only when there's nothing to resolve against (no
+        // camera, or no active piece - e.g. between spawns).
+        private bool TryResolveTapAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
         {
             hitPiece = false;
             direction = default;
@@ -150,6 +142,8 @@ namespace hp55games.Blockout.InputSystem
                     break;
                 }
             }
+
+            if (hitPiece) return true;
 
             float dx = local.x - gridPosition.x;
             float dz = local.z - gridPosition.z;

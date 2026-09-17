@@ -3,7 +3,7 @@
 Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruito sul **55HP Mobile Template**.
 
 - **Repo**: `55hp/55HPGamesMinimalGame`. Si lavora su `develop`; `main` riceve solo milestone chiuse.
-- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `76d164f`.
+- **Ultimo aggiornamento**: 17/09/2026, base `develop` @ `38eec16`.
 - **Fonti di verità**: il design (GDD e documentazione tecnica) sta su Notion. Se questo file e il codice non coincidono, **vale il codice**, e questo file va corretto nello stesso commit.
 - **Voci ⏳**: descrivono lo **stato target** del refactor authoring (§9). Finché il refactor non è chiuso, il codice può ancora non corrispondere.
 
@@ -94,9 +94,8 @@ Registrati da `BlockoutGameplayStateInstaller`:
 - Se la camera non è centrata in X/Z, il frustum si allarga per tenere il pozzo in frame, ma non ricentra (impossibile con un frustum simmetrico senza lens shift).
 
 ### Input — gesti (`BlockoutInputHandler`)
-Ogni gesto viene proiettato sul piano orizzontale **all'altezza del pezzo attivo**. La mappatura:
-- **Swipe** (sul pezzo o fuori, stessa risoluzione di direzione via raycast) → traslazione, sempre. Nessun gesto ruota più il pezzo (17/09) — la rotazione è solo bottoni, vedi sotto.
-- **Tap fuori dal pezzo** → traslazione.
+- **Swipe** (sul pezzo o fuori, posizione ignorata) → traslazione diretta nella direzione dello swipe sullo schermo: su/destra/giù/sinistra → pezzo su/destra/giù/sinistra. Nessun raycast, nessun gesto ruota più il pezzo (17/09) — la rotazione è solo bottoni, vedi sotto.
+- **Tap fuori dal pezzo** → traslazione, proiettata sul piano orizzontale **all'altezza del pezzo attivo** (raycast, a differenza dello swipe: un tap non ha un delta da cui ricavare la direzione).
 - **Tap sul pezzo** → nessun effetto.
 - **Doppio tap** → **rimosso**.
 
