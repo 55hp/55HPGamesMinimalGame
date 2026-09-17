@@ -59,8 +59,8 @@ namespace hp55games.Blockout.Gameplay
         private const float LockedValueFactor = 0.55f;
 
         // True once SpawnNext refused to spawn because the well is already full at the computed
-        // spawn position (see SpawnNext). Public so PlayMode tests (and BlockoutDebugOverlay) can
-        // read this instead of a silent lock.
+        // spawn position (see SpawnNext). Public so PlayMode tests can read this instead of a
+        // silent lock.
         public bool SpawnBlockedWellFull { get; private set; }
         public PieceController CurrentPiece => _controller;
 
