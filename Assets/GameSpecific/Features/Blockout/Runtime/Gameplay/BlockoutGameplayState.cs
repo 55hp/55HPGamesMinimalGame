@@ -57,8 +57,15 @@ namespace hp55games.Blockout.Gameplay
             // survives a pause, but this state instance does not (SceneFlowService constructs a
             // fresh one via CreateGameplayState(isResuming: true) rather than reusing the old one,
             // mirroring the template's own GameplayState/ResumeFromPauseAsync behavior).
-            _spawner = UnityEngine.Object.FindObjectOfType<BlockoutSpawner>();
-            if (_spawner != null) _spawner.WellFull += OnWellFull;
+            // Resolved via ServiceRegistry (BlockoutSpawner.Awake registers itself) rather than
+            // FindObjectOfType (README §0 rule 2) - this state is a plain C# class, not a
+            // MonoBehaviour, so it can't hold a [SerializeField] of its own, and BlockoutSpawner
+            // lives in 02_Gameplay while whatever constructs this state (SceneFlowService) doesn't,
+            // ruling out a scene-authored reference passed in from outside too.
+            if (!ServiceRegistry.TryResolve(out _spawner))
+                Debug.LogError("[BlockoutGameplayState] BlockoutSpawner is not registered - is it present and enabled in 02_Gameplay?");
+            else
+                _spawner.WellFull += OnWellFull;
 
             if (!_isResuming)
             {

@@ -62,10 +62,10 @@ namespace hp55games.Blockout.InputSystem
         private void HandleTap(Vector2 screenPosition)
         {
             // A tap has no directional delta to rotate by, so a tap landing on the piece's own
-            // footprint is simply consumed with no effect - only a miss resolves into a move. See
-            // 03_input_translation_raycast.md. Hard drop no longer has a gesture of its own (the
-            // double-tap that used to buffer this resolution waiting for a follow-up tap is gone
-            // - hard drop is button-only now) - a tap resolves immediately.
+            // footprint is simply consumed with no effect - only a miss resolves into a move.
+            // Hard drop no longer has a gesture of its own (the double-tap that used to buffer
+            // this resolution waiting for a follow-up tap is gone - hard drop is button-only now)
+            // - a tap resolves immediately.
             if (TryResolveGestureAgainstPiece(screenPosition, out bool hitPiece, out var direction) && !hitPiece)
             {
                 _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
@@ -74,11 +74,10 @@ namespace hp55games.Blockout.InputSystem
 
         private void HandleSwipe(Vector2 start, Vector2 end)
         {
-            // Raycast-gated per 03_input_translation_raycast.md: a swipe starting on the active
-            // piece rotates (existing logic below, unchanged); a swipe starting off the piece
-            // translates instead. If the raycast can't resolve at all (no active piece / no
-            // camera yet), fall back to the old unconditional-rotate behavior rather than
-            // dropping the input.
+            // Raycast-gated: a swipe starting on the active piece rotates (existing logic below,
+            // unchanged); a swipe starting off the piece translates instead. If the raycast can't
+            // resolve at all (no active piece / no camera yet), fall back to the old
+            // unconditional-rotate behavior rather than dropping the input.
             if (TryResolveGestureAgainstPiece(start, out bool hitPiece, out var direction) && !hitPiece)
             {
                 _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
@@ -119,7 +118,12 @@ namespace hp55games.Blockout.InputSystem
             var camera = _camera != null ? _camera : Camera.main;
             if (camera == null) return false;
 
-            if (_spawner == null) _spawner = FindObjectOfType<BlockoutSpawner>();
+            // Resolved lazily via ServiceRegistry (BlockoutSpawner.Awake registers itself), not
+            // FindObjectOfType (README §0 rule 2) - kept lazy (first raycast, not this
+            // component's own Awake()) since Awake() order between two scene-authored objects in
+            // the same scene load isn't guaranteed; by the time a gesture actually happens, both
+            // are long since initialized.
+            if (_spawner == null) ServiceRegistry.TryResolve(out _spawner);
             var piece = _spawner != null ? _spawner.CurrentPiece : null;
             if (piece == null) return false;
 

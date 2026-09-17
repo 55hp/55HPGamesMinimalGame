@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Rendering;
 using hp55games.Polycubes.Grid;
@@ -13,8 +14,20 @@ namespace hp55games.Blockout.Gameplay
     // delegated to WellCellRenderer (Phase 5, pooled) - this class only decides WHICH grid cells
     // are shown and WHAT COLOR they mean (active vs locked), never touches a GameObject/Renderer
     // directly.
+    //
+    // Registers itself into ServiceRegistry (Awake) rather than being found via FindObjectOfType
+    // (README §0 rule 2) - BlockoutGameplayState and BlockoutInputHandler both need to reach the
+    // active spawner, and neither can hold a scene-authored [SerializeField] to it (the state is
+    // a plain C# class constructed outside this scene; the input handler's Awake() has no
+    // ordering guarantee relative to this one's within the same scene load). Not explicitly
+    // unregistered on OnDestroy - a new run's spawner overwrites the registration in its own
+    // Awake() before EnterAsync ever resolves it again (scene unload/load is sequential, not
+    // concurrent, in every path this project's SceneFlowService takes).
     public sealed class BlockoutSpawner : MonoBehaviour
     {
+        [Tooltip("Renders the well's occupied cells (pooled). Missing reference: pieces still spawn/lock/clear normally, just with no visual.")]
+        [SerializeField] private WellCellRenderer _cellRenderer;
+
         private VoxelGrid _grid;
         private int _wellWidth;
         private int _wellHeight;
@@ -27,7 +40,6 @@ namespace hp55games.Blockout.Gameplay
         private IReadOnlyList<PolycubeShape> _shapes;
         private int _nextShapeIndex;
 
-        private WellCellRenderer _cellRenderer;
         private PieceController _controller;
 
         // Both sourced from the active skin (Technical Doc Phase 3 - BlockoutGameplayState reads
@@ -87,11 +99,7 @@ namespace hp55games.Blockout.Gameplay
 
             if (_cellRenderer == null)
             {
-                _cellRenderer = FindObjectOfType<WellCellRenderer>();
-                if (_cellRenderer == null)
-                {
-                    Debug.LogError("[BlockoutSpawner] No WellCellRenderer found in the scene - pieces will spawn with no visual.", this);
-                }
+                Debug.LogError("[BlockoutSpawner] _cellRenderer is not assigned in the Inspector - pieces will spawn with no visual.", this);
             }
 
             // Leaves no visual trace of a previous run: every locked cell, plus whatever the
@@ -111,6 +119,12 @@ namespace hp55games.Blockout.Gameplay
             SpawnBlockedWellFull = false;
 
             SpawnNext();
+        }
+
+        private void Awake()
+        {
+            // See the class doc for why this is ServiceRegistry, not left for FindObjectOfType.
+            ServiceRegistry.Register<BlockoutSpawner>(this);
         }
 
         private void OnDestroy()
