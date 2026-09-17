@@ -52,6 +52,8 @@ Registrati da `BlockoutGameplayStateInstaller`:
 | Camera | prospettica dentro il pozzo, adattiva, griglia wireframe | `BlockoutWellCamera`, `BlockoutWellWireframe` |
 | Punteggio | `100 × N²` (N = strati eliminati insieme) | `ScoreCalculator` |
 
+`BlockoutWellCamera` tocca solo il FOV: posizione/rotazione restano quelle impostate a mano sulla camera in scena. Normalmente viene aggiunto via `AddComponent` a runtime da `BlockoutGameplayState` (i suoi `[SerializeField]` restano quindi ai default in codice, non editabili). Per tuning euristico: aggiungilo a mano sulla Main Camera in `02_Gameplay.unity` (il codice lo salta se già presente) — `[ExecuteAlways]` + `OnValidate` ricalcolano il fit a ogni modifica da Inspector durante il Play. Fuori Play il ricalcolo è un no-op silenzioso: `IConfigCatalogService` non è disponibile senza Bootstrap, quindi il fit reale richiede comunque di premere Play.
+
 ### Input touch (`BlockoutInputHandler`)
 Ogni gesto viene risolto con un raycast contro il pezzo attivo:
 - **Swipe che parte sul pezzo** → rotazione. Orizzontale = AxisA → **Z**, verticale = AxisB → **X**. Y escluso (asse di caduta). Mapping in `PieceController` (`AxisAMapsTo` / `AxisBMapsTo`).
