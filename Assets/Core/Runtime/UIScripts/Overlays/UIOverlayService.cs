@@ -27,6 +27,12 @@ namespace hp55games.Mobile.UI
 
         private GameObject _blockerGo;    // invisibile, intercetta raycast
 
+        // Caches the in-flight fade-instantiate so PrewarmAsync and FadeInAsync racing each other
+        // (e.g. FadeInAsync fired before PrewarmAsync's own InstantiateAsync has returned) await
+        // the same instantiate instead of each seeing _fadeGo == null and starting their own,
+        // which used to orphan a duplicate overlay instance.
+        private Task _fadeGoTask;
+
         // Address (metti le tue costanti in Addr.cs)
         private const string FADE_ADDR    = hp55games.Addr.Content.UI.Overlays.FadeFull;
         private const string LOADING_ADDR = hp55games.Addr.Content.UI.Overlays.LoadingFull;
@@ -52,20 +58,31 @@ namespace hp55games.Mobile.UI
         // FadeInAsync (which used to do this instantiate inline - see PrewarmAsync's remarks on
         // IUIOverlayService for why that made the first fade of a session routinely miss
         // SceneFlowService's OverlayTimeoutMs).
-        private async Task EnsureFadeGoAsync()
+        //
+        // Not itself async: the _fadeGo/_fadeGoTask check-then-set below must complete in one
+        // synchronous stretch (no await before caching the task) so two callers racing each other
+        // - see the _fadeGoTask field doc - are guaranteed to observe the same cached task rather
+        // than a window where both see _fadeGo == null and _fadeGoTask == null.
+        private Task EnsureFadeGoAsync()
         {
-            if (_fadeGo != null) return;
+            if (_fadeGo != null) return Task.CompletedTask;
+            return _fadeGoTask ??= CreateFadeGoAsync();
+        }
 
+        private async Task CreateFadeGoAsync()
+        {
             await EnsureUIRootAsync();
             if (_ui == null) return;
 
-            _fadeGo = await _loader.InstantiateAsync(FADE_ADDR, _ui.overlays);
-            if (_fadeGo == null) { Debug.LogError("[UIOverlayService] Fade prefab non trovato."); return; }
-            _fadeCg = RequireCanvasGroup(_fadeGo);
+            var go = await _loader.InstantiateAsync(FADE_ADDR, _ui.overlays);
+            if (go == null) { Debug.LogError("[UIOverlayService] Fade prefab non trovato."); return; }
+
+            _fadeCg = RequireCanvasGroup(go);
             _fadeCg.alpha = 0f;
             _fadeCg.blocksRaycasts = false; // di solito il fade non blocca input, lo fa Blocker
             _fadeCg.interactable = false;
-            StretchFull(_fadeGo);
+            StretchFull(go);
+            _fadeGo = go; // set last: EnsureFadeGoAsync's fast path only sees it once fully configured
         }
 
         public async Task FadeOutAsync(float duration = 0.2f)
