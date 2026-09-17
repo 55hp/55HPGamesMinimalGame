@@ -15,14 +15,14 @@ namespace hp55games.Blockout.Gameplay
     // are shown and WHAT COLOR they mean (active vs locked), never touches a GameObject/Renderer
     // directly.
     //
-    // Registers itself into ServiceRegistry (Awake) rather than being found via FindObjectOfType
-    // (README §0 rule 2) - BlockoutGameplayState and BlockoutInputHandler both need to reach the
-    // active spawner, and neither can hold a scene-authored [SerializeField] to it (the state is
-    // a plain C# class constructed outside this scene; the input handler's Awake() has no
-    // ordering guarantee relative to this one's within the same scene load). Not explicitly
-    // unregistered on OnDestroy - a new run's spawner overwrites the registration in its own
-    // Awake() before EnterAsync ever resolves it again (scene unload/load is sequential, not
-    // concurrent, in every path this project's SceneFlowService takes).
+    // Registers itself into ServiceRegistry (Awake/OnDestroy) rather than being found via
+    // FindObjectOfType (README §0 rule 2) - BlockoutGameplayState and BlockoutInputHandler both
+    // need to reach the active spawner, and neither can hold a scene-authored [SerializeField] to
+    // it (the state is a plain C# class constructed outside this scene; the input handler's
+    // Awake() has no ordering guarantee relative to this one's within the same scene load).
+    // ServiceRegistry.Unregister only removes the entry if it still holds this instance, so even
+    // if the unload/load ordering ever stopped being strictly sequential, a late OnDestroy can't
+    // clobber a newer spawner's registration.
     public sealed class BlockoutSpawner : MonoBehaviour
     {
         [Tooltip("Renders the well's occupied cells (pooled). Missing reference: pieces still spawn/lock/clear normally, just with no visual.")]
@@ -129,6 +129,7 @@ namespace hp55games.Blockout.Gameplay
 
         private void OnDestroy()
         {
+            ServiceRegistry.Unregister<BlockoutSpawner>(this);
             _timeDifficulty?.Dispose();
         }
 

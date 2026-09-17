@@ -8,7 +8,8 @@ namespace hp55games.Mobile.Core.Juice
     /// <summary>
     /// Registers named FeedbackPlayers and dispatches Play() calls by id.
     /// Attach to a persistent GameObject in the bootstrap or gameplay scene.
-    /// Self-registers as IFeedbackService in Awake.
+    /// Self-registers as IFeedbackService in Awake, unregisters in OnDestroy (harmless if never
+    /// destroyed - e.g. a bootstrap-persistent instance).
     /// </summary>
     public sealed class FeedbackService : MonoBehaviour, IFeedbackService
     {
@@ -32,6 +33,11 @@ namespace hp55games.Mobile.Core.Juice
 
             // Boot log: mostra tutti gli id registrati per facilitare il debug.
             Debug.Log($"[FeedbackService] Registered {_map.Count} entries: [ {string.Join(", ", _map.Keys)} ]", this);
+        }
+
+        private void OnDestroy()
+        {
+            ServiceRegistry.Unregister<IFeedbackService>(this);
         }
 
         // ── IFeedbackService ─────────────────────────────────────────────────
