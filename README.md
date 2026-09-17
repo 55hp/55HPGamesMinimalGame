@@ -52,6 +52,8 @@ Registrati da `BlockoutGameplayStateInstaller`:
 | Camera | prospettica dentro il pozzo, adattiva, griglia wireframe | `BlockoutWellCamera`, `BlockoutWellWireframe` |
 | Punteggio | `100 × N²` (N = strati eliminati insieme) | `ScoreCalculator` |
 
+`BlockoutWellCamera` tocca solo il FOV; rotazione e posizione restano quelle impostate a mano sulla camera in scena, salvo `BlockoutWell.asset` → `Camera Position Offset` (`Vector3`, default zero), sommato una sola volta alla posizione a `Start()`. Per trovare i valori: Play da `00_Bootstrap`, pausa, sposta a mano la camera, riporta il delta nell'asset.
+
 ### Input touch (`BlockoutInputHandler`)
 Ogni gesto viene risolto con un raycast contro il pezzo attivo:
 - **Swipe che parte sul pezzo** → rotazione. Orizzontale = AxisA → **Z**, verticale = AxisB → **X**. Y escluso (asse di caduta). Mapping in `PieceController` (`AxisAMapsTo` / `AxisBMapsTo`).

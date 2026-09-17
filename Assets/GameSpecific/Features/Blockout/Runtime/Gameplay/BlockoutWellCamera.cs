@@ -11,8 +11,9 @@ namespace hp55games.Blockout.Gameplay
     // real bounds and the device's actual aspect ratio, safe area, and gameplay-HUD footprint -
     // the fixed 40 degree FOV was only ever eyeballed against the Editor Game View's default
     // aspect ratio and clips the well's top opening on unusually tall/narrow screens (e.g. the
-    // Samsung S25 Edge). Camera position/rotation (looking straight down at the well) are left
-    // exactly as authored in the scene; only field of view is touched.
+    // Samsung S25 Edge). Rotation (looking straight down at the well) is left exactly as authored
+    // in the scene. Position is left as authored too, except for one config-driven nudge applied
+    // once at Start - see BlockoutWellConfig.CameraPositionOffset.
     //
     // Symmetric-frustum limitation: with no lens shift, the rendered well is always centered on
     // screen, so an inset on only one edge (e.g. a HUD bar at the top but nothing at the bottom)
@@ -45,7 +46,26 @@ namespace hp55games.Blockout.Gameplay
             _camera = GetComponent<Camera>();
         }
 
-        private void Start() => Recompute();
+        private void Start()
+        {
+            ApplyPositionOffset();
+            Recompute();
+        }
+
+        // One-shot nudge on top of the scene-authored position, sourced from
+        // BlockoutWellConfig.CameraPositionOffset - lets a value found by hand (Play from
+        // 00_Bootstrap, pause, drag the camera, note the delta) be applied without editing the
+        // scene. Runs before the first Recompute() so the FOV fit is computed against the
+        // already-offset position, not the original one.
+        private void ApplyPositionOffset()
+        {
+            if (!ServiceRegistry.TryResolve<IConfigCatalogService>(out var catalogService)) return;
+
+            var wellConfig = catalogService.Get<BlockoutWellConfig>();
+            if (wellConfig == null) return;
+
+            transform.position += wellConfig.CameraPositionOffset;
+        }
 
         private void Update()
         {
