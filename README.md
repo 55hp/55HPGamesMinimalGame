@@ -59,6 +59,7 @@ Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruit
 - **FSM**: `IGameStateMachine`. `BlockoutGameplayState` prende il posto di `GameplayState` via `IGameplayStateFactory`. Il fine partita usa `ResultState` del template.
 - **Navigazione**: `IUINavigationService`. Push, Replace e Pop sono serializzati da un semaforo, quindi sicuri anche se chiamati in concorrenza.
 - **Overlay**: `IUIOverlayService`. Il fade è precaricato (`PrewarmAsync`) in `UIServiceInstaller.Awake`; le chiamate concorrenti condividono lo stesso task di istanziazione.
+- **Back button (Android)**: `AndroidBackButtonHandler` (`KeyCode.Escape`, anche il tasto Escape in Editor/desktop) chiude il popup in cima allo stack se `IUIPopupService.HasOpenPopups`, altrimenti fa `PopAsync()` sulla pagina corrente se `IUINavigationService.CanGoBack`. Nessuna gestione per-schermata. ⏳ Non è ancora attaccato a nessun GameObject — va messo su un oggetto persistente (es. `GameBootstrap`), Bezi.
 - **Input**: `IInputService`. Un press che inizia sopra un elemento UI appartiene alla UI e non genera gesti di gioco.
 - **Bootstrap**: `00_Bootstrap` → `ServiceRegistry.InstallDefaults()`. Scene: `01_Menu`, `02_Gameplay`, `03_Results`. In Editor si fa Play sempre da `00_Bootstrap`.
 - **Gap noto del template**: `IConfigCatalogService` non è in `InstallDefaults()` e richiede un `ConfigCatalogInstaller` in scena. La correzione va fatta nel template.
@@ -256,6 +257,7 @@ Rimossi i workaround a runtime che violavano §0:
 - **`BlockoutSpawner`** (scena `02_Gameplay`): collegare `_cellRenderer` (`WellCellRenderer`) in Inspector — oggi senza reference non c'è visuale, ma il gioco funziona lo stesso.
 - **`BlockoutWellCamera`**: da verificare che sia autorato sulla Main Camera di `02_Gameplay` con `_wellOrigin`/`_hudTopReservedCanvasUnits` collegati (`_worldPadding` non esiste più, va tolto se presente in scena).
 - **Shop** (`UIPeriodicTableShopPage`/`UIPeriodicElementCell`, nel prefab): pagina root full-stretch (anchorMin 0,0 / anchorMax 1,1 / offset 0,0 / pivot 0.5,0.5); `_seriesSubViewContainer` con `HorizontalLayoutGroup` (childControlWidth=false, childControlHeight=true, childForceExpandWidth=false, childForceExpandHeight=true, childAlignment=MiddleLeft, spacing=8) + `ContentSizeFitter` (horizontalFit=PreferredSize); il suo genitore con uno `ScrollRect` (content = il container, viewport = se stesso, horizontal=true, vertical=false, movementType=Elastic); `UIPeriodicElementCell._activeIndicator` ora obbligatorio (es. `Outline` su `_elementColor`, effectColor ~(255,214,51), effectDistance (3,-3)).
+- **`AndroidBackButtonHandler`** (nuovo, §1): attaccarlo a un GameObject persistente (`GameBootstrap` o simile in `00_Bootstrap`) — nessun `[SerializeField]`, nessun'altra configurazione necessaria.
 
 ### Tecnici
 - `PieceController` viene creato e distrutto a ogni pezzo, senza pool.
