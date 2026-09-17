@@ -129,10 +129,14 @@ namespace hp55games.Blockout.InputSystem
             }
         }
 
-        // Raycasts a screen point vertically (via the ground plane, camera-relative so it's
-        // correct regardless of camera angle) against the active piece's occupied cells. A hit
-        // means the point landed on the piece's own X/Z footprint; a miss returns the direction
-        // from the piece's pivot (GridPosition - the shape's local-space anchor, per
+        // Raycasts a screen point (camera-relative so it's correct regardless of camera
+        // position/angle) against the active piece's occupied cells, intersected at the piece's
+        // own height - not the well floor, since the camera isn't orthographic: the same screen
+        // ray hits different world X/Z depending on which height it's projected onto, so a
+        // floor-only intersection was systematically off for any piece not already on the floor
+        // (i.e. most of the time, since pieces start near the well's top and fall). A hit means
+        // the point landed on the piece's own X/Z footprint; a miss returns the direction from
+        // the piece's pivot (GridPosition - the shape's local-space anchor, per
         // PolycubeShape/PieceController) to the point instead - no dead zone, works from anywhere
         // on screen including edges. Returns false only when there's nothing to resolve against
         // (no camera, or no active piece - e.g. between spawns).
@@ -148,13 +152,14 @@ namespace hp55games.Blockout.InputSystem
             var piece = _spawner != null ? _spawner.CurrentPiece : null;
             if (piece == null) return false;
 
+            var gridPosition = piece.GridPosition;
             var origin = _wellOrigin != null ? _wellOrigin.position : Vector3.zero;
-            var plane = new Plane(Vector3.up, origin);
+            var pieceWorldPosition = new Vector3(origin.x, origin.y + gridPosition.y, origin.z);
+            var plane = new Plane(Vector3.up, pieceWorldPosition);
             var ray = camera.ScreenPointToRay(screenPosition);
             if (!plane.Raycast(ray, out float distance)) return false;
 
             var local = ray.GetPoint(distance) - origin;
-            var gridPosition = piece.GridPosition;
             IReadOnlyList<Vector3Int> cells = piece.Shape.Cells;
 
             foreach (var cell in cells)
