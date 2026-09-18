@@ -152,7 +152,12 @@ namespace hp55games.Blockout.Gameplay
             PieceMaterialCategory? materialCategory = activeSkin.AtomicNumber > 0 ? activeSkin.MaterialCategory : null;
 
             var well = new BlockoutWell(wellConfig);
-            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth, activeSkin.PieceColors, activeSkin.ClearBehaviour, materialCategory);
+
+            // A fresh seed per run (not a fixed one) - spawn order should vary run to run, while
+            // still being fully deterministic and reproducible for a given seed (see
+            // BlockoutSpawner.CurrentSeed for logging/repro).
+            int spawnSeed = new System.Random().Next();
+            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), spawnSeed, well.Width, well.Height, well.Depth, activeSkin.PieceColors, activeSkin.ClearBehaviour, materialCategory);
         }
 
         // Reuses the template's existing score infrastructure (IGameContextService.Score,
