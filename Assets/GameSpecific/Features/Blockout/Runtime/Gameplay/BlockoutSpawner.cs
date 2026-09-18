@@ -92,9 +92,7 @@ namespace hp55games.Blockout.Gameplay
             _clearBehaviour = clearBehaviour;
             _materialCategory = materialCategory;
 
-            // Fresh per run, per spec (the session timer restarts from zero on every new game) -
-            // dispose the previous run's subscription before replacing it.
-            _timeDifficulty?.Dispose();
+            // Fresh per run, per spec: the step delay restarts from StartStepDelay every new game.
             _timeDifficulty = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
 
             if (_cellRenderer == null)
@@ -130,7 +128,6 @@ namespace hp55games.Blockout.Gameplay
         private void OnDestroy()
         {
             ServiceRegistry.Unregister<BlockoutSpawner>(this);
-            _timeDifficulty?.Dispose();
         }
 
         private void Update()

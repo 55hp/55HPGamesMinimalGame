@@ -355,44 +355,26 @@ namespace hp55games.Blockout.Tests
         public void Initialize_ResetsTimeDifficulty_ForANewRun()
         {
             // Regression guard: BlockoutSpawner.Initialize() must construct a fresh
-            // BlockoutTimeDifficultyModifier per run (and dispose the previous one's
-            // subscription) so the session timer restarts from zero on every new game.
-            //
-            // The session-interval reduction is triggered by an actual layer clear now, not by
-            // publishing LayersClearedEvent directly - BlockoutSpawner no longer publishes it
-            // itself (the clear/collapse dispatch moved to PieceController.Locked, a synchronous
-            // Action<int[]>, to fix a real sequencing bug - see
-            // HardDrop_DoesNotDragTheNewlySpawnedPieceDownWithTheCollapse above). A width=1,
-            // depth=1 well makes a hard drop guaranteed to complete the only layer, same
-            // technique as HardDrop_DispatchesToClearBehaviour_WithTheClearedCellsPositionsAndColors
-            // above. PieceController still publishes LayersClearedEvent itself (for scoring/
-            // BlockoutTimeDifficultyModifier), so that part of the wiring is unchanged - only how
-            // this test triggers it needed to catch up.
+            // BlockoutTimeDifficultyModifier per run, so the step delay restarts at
+            // StartStepDelay instead of carrying over the previous run's decay.
             var cellRenderer = CreateCellRenderer();
-            var eventBus = new EventBus();
-            ServiceRegistry.Register<IEventBus>(eventBus);
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
             spawner.Initialize(new VoxelGrid(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 5, 1, null, null);
 
-            eventBus.Publish(new HardDropRequestedEvent()); // locks, clears the only layer, reduces run 1's session interval
+            // Reach the private modifier directly (same pattern as the WellCellRenderer field
+            // access above) to force decay without waiting DecayIntervalSeconds of real time.
+            var timeDifficultyField = typeof(BlockoutSpawner).GetField("_timeDifficulty", BindingFlags.NonPublic | BindingFlags.Instance);
+            var modifier = (BlockoutTimeDifficultyModifier)timeDifficultyField.GetValue(spawner);
+            modifier.Tick(_timeDifficultyConfig.DecayIntervalSeconds + 1f);
 
-            // PieceController.CurrentInterval is a snapshot taken at Initialize() and only
-            // refreshed by Tick()/AdvancePhase() - piece 2 was already spawned (inside the
-            // Locked?.Invoke() call chain) BEFORE PieceController.Lock() goes on to publish
-            // LayersClearedEvent, so its snapshot predates the reduction. A real frame's Update()
-            // would refresh it the same way; Tick(0f) does the same synchronously, without
-            // advancing any fall-state timer (deltaTime=0), since this is a [Test] with no frame
-            // boundary to wait for.
-            spawner.CurrentPiece.Tick(0f);
-
-            float phaseInterval = _fallCurve.IntervalForPhase(0);
-            Assert.Less(spawner.CurrentPiece.CurrentInterval, phaseInterval); // the reduction reached this piece
+            spawner.CurrentPiece.Tick(0f); // refresh the snapshot without advancing any fall-state timer
+            Assert.Less(spawner.CurrentPiece.CurrentInterval, _timeDifficultyConfig.StartStepDelay); // the decay reached this piece
 
             spawner.Initialize(new VoxelGrid(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 5, 1, null, null);
 
-            Assert.AreEqual(phaseInterval, spawner.CurrentPiece.CurrentInterval, 0.0001f); // back to ratio 1.0
+            Assert.AreEqual(_timeDifficultyConfig.StartStepDelay, spawner.CurrentPiece.CurrentInterval, 0.0001f); // back to the start delay
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(cellRenderer.gameObject);

@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c84999c5c7ed431ab0fec0c47f84cfee, type: 3}
   m_Name: BlockoutTimeDifficulty
   m_EditorClassIdentifier:
-  _sessionBaseInterval: 2
-  _timerTickIntervalSeconds: 15
-  _timerDecrementPerTick: 0.15
-  _layerClearDecrement: 0.1
-  _combinedFloorInterval: 0.5
+  _startStepDelay: 3
+  _decayIntervalSeconds: 10
+  _decayPercent: 0.1
+  _minStepDelay: 0.7

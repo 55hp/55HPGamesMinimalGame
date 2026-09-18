@@ -3,22 +3,29 @@ using hp55games.Mobile.Core.Config;
 
 namespace hp55games.Blockout.Config
 {
-    // Tuning for BlockoutTimeDifficultyModifier - the time+layer-clear based difficulty system
-    // that sits alongside (never replaces) BlockoutFallCurveConfig's per-piece phase curve. See
-    // BlockoutTimeDifficultyModifier for how these combine into the final fall interval.
+    // Tuning for BlockoutTimeDifficultyModifier - the sole source of the fall step delay.
+    // Purely time-based: the delay decays every DecayIntervalSeconds by DecayPercent, down to
+    // MinStepDelay, and never depends on how many pieces or layers have been cleared.
     [CreateAssetMenu(fileName = "BlockoutTimeDifficulty", menuName = "hp55games/Blockout/Time Difficulty Config")]
     public sealed class BlockoutTimeDifficultyConfig : ScriptableObject, IConfigAsset
     {
-        [SerializeField] private float _sessionBaseInterval = 2.0f;
-        [SerializeField] private float _timerTickIntervalSeconds = 15.0f;
-        [SerializeField] private float _timerDecrementPerTick = 0.15f;
-        [SerializeField] private float _layerClearDecrement = 0.1f;
-        [SerializeField] private float _combinedFloorInterval = 0.5f;
+        [Header("Step Delay")]
+        [Tooltip("Interval in seconds between piece steps at the start of a session.")]
+        [SerializeField] private float _startStepDelay = 3.0f;
 
-        public float SessionBaseInterval => _sessionBaseInterval;
-        public float TimerTickIntervalSeconds => _timerTickIntervalSeconds;
-        public float TimerDecrementPerTick => _timerDecrementPerTick;
-        public float LayerClearDecrement => _layerClearDecrement;
-        public float CombinedFloorInterval => _combinedFloorInterval;
+        [Header("Decay Over Time")]
+        [Tooltip("How often, in seconds, the step delay is reduced.")]
+        [SerializeField] private float _decayIntervalSeconds = 10.0f;
+        [Tooltip("Fraction the step delay is reduced by on every decay tick (e.g. 0.1 = -10%).")]
+        [SerializeField, Range(0f, 1f)] private float _decayPercent = 0.1f;
+
+        [Header("Limits")]
+        [Tooltip("Minimum step delay in seconds; decay never goes below this.")]
+        [SerializeField] private float _minStepDelay = 0.7f;
+
+        public float StartStepDelay => _startStepDelay;
+        public float DecayIntervalSeconds => _decayIntervalSeconds;
+        public float DecayPercent => _decayPercent;
+        public float MinStepDelay => _minStepDelay;
     }
 }

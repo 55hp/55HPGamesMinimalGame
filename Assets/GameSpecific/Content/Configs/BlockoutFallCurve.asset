@@ -14,7 +14,3 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _stepDuration: 0.3
   _baseInterval: 3
-  _stage1Divisor: 1.2
-  _stage1End: 10
-  _stage2Divisor: 1.1
-  _stage2End: 20

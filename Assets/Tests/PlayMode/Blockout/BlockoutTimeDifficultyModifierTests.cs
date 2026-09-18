@@ -1,9 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
-using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Gameplay;
-using hp55games.Blockout.Gameplay.Events;
 
 namespace hp55games.Blockout.Tests
 {
@@ -24,34 +22,36 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
-        public void ApplyTo_ReturnsPhaseIntervalUnchanged_AtSessionStart()
+        public void CurrentStepDelay_StartsAtStartStepDelay_BeforeAnyTick()
         {
-            // No time elapsed, no clears yet - ratio is 1.0, the modifier should be a no-op.
             var modifier = new BlockoutTimeDifficultyModifier(_config);
 
-            Assert.AreEqual(1.5f, modifier.ApplyTo(1.5f), 0.0001f);
+            Assert.AreEqual(_config.StartStepDelay, modifier.CurrentStepDelay, 0.0001f);
         }
 
         [Test]
-        public void Tick_ReducesSessionInterval_OnceThe15sBoundaryIsCrossed()
+        public void Tick_ReducesStepDelayByDecayPercent_OnceTheBoundaryIsCrossed()
         {
             var modifier = new BlockoutTimeDifficultyModifier(_config);
 
-            modifier.Tick(_config.TimerTickIntervalSeconds + 1f); // one boundary crossed
+            modifier.Tick(_config.DecayIntervalSeconds + 1f); // one boundary crossed
 
-            Assert.AreEqual(_config.SessionBaseInterval - _config.TimerDecrementPerTick, modifier.SessionInterval, 0.0001f);
+            float expected = _config.StartStepDelay * (1f - _config.DecayPercent);
+            Assert.AreEqual(expected, modifier.CurrentStepDelay, 0.0001f);
         }
 
         [Test]
         public void Tick_AppliesOneReductionPerBoundaryCrossed_InASingleCall()
         {
             // A single call spanning several boundaries (e.g. a lag spike) is real elapsed time,
-            // not a duplicate trigger - every boundary crossed should reduce the interval once.
+            // not a duplicate trigger - every boundary crossed should reduce the delay once, and
+            // the reductions compound (multiplicative, not additive).
             var modifier = new BlockoutTimeDifficultyModifier(_config);
 
-            modifier.Tick(_config.TimerTickIntervalSeconds * 3f + 1f); // 3 boundaries crossed
+            modifier.Tick(_config.DecayIntervalSeconds * 3f + 1f); // 3 boundaries crossed
 
-            Assert.AreEqual(_config.SessionBaseInterval - _config.TimerDecrementPerTick * 3f, modifier.SessionInterval, 0.0001f);
+            float expected = _config.StartStepDelay * Mathf.Pow(1f - _config.DecayPercent, 3f);
+            Assert.AreEqual(expected, modifier.CurrentStepDelay, 0.0001f);
         }
 
         [Test]
@@ -62,64 +62,22 @@ namespace hp55games.Blockout.Tests
             // calls below happen synchronously, so Time.frameCount is identical for both.
             var modifier = new BlockoutTimeDifficultyModifier(_config);
 
-            modifier.Tick(_config.TimerTickIntervalSeconds + 1f);
-            float afterFirstTick = modifier.SessionInterval;
+            modifier.Tick(_config.DecayIntervalSeconds + 1f);
+            float afterFirstTick = modifier.CurrentStepDelay;
 
-            modifier.Tick(_config.TimerTickIntervalSeconds + 1f); // same frame - must be a no-op
+            modifier.Tick(_config.DecayIntervalSeconds + 1f); // same frame - must be a no-op
 
-            Assert.AreEqual(afterFirstTick, modifier.SessionInterval, 0.0001f);
+            Assert.AreEqual(afterFirstTick, modifier.CurrentStepDelay, 0.0001f);
         }
 
         [Test]
-        public void LayersCleared_ReducesSessionInterval_ByAFixedAmount_RegardlessOfLayerCount()
-        {
-            var eventBus = new EventBus();
-            ServiceRegistry.Register<IEventBus>(eventBus);
-            var modifier = new BlockoutTimeDifficultyModifier(_config);
-
-            eventBus.Publish(new LayersClearedEvent { LayerCount = 4, PointsAwarded = 1600 });
-
-            Assert.AreEqual(_config.SessionBaseInterval - _config.LayerClearDecrement, modifier.SessionInterval, 0.0001f);
-        }
-
-        [Test]
-        public void LayersCleared_StacksWithATimerTick_WhenBothOccur()
-        {
-            // Explicitly-wanted edge case: a timer tick and a layer clear landing together both
-            // apply - this is a reward for synchronized timing, not a bug to prevent.
-            var eventBus = new EventBus();
-            ServiceRegistry.Register<IEventBus>(eventBus);
-            var modifier = new BlockoutTimeDifficultyModifier(_config);
-
-            modifier.Tick(_config.TimerTickIntervalSeconds + 1f);
-            eventBus.Publish(new LayersClearedEvent { LayerCount = 1, PointsAwarded = 100 });
-
-            float expected = _config.SessionBaseInterval - _config.TimerDecrementPerTick - _config.LayerClearDecrement;
-            Assert.AreEqual(expected, modifier.SessionInterval, 0.0001f);
-        }
-
-        [Test]
-        public void ApplyTo_NeverGoesBelowTheCombinedFloor_EvenOnceTheSessionIntervalIsFullyDepleted()
+        public void Tick_NeverGoesBelowMinStepDelay_EvenAfterManyBoundaries()
         {
             var modifier = new BlockoutTimeDifficultyModifier(_config);
 
-            modifier.Tick(_config.TimerTickIntervalSeconds * 1000f); // drive the session interval to 0
+            modifier.Tick(_config.DecayIntervalSeconds * 1000f); // enough boundaries to hit the floor
 
-            Assert.AreEqual(0f, modifier.SessionInterval, 0.0001f);
-            Assert.AreEqual(_config.CombinedFloorInterval, modifier.ApplyTo(10f), 0.0001f);
-        }
-
-        [Test]
-        public void Dispose_StopsFurtherReductions_FromLayerClearEvents()
-        {
-            var eventBus = new EventBus();
-            ServiceRegistry.Register<IEventBus>(eventBus);
-            var modifier = new BlockoutTimeDifficultyModifier(_config);
-
-            modifier.Dispose();
-            eventBus.Publish(new LayersClearedEvent { LayerCount = 1, PointsAwarded = 100 });
-
-            Assert.AreEqual(_config.SessionBaseInterval, modifier.SessionInterval, 0.0001f);
+            Assert.AreEqual(_config.MinStepDelay, modifier.CurrentStepDelay, 0.0001f);
         }
     }
 }
