@@ -18,6 +18,11 @@ namespace hp55games.Blockout
         public static IReadOnlyList<string> AllPieceNames { get; } =
             BuildAllNamedShapes().Select(s => s.Name).ToList();
 
+        // The full geometry behind AllPieceNames, not just the strings - for editor tooling
+        // (e.g. BlockoutShapeGalleryWindow) that needs to preview every shape regardless of
+        // which are currently enabled.
+        public static IReadOnlyList<PolycubeShape> AllShapes() => BuildAllNamedShapes();
+
         // The default set, filtered down to only the pieces BlockoutShapeSelectionConfig (if
         // present in the catalog) marks enabled - a piece not listed there defaults to enabled.
         // Falls back to all 12 if the filter would otherwise empty the set (a config mistake
