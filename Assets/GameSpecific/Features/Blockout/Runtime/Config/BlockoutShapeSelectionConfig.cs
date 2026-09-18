@@ -18,9 +18,11 @@ namespace hp55games.Blockout.Config
         {
             [Tooltip("Must match one of BlockoutShapeSet.AllPieceNames exactly (e.g. Tetracube01, Pentacube03). A name that doesn't match any piece is ignored.")]
             public string pieceName;
+            [Tooltip("Whether this piece is included in the game's piece pool.")]
             public bool enabled = true;
         }
 
+        [Header("Piece Overrides")]
         [Tooltip("One entry per piece to exclude/re-include. A piece not listed here defaults to enabled.")]
         [SerializeField] private List<PieceToggle> _pieces = new();
 
