@@ -52,7 +52,7 @@ namespace hp55games.Blockout.Tests
         });
 
         // Spacious grid and a start position far from any wall: used by the timing tests below,
-        // which only care about phase/interval behavior and must never lock mid-test.
+        // which only care about step/interval behavior and must never lock mid-test.
         private PieceController CreateController() =>
             CreateController(SingleCellShape(), new Vector3Int(1, 5, 1), new VoxelGrid(3, 10, 3));
 
@@ -65,7 +65,7 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
-        public void Tick_DoesNotRaiseFallIntervalChanged_WhileStillWaitingOnFirstPhase()
+        public void Tick_DoesNotRaiseFallIntervalChanged_WhileStillWaitingOnFirstStep()
         {
             var controller = CreateController();
             int raiseCount = 0;
@@ -73,7 +73,7 @@ namespace hp55games.Blockout.Tests
 
             for (int i = 0; i < 50; i++)
             {
-                controller.Tick(0.01f); // 0.5s total, well short of phase 0's 3.0s interval
+                controller.Tick(0.01f); // 0.5s total, well short of the 3.0s base interval
             }
 
             Assert.AreEqual(0, raiseCount);
@@ -81,7 +81,7 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
-        public void Tick_RaisesFallIntervalChanged_ExactlyOncePerPhaseTransition_NotPerFrame()
+        public void Tick_RaisesFallIntervalChanged_ExactlyOncePerStepTransition_NotPerFrame()
         {
             var controller = CreateController();
             int raiseCount = 0;
@@ -89,40 +89,36 @@ namespace hp55games.Blockout.Tests
 
             // Cross Waiting (3.0s) then Stepping (0.3s) in many small per-frame-sized ticks: if the
             // controller published once per frame instead of once per transition, this would be >> 1.
-            float fullCycle = _fallCurve.IntervalForPhase(0) + _fallCurve.StepDuration;
+            float fullCycle = _fallCurve.BaseInterval + _fallCurve.StepDuration;
             AdvanceBy(controller, fullCycle + 0.001f);
 
             Assert.AreEqual(1, raiseCount);
-            Assert.AreEqual(1, controller.PhaseIndex);
 
             Object.DestroyImmediate(controller.gameObject);
         }
 
         [Test]
-        public void Initialize_AppliesTimeDifficultyModifier_ToCurrentInterval()
+        public void Initialize_UsesTimeDifficultyModifier_ForCurrentInterval()
         {
             var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
             var modifier = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
-            modifier.Tick(timeDifficultyConfig.TimerTickIntervalSeconds + 1f); // one reduction applied
+            modifier.Tick(timeDifficultyConfig.DecayIntervalSeconds + 1f); // one reduction applied
 
             var go = new GameObject(nameof(PieceControllerTests));
             var controller = go.AddComponent<PieceController>();
             controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
 
-            float expectedRatio = modifier.SessionInterval / timeDifficultyConfig.SessionBaseInterval;
-            float expected = Mathf.Max(_fallCurve.IntervalForPhase(0) * expectedRatio, timeDifficultyConfig.CombinedFloorInterval);
-            Assert.AreEqual(expected, controller.CurrentInterval, 0.0001f);
+            Assert.AreEqual(modifier.CurrentStepDelay, controller.CurrentInterval, 0.0001f);
 
             Object.DestroyImmediate(controller.gameObject);
             Object.DestroyImmediate(timeDifficultyConfig);
         }
 
         [Test]
-        public void Tick_RefreshesCurrentInterval_WhenTimeDifficultyModifierChanges_EvenWithoutAPhaseAdvance()
+        public void Tick_RefreshesCurrentInterval_WhenTimeDifficultyModifierChanges_EvenMidPiece()
         {
-            // Regression guard: CurrentInterval used to only change on AdvancePhase, but the
-            // time-based modifier's own 15s timer can shift the combined value independently of
-            // PhaseIndex, mid-piece.
+            // Regression guard: the time-based modifier's own decay timer can shift the delay
+            // independently of the piece's own Waiting/Stepping state, mid-fall.
             var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
             var modifier = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
 
@@ -134,10 +130,9 @@ namespace hp55games.Blockout.Tests
             int raiseCount = 0;
             controller.FallIntervalChanged += _ => raiseCount++;
 
-            modifier.Tick(timeDifficultyConfig.TimerTickIntervalSeconds + 1f); // session interval drops
-            controller.Tick(0.001f); // far short of a phase transition - only the refresh should react
+            modifier.Tick(timeDifficultyConfig.DecayIntervalSeconds + 1f); // step delay drops
+            controller.Tick(0.001f); // far short of a step transition - only the refresh should react
 
-            Assert.AreEqual(0, controller.PhaseIndex); // confirms this wasn't a phase-driven change
             Assert.AreEqual(1, raiseCount);
             Assert.Less(controller.CurrentInterval, intervalBeforeTimerTick);
 
@@ -152,7 +147,7 @@ namespace hp55games.Blockout.Tests
             var start = new Vector3Int(1, 0, 1); // already resting on the floor (y = 0)
             var controller = CreateController(SingleCellShape(), start, grid);
 
-            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
 
             Assert.IsTrue(controller.IsLocked);
             Assert.AreEqual(start, controller.GridPosition); // never moved below the floor
@@ -170,7 +165,7 @@ namespace hp55games.Blockout.Tests
             var start = new Vector3Int(1, 1, 1);
             var controller = CreateController(SingleCellShape(), start, grid);
 
-            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
 
             Assert.IsTrue(controller.IsLocked);
             Assert.AreEqual(start, controller.GridPosition); // never moved into the occupied cell
@@ -186,7 +181,7 @@ namespace hp55games.Blockout.Tests
             var start = new Vector3Int(0, 0, 1); // resting on the floor
             var controller = CreateController(TwoCellShape(), start, grid);
 
-            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
 
             Assert.IsTrue(controller.IsLocked);
             Assert.IsTrue(grid.IsOccupied(0, 0, 1));
@@ -207,7 +202,7 @@ namespace hp55games.Blockout.Tests
             LayersClearedEvent received = null;
             _eventBus.Subscribe<LayersClearedEvent>(evt => received = evt);
 
-            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
 
             Assert.IsTrue(controller.IsLocked);
             Assert.IsNotNull(received);
@@ -231,7 +226,7 @@ namespace hp55games.Blockout.Tests
             int[] receivedClearedLayerYs = null;
             controller.Locked += clearedLayerYs => receivedClearedLayerYs = clearedLayerYs;
 
-            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
 
             Assert.IsTrue(controller.IsLocked);
             CollectionAssert.AreEqual(new[] { 0 }, receivedClearedLayerYs);
@@ -249,7 +244,7 @@ namespace hp55games.Blockout.Tests
             int[] receivedClearedLayerYs = null;
             controller.Locked += clearedLayerYs => receivedClearedLayerYs = clearedLayerYs;
 
-            AdvanceBy(controller, _fallCurve.IntervalForPhase(0) + 0.001f);
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
 
             Assert.IsTrue(controller.IsLocked);
             Assert.IsNotNull(receivedClearedLayerYs);
@@ -289,15 +284,54 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
-        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitGridBounds()
+        public void HandleRotateRequested_Rotates_WhenTargetOrientationOnlyExceedsTheOpenTop()
         {
-            // Shape's bounding box exactly fills this grid unrotated; any 90-degree turn about
-            // any axis needs a dimension the grid doesn't have.
+            // LShape is flat (Y-extent 1) - rotating about either exposed axis preserves that
+            // axis's own extent and swaps the other two, so the previously-flat dimension always
+            // becomes the one that grows (see PlacementRules.CanPlaceAt's allowAboveTop remarks -
+            // this is exactly the "piece stands up through the well's open top" case). A Height=1
+            // grid used to reject this; it's now allowed - only the side walls/floor still block
+            // rotation, see the two tests below.
             var grid = new VoxelGrid(2, 1, 2);
             var shape = LShape();
             var controller = CreateController(shape, Vector3Int.zero, grid);
 
             _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreNotSame(shape, controller.Shape); // committed - a new (rotated) shape instance
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitASideWall()
+        {
+            // A 3-cell vertical line: rotating about Z (AxisA) turns Y into X with a sign flip
+            // (RotatedZ: x' = -y), landing two cells at negative X - out of bounds regardless of
+            // grid width, a genuine side-wall violation unrelated to the open-top exemption
+            // (which only ever relaxes the upper Y bound).
+            var grid = new VoxelGrid(2, 3, 1);
+            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0), new Vector3Int(0, 2, 0) });
+            var controller = CreateController(shape, Vector3Int.zero, grid);
+
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreSame(shape, controller.Shape); // rejected - still the exact original instance
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HandleRotateRequested_DoesNotRotate_WhenRotationWouldExitTheFloor()
+        {
+            // AxisB (X rotation) turns LShape's Z-extent into the new Y-extent with a sign flip -
+            // one cell lands at Y = -1. The open-top exemption only ever relaxes the upper bound
+            // (Y >= Height); Y < 0 (the floor) is still enforced.
+            var grid = new VoxelGrid(2, 3, 2);
+            var shape = LShape();
+            var controller = CreateController(shape, Vector3Int.zero, grid);
+
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisB, Steps90 = 1 });
 
             Assert.AreSame(shape, controller.Shape); // rejected - still the exact original instance
 

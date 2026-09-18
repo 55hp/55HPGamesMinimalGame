@@ -6,19 +6,21 @@ using hp55games.Ui;
 
 namespace hp55games.Blockout.Gameplay
 {
-    // Replaces the static Inspector field-of-view baked into 02_Gameplay.unity (see
-    // 02_camera_investigation.md) with a value recomputed at runtime from BlockoutWellConfig's
-    // real bounds and the device's actual aspect ratio, safe area, and gameplay-HUD footprint -
+    // Replaces the static Inspector field-of-view baked into 02_Gameplay.unity with a value
+    // recomputed at runtime from BlockoutWellConfig's real bounds and the device's actual aspect
+    // ratio, safe area, and gameplay-HUD footprint -
     // the fixed 40 degree FOV was only ever eyeballed against the Editor Game View's default
     // aspect ratio and clips the well's top opening on unusually tall/narrow screens (e.g. the
-    // Samsung S25 Edge). Camera position/rotation (looking straight down at the well) are left
-    // exactly as authored in the scene; only field of view is touched.
+    // Samsung S25 Edge). Position and rotation (looking straight down at the well) are left
+    // exactly as authored in the scene - this component only ever touches fieldOfView, the
+    // camera's single source of truth for position stays the Transform (README §0 rule 4).
     //
-    // Symmetric-frustum limitation: with no lens shift, the rendered well is always centered on
-    // screen, so an inset on only one edge (e.g. a HUD bar at the top but nothing at the bottom)
-    // still costs frustum on BOTH edges - the fit uses whichever of the two opposing insets is
-    // larger. Good enough to guarantee full, unoccluded visibility; a future asymmetric fit would
-    // need physical-camera lens shift instead.
+    // Symmetric-frustum limitation: with no lens shift, an inset on only one edge (e.g. a HUD bar
+    // at the top but nothing at the bottom, or the camera simply not sitting exactly centered over
+    // the well's X/Z in the scene) still costs frustum on BOTH edges - the fit uses whichever of
+    // the two opposing insets/offsets is larger. Good enough to guarantee full, unoccluded
+    // visibility; the well won't be perfectly re-centered in frame for a non-zero horizontal
+    // offset. A future asymmetric fit would need physical-camera lens shift instead.
     [RequireComponent(typeof(Camera))]
     public sealed class BlockoutWellCamera : MonoBehaviour
     {
@@ -28,9 +30,6 @@ namespace hp55games.Blockout.Gameplay
 
         [Tooltip("World-space origin of the well's (0,0,0) grid cell. Defaults to world origin, matching BlockoutSpawner's convention, if left empty.")]
         [SerializeField] private Transform _wellOrigin;
-
-        [Tooltip("Extra world-space padding added around the well's exact bounds so it doesn't render flush against the frame edge.")]
-        [SerializeField] private float _worldPadding = 0.5f;
 
         [Tooltip("UIGameHUD.prefab's Header RectTransform sizeDelta.y, in CanvasScaler reference-resolution units - currently the only screen space the gameplay HUD reserves (score/lives/pause all live inside that one top bar). Keep this in sync if Header's height ever changes.")]
         [SerializeField] private float _hudTopReservedCanvasUnits = 100f;
@@ -80,8 +79,35 @@ namespace hp55games.Blockout.Gameplay
             }
 
             var origin = _wellOrigin != null ? _wellOrigin.position : Vector3.zero;
-            float halfExtentX = wellConfig.Width / 2f + _worldPadding;
-            float halfExtentZ = wellConfig.Depth / 2f + _worldPadding;
+
+            // A naive fit would assume the camera sits exactly above the well's X/Z center (true
+            // for the intended scene-authored position, e.g. (2, 18, 2) over a 5x5 well centered
+            // at (2, 2)) - if Bezi's scene Transform ever drifts from that, the frustum widens by
+            // however far the camera actually is from that center, on each axis, to keep both of
+            // the well's edges in frame from its real position. This keeps the well fully
+            // visible, not perfectly re-centered in the frame - a symmetric FOV/aspect fit can't
+            // re-center for an off-axis camera without lens shift (see the class's own
+            // "Symmetric-frustum limitation" remarks - same constraint, different axis).
+            float wellCenterX = origin.x + (wellConfig.Width - 1) / 2f;
+            float wellCenterZ = origin.z + (wellConfig.Depth - 1) / 2f;
+            float cameraOffsetX = transform.position.x - wellCenterX;
+            float cameraOffsetZ = transform.position.z - wellCenterZ;
+
+            // Horizontal (screen-width) padding is percentage-based, not world-space: a fixed
+            // world-unit margin can't give a constant on-screen fraction on its own, since the
+            // world-units-to-screen-fraction relationship depends on the FOV that the padding
+            // itself feeds into - circular in world-space. Scale the offset-compensated
+            // half-extent up so it sits at (1 - 2*fraction) of the way to the frame edge: the
+            // well's own width (2x that half-extent) then occupies exactly (1 - 2*fraction) of
+            // the frame width by construction, as a ratio - independent of FOV/aspect/distance.
+            float rawHalfExtentX = wellConfig.Width / 2f + Mathf.Abs(cameraOffsetX);
+            float horizontalPaddingFraction = Mathf.Clamp(wellConfig.HorizontalPaddingScreenFraction, 0f, 0.45f);
+            float halfExtentX = rawHalfExtentX / (1f - 2f * horizontalPaddingFraction);
+
+            // Vertical/depth axis has no padding at all - only the horizontal axis gets a margin
+            // (HorizontalPaddingScreenFraction, above). The well's depth edge sits exactly at the
+            // frame boundary when the camera is centered on Z.
+            float halfExtentZ = wellConfig.Depth / 2f + Mathf.Abs(cameraOffsetZ);
             float wellTopY = origin.y + (wellConfig.Height - 1 + CellHalfExtent);
 
             // The well's top opening is nearest the camera (which looks straight down), so it
@@ -98,11 +124,11 @@ namespace hp55games.Blockout.Gameplay
 
             float effectiveAspect = ComputeEffectiveAspect();
 
-            // FOVAxisMode on this camera is Vertical, and by construction (see
-            // 02_camera_investigation.md) the vertical screen axis maps to world Z (well depth)
-            // while horizontal maps to world X (well width) and is only ever derived from the
-            // vertical FOV via aspect. So solve for whichever vertical half-angle is large enough
-            // to cover BOTH axes once that derivation is accounted for.
+            // FOVAxisMode on this camera is Vertical, and by construction the vertical screen
+            // axis maps to world Z (well depth) while horizontal maps to world X (well width) and
+            // is only ever derived from the vertical FOV via aspect. So solve for whichever
+            // vertical half-angle is large enough to cover BOTH axes once that derivation is
+            // accounted for.
             float requiredVerticalHalfAngle = Mathf.Max(depthHalfAngle, Mathf.Atan(Mathf.Tan(widthHalfAngle) / effectiveAspect));
 
             _camera.fieldOfView = Mathf.Clamp(requiredVerticalHalfAngle * 2f * Mathf.Rad2Deg, 1f, 170f);

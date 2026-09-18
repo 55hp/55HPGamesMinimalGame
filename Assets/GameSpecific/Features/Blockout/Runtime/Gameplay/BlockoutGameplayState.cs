@@ -57,8 +57,15 @@ namespace hp55games.Blockout.Gameplay
             // survives a pause, but this state instance does not (SceneFlowService constructs a
             // fresh one via CreateGameplayState(isResuming: true) rather than reusing the old one,
             // mirroring the template's own GameplayState/ResumeFromPauseAsync behavior).
-            _spawner = UnityEngine.Object.FindObjectOfType<BlockoutSpawner>();
-            if (_spawner != null) _spawner.WellFull += OnWellFull;
+            // Resolved via ServiceRegistry (BlockoutSpawner.Awake registers itself) rather than
+            // FindObjectOfType (README §0 rule 2) - this state is a plain C# class, not a
+            // MonoBehaviour, so it can't hold a [SerializeField] of its own, and BlockoutSpawner
+            // lives in 02_Gameplay while whatever constructs this state (SceneFlowService) doesn't,
+            // ruling out a scene-authored reference passed in from outside too.
+            if (!ServiceRegistry.TryResolve(out _spawner))
+                Debug.LogError("[BlockoutGameplayState] BlockoutSpawner is not registered - is it present and enabled in 02_Gameplay?");
+            else
+                _spawner.WellFull += OnWellFull;
 
             if (!_isResuming)
             {
@@ -71,19 +78,17 @@ namespace hp55games.Blockout.Gameplay
                 _bonusCoinsThisRun = 0;
                 _achievements?.RecordLoginForToday(); // Shop GDD login-streak family - once per fresh session, not on resume
 
-                // Attaches the runtime FOV fit (see 02_camera_investigation.md) to whatever camera
-                // is tagged MainCamera in this scene - only needed once per fresh entry, since the
-                // component and its GameObject both survive a pause/resume.
-                var mainCamera = UnityEngine.Camera.main;
-                if (mainCamera != null && mainCamera.GetComponent<BlockoutWellCamera>() == null)
+                // BlockoutWellCamera (FOV fit) and UIBlockoutHUD's buttons are scene/prefab-authored
+                // now (README §2/§3/§9) - nothing to attach here, just navigate to the HUD.
+                if (ServiceRegistry.TryResolve<IUINavigationService>(out var navigation))
                 {
-                    mainCamera.gameObject.AddComponent<BlockoutWellCamera>();
+                    await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.BlockoutHUD);
+                    StartSpawning();
                 }
-
-                var navigation = ServiceRegistry.Resolve<IUINavigationService>();
-                await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.GameplayHUD);
-
-                StartSpawning();
+                else
+                {
+                    Debug.LogError("[BlockoutGameplayState] IUINavigationService is not registered - cannot show the gameplay HUD, gameplay not started.");
+                }
             }
         }
 
@@ -147,7 +152,12 @@ namespace hp55games.Blockout.Gameplay
             PieceMaterialCategory? materialCategory = activeSkin.AtomicNumber > 0 ? activeSkin.MaterialCategory : null;
 
             var well = new BlockoutWell(wellConfig);
-            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), well.Width, well.Height, well.Depth, activeSkin.PieceColors, activeSkin.ClearBehaviour, materialCategory);
+
+            // A fresh seed per run (not a fixed one) - spawn order should vary run to run, while
+            // still being fully deterministic and reproducible for a given seed (see
+            // BlockoutSpawner.CurrentSeed for logging/repro).
+            int spawnSeed = new System.Random().Next();
+            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), spawnSeed, well.Width, well.Height, well.Depth, activeSkin.PieceColors, activeSkin.ClearBehaviour, materialCategory);
         }
 
         // Reuses the template's existing score infrastructure (IGameContextService.Score,

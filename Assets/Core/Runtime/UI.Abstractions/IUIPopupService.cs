@@ -19,5 +19,9 @@ namespace hp55games.Mobile.Core.UI
         void Close(GameObject popup);
         void CloseTop();
         void CloseAll();
+
+        // Lets a global back-button handler decide whether to close a popup or fall back to
+        // page navigation, without either needing to special-case the other.
+        bool HasOpenPopups { get; }
     }
 }

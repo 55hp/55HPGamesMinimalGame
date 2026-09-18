@@ -15,6 +15,10 @@ namespace hp55games.Mobile.Core.Architecture
 
     public sealed class AddressablesContentLoader : IContentLoader
     {
+        // How long InstantiateAsync can sit pending before we warn - not a timeout, just a
+        // diagnostic threshold (see InstantiateAsync's remarks).
+        private const int StallWarningMs = 3000;
+
         public async Task<T> LoadAsync<T>(string address) where T : class
         {
             AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(address);
@@ -30,6 +34,19 @@ namespace hp55games.Mobile.Core.Architecture
         {
             // parent null = instanzia in root; per UI passa il Canvas.transform
             var handle = Addressables.InstantiateAsync(address, parent);
+
+            // Permanent diagnostic (not test-only): a blocked InstantiateAsync - e.g. queued
+            // behind a scene load stuck at 90% via allowSceneActivation = false, see
+            // SceneFlowService.StartGameplayPreloadAsync's remarks - previously hung completely
+            // silently, indistinguishable from one that's merely slow, and took ~8 hours to
+            // diagnose on device (never reproduced in Editor, so an Editor-only check would have
+            // missed it). Doesn't change behavior or cancel anything - just logs once if this
+            // specific call is still pending after the threshold, then keeps waiting normally.
+            if (await Task.WhenAny(handle.Task, Task.Delay(StallWarningMs)) != handle.Task)
+            {
+                Debug.LogWarning($"[AddressablesContentLoader] InstantiateAsync('{address}') still pending after {StallWarningMs / 1000}s - check for a blocked shared loading pipeline (e.g. a scene preload with allowSceneActivation = false).");
+            }
+
             var instance = await handle.Task;
 
             if (instance == null)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,14 @@ namespace hp55games.Mobile.UI
         private readonly Stack<PageEntry> _stack = new();
         private RectTransform _pagesRoot;
 
+        // PushAsync/ReplaceAsync/PopAsync all touch _stack and _pagesRoot across multiple awaits
+        // (Addressables load, fades). Without this, two overlapping calls (e.g. a rapid double
+        // Shop tap not covered by the caller's own CancellationTokenSource - see
+        // UIMainMenuPage.PushPage) could interleave their stack mutations and fades, corrupting
+        // ordering or leaking/duplicating page GameObjects. This guards the entire body of each
+        // method so operations run strictly one at a time, in call order.
+        private readonly SemaphoreSlim _navigationLock = new(1, 1);
+
         private const float FadeDuration = 0.25f;
 
         public UINavigationService()
@@ -28,6 +37,27 @@ namespace hp55games.Mobile.UI
         public bool CanGoBack => _stack.Count > 1;
 
         public async Task PushAsync(string address, CancellationToken ct = default)
+        {
+            try
+            {
+                await _navigationLock.WaitAsync(ct);
+            }
+            catch (OperationCanceledException)
+            {
+                return; // superseded while still queued - never got to touch the stack
+            }
+
+            try
+            {
+                await PushAsyncCore(address, ct);
+            }
+            finally
+            {
+                _navigationLock.Release();
+            }
+        }
+
+        private async Task PushAsyncCore(string address, CancellationToken ct)
         {
             await EnsurePagesRootAsync();
             if (_pagesRoot == null || ct.IsCancellationRequested) return;
@@ -79,6 +109,19 @@ namespace hp55games.Mobile.UI
 
         public async Task ReplaceAsync(string address)
         {
+            await _navigationLock.WaitAsync();
+            try
+            {
+                await ReplaceAsyncCore(address);
+            }
+            finally
+            {
+                _navigationLock.Release();
+            }
+        }
+
+        private async Task ReplaceAsyncCore(string address)
+        {
             await EnsurePagesRootAsync();
             if (_pagesRoot == null) return;
 
@@ -108,7 +151,7 @@ namespace hp55games.Mobile.UI
                 if (current.GameObject != null)
                 {
                     await FadeOut(current.GameObject);
-                    Object.Destroy(current.GameObject);
+                    UnityEngine.Object.Destroy(current.GameObject);
                 }
             }
 
@@ -121,6 +164,19 @@ namespace hp55games.Mobile.UI
 
 
         public async Task PopAsync()
+        {
+            await _navigationLock.WaitAsync();
+            try
+            {
+                await PopAsyncCore();
+            }
+            finally
+            {
+                _navigationLock.Release();
+            }
+        }
+
+        private async Task PopAsyncCore()
         {
             if (_stack.Count == 0) return;
 

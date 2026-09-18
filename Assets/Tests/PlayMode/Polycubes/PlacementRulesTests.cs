@@ -37,6 +37,38 @@ namespace hp55games.Polycubes.Tests
         }
 
         [Test]
+        public void CanPlaceAt_DefaultOverload_StillRejectsAboveHeight()
+        {
+            // The 3-arg overload must keep its original (allowAboveTop: false) behavior - every
+            // existing caller (fall step, move, hard drop, lock validation) relies on this.
+            var grid = new VoxelGrid(3, 1, 3);
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, 1, 0)));
+        }
+
+        [Test]
+        public void CanPlaceAt_AllowAboveTop_ReturnsTrue_WhenOnlyYExceedsHeight()
+        {
+            var grid = new VoxelGrid(3, 1, 3);
+            Assert.IsTrue(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, 1, 0), allowAboveTop: true));
+        }
+
+        [Test]
+        public void CanPlaceAt_AllowAboveTop_StillReturnsFalse_WhenXOrZExitBounds()
+        {
+            var grid = new VoxelGrid(2, 1, 3);
+            // X=2 is out of bounds for Width=2 regardless of Y - the open-top exemption only ever
+            // relaxes the upper Y bound, never the side walls.
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(1, 1, 0), allowAboveTop: true));
+        }
+
+        [Test]
+        public void CanPlaceAt_AllowAboveTop_StillReturnsFalse_WhenYIsBelowTheFloor()
+        {
+            var grid = new VoxelGrid(3, 3, 3);
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, -1, 0), allowAboveTop: true));
+        }
+
+        [Test]
         public void LockInto_MarksAllShapeCellsAsOccupied()
         {
             var grid = new VoxelGrid(3, 3, 3);

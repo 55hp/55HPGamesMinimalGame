@@ -62,7 +62,7 @@ namespace hp55games.Blockout.Achievements
             if (save == null) return;
 
             save.runsCompleted++;
-            ServiceRegistry.Resolve<ISaveService>().Save();
+            ResolveSaveService()?.Save();
 
             if (save.runsCompleted >= 1) Complete(FirstRunCompleted);
             if (save.runsCompleted >= 10) Complete(RunsCompleted10);
@@ -146,7 +146,7 @@ namespace hp55games.Blockout.Achievements
             if (save.completedAchievementIds.Contains(achievementId)) return;
 
             save.completedAchievementIds.Add(achievementId);
-            ServiceRegistry.Resolve<ISaveService>().Save();
+            ResolveSaveService()?.Save();
 
             GrantMatchingSkins(achievementId);
             RecheckElementsUnlockedThreshold(); // this unlock can itself be the 20th element
@@ -166,9 +166,11 @@ namespace hp55games.Blockout.Achievements
             }
         }
 
-        private static SaveData ResolveSaveData()
+        private static SaveData ResolveSaveData() => ResolveSaveService()?.Data;
+
+        private static ISaveService ResolveSaveService()
         {
-            if (ServiceRegistry.TryResolve<ISaveService>(out var service)) return service.Data;
+            if (ServiceRegistry.TryResolve<ISaveService>(out var service)) return service;
             Debug.LogError("[BlockoutAchievementService] ISaveService is not registered.");
             return null;
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using hp55games.Mobile.Core.Architecture;
 using hp55games.Blockout.Config;
 using hp55games.Blockout.Rendering;
 using hp55games.Polycubes.Grid;
@@ -13,8 +14,20 @@ namespace hp55games.Blockout.Gameplay
     // delegated to WellCellRenderer (Phase 5, pooled) - this class only decides WHICH grid cells
     // are shown and WHAT COLOR they mean (active vs locked), never touches a GameObject/Renderer
     // directly.
+    //
+    // Registers itself into ServiceRegistry (Awake/OnDestroy) rather than being found via
+    // FindObjectOfType (README §0 rule 2) - BlockoutGameplayState and BlockoutInputHandler both
+    // need to reach the active spawner, and neither can hold a scene-authored [SerializeField] to
+    // it (the state is a plain C# class constructed outside this scene; the input handler's
+    // Awake() has no ordering guarantee relative to this one's within the same scene load).
+    // ServiceRegistry.Unregister only removes the entry if it still holds this instance, so even
+    // if the unload/load ordering ever stopped being strictly sequential, a late OnDestroy can't
+    // clobber a newer spawner's registration.
     public sealed class BlockoutSpawner : MonoBehaviour
     {
+        [Tooltip("Renders the well's occupied cells (pooled). Missing reference: pieces still spawn/lock/clear normally, just with no visual.")]
+        [SerializeField] private WellCellRenderer _cellRenderer;
+
         private VoxelGrid _grid;
         private int _wellWidth;
         private int _wellHeight;
@@ -22,12 +35,17 @@ namespace hp55games.Blockout.Gameplay
         private BlockoutFallCurveConfig _fallCurve;
         private BlockoutTimeDifficultyModifier _timeDifficulty;
 
-        // Cycled in order (rather than picked randomly) so a run is repeatable while eyeballing
-        // fall/lock timing - call it if you'd rather have random.
         private IReadOnlyList<PolycubeShape> _shapes;
-        private int _nextShapeIndex;
+        private System.Random _random;
 
-        private WellCellRenderer _cellRenderer;
+        // Spawns elapsed since each _shapes[i] was last picked, indexed by position in _shapes
+        // (not PolycubeShape identity - the class has no Equals/GetHashCode, so comparing
+        // instances would be fragile). PickNextShapeIndex clamps each value to _shapes.Count - 1
+        // before summing into weights: a piece can't repeat immediately (weight 0 right after
+        // being picked) and its odds grow back linearly the longer it's been benched, capped so
+        // no single shape's weight runs away over a long run.
+        private int[] _spawnsSinceLastPick;
+
         private PieceController _controller;
 
         // Both sourced from the active skin (Technical Doc Phase 3 - BlockoutGameplayState reads
@@ -59,10 +77,14 @@ namespace hp55games.Blockout.Gameplay
         private const float LockedValueFactor = 0.55f;
 
         // True once SpawnNext refused to spawn because the well is already full at the computed
-        // spawn position (see SpawnNext). Public so PlayMode tests (and BlockoutDebugOverlay) can
-        // read this instead of a silent lock.
+        // spawn position (see SpawnNext). Public so PlayMode tests can read this instead of a
+        // silent lock.
         public bool SpawnBlockedWellFull { get; private set; }
         public PieceController CurrentPiece => _controller;
+
+        // The seed this run's spawn order was built from - exposed for logging/repro (the same
+        // seed always produces the same spawn sequence for a given shape set).
+        public int CurrentSeed { get; private set; }
 
         // Fired once, the moment SpawnNext refuses to spawn because the well is full - see
         // SpawnBlockedWellFull. BlockoutGameplayState listens for this to publish
@@ -74,24 +96,18 @@ namespace hp55games.Blockout.Gameplay
         // IConfigCatalogService/IBlockoutSkinService wired up (mirrors PieceController.Initialize).
         // Called by BlockoutGameplayState.EnterAsync, which is the sole entry point - this class
         // doesn't self-start.
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int wellWidth, int wellHeight, int wellDepth, IReadOnlyList<Color> pieceColors, IBlockoutClearBehaviour clearBehaviour, PieceMaterialCategory? materialCategory = null)
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int seed, int wellWidth, int wellHeight, int wellDepth, IReadOnlyList<Color> pieceColors, IBlockoutClearBehaviour clearBehaviour, PieceMaterialCategory? materialCategory = null)
         {
             _pieceColors = pieceColors;
             _clearBehaviour = clearBehaviour;
             _materialCategory = materialCategory;
 
-            // Fresh per run, per spec (the session timer restarts from zero on every new game) -
-            // dispose the previous run's subscription before replacing it.
-            _timeDifficulty?.Dispose();
+            // Fresh per run, per spec: the step delay restarts from StartStepDelay every new game.
             _timeDifficulty = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
 
             if (_cellRenderer == null)
             {
-                _cellRenderer = FindObjectOfType<WellCellRenderer>();
-                if (_cellRenderer == null)
-                {
-                    Debug.LogError("[BlockoutSpawner] No WellCellRenderer found in the scene - pieces will spawn with no visual.", this);
-                }
+                Debug.LogError("[BlockoutSpawner] _cellRenderer is not assigned in the Inspector - pieces will spawn with no visual.", this);
             }
 
             // Leaves no visual trace of a previous run: every locked cell, plus whatever the
@@ -106,16 +122,31 @@ namespace hp55games.Blockout.Gameplay
             _wellWidth = wellWidth;
             _wellHeight = wellHeight;
             _wellDepth = wellDepth;
-            _nextShapeIndex = 0;
+
+            CurrentSeed = seed;
+            _random = new System.Random(seed);
+
+            // Every piece starts at Count - 1 (the cap PickNextShapeIndex clamps weights to), not
+            // 0 - all-zero weights would sum to 0 and break the very first roll of the run.
+            _spawnsSinceLastPick = new int[shapes.Count];
+            for (int i = 0; i < _spawnsSinceLastPick.Length; i++)
+                _spawnsSinceLastPick[i] = shapes.Count - 1;
+
             _spawningStopped = false;
             SpawnBlockedWellFull = false;
 
             SpawnNext();
         }
 
+        private void Awake()
+        {
+            // See the class doc for why this is ServiceRegistry, not left for FindObjectOfType.
+            ServiceRegistry.Register<BlockoutSpawner>(this);
+        }
+
         private void OnDestroy()
         {
-            _timeDifficulty?.Dispose();
+            ServiceRegistry.Unregister<BlockoutSpawner>(this);
         }
 
         private void Update()
@@ -167,9 +198,9 @@ namespace hp55games.Blockout.Gameplay
         {
             if (_spawningStopped) return;
 
-            var shapeIndex = _nextShapeIndex;
+            var shapeIndex = PickNextShapeIndex();
+            RecordPick(shapeIndex);
             var shape = _shapes[shapeIndex];
-            _nextShapeIndex = (_nextShapeIndex + 1) % _shapes.Count;
 
             var startPosition = CenteredTopStart(shape);
 
@@ -188,12 +219,44 @@ namespace hp55games.Blockout.Gameplay
                 ? _pieceColors[shapeIndex % _pieceColors.Count]
                 : Color.white;
 
-            var pieceObject = new GameObject("BlockoutPieceController (TEMP)");
+            var pieceObject = new GameObject("BlockoutPieceController");
             _controller = pieceObject.AddComponent<PieceController>();
             _controller.Locked += OnPieceLocked;
             _controller.Initialize(shape, startPosition, _fallCurve, _grid, _timeDifficulty);
 
             SyncActivePieceVisual(); // show immediately rather than waiting for the next Update()
+        }
+
+        // Weighted random pick with a linear cooldown: a shape can't repeat immediately (its
+        // weight is 0 right after being picked) and its odds grow back by 1 per spawn the longer
+        // it's been benched, capped at _shapes.Count - 1 so no single shape's weight runs away
+        // over a long run.
+        private int PickNextShapeIndex()
+        {
+            // The capped-weight formula below would give a cap of Count - 1 = 0 for every entry
+            // (an always-zero sum) - only one choice exists anyway, so skip straight to it.
+            if (_shapes.Count == 1) return 0;
+
+            int cap = _shapes.Count - 1;
+            int totalWeight = 0;
+            for (int i = 0; i < _shapes.Count; i++)
+                totalWeight += Mathf.Min(_spawnsSinceLastPick[i], cap);
+
+            int roll = _random.Next(totalWeight);
+            int cumulative = 0;
+            for (int i = 0; i < _shapes.Count; i++)
+            {
+                cumulative += Mathf.Min(_spawnsSinceLastPick[i], cap);
+                if (roll < cumulative) return i;
+            }
+
+            return _shapes.Count - 1; // unreachable while roll < totalWeight; kept as a safe fallback
+        }
+
+        private void RecordPick(int pickedIndex)
+        {
+            for (int i = 0; i < _spawnsSinceLastPick.Length; i++)
+                _spawnsSinceLastPick[i] = i == pickedIndex ? 0 : _spawnsSinceLastPick[i] + 1;
         }
 
         private void OnPieceLocked(int[] clearedLayerYs)

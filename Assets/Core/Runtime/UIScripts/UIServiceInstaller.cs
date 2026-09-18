@@ -1,4 +1,5 @@
 using UnityEngine;
+using hp55games.Mobile.Core;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.UI;
 
@@ -15,7 +16,14 @@ namespace hp55games.Mobile.UI
             // UI services implementations (già esistenti nel tuo progetto)
             ServiceRegistry.Register<IUIPopupService>(new UIPopupService());
             ServiceRegistry.Register<IUINavigationService>(new UINavigationService());
-            ServiceRegistry.Register<IUIOverlayService>(new UIOverlayService());
+
+            var overlay = new UIOverlayService();
+            ServiceRegistry.Register<IUIOverlayService>(overlay);
+            // Warms the fade overlay's Addressables instantiate now, while the menu is still
+            // loading, instead of paying for it on the first real FadeInAsync call (the Play tap)
+            // - see IUIOverlayService.PrewarmAsync's remarks.
+            AsyncUtils.FireAndForget(overlay.PrewarmAsync(), context: nameof(UIServiceInstaller));
+
             ServiceRegistry.Register<IUIToastService>(new UIToastService());
             ServiceRegistry.Register<IMusicService>(new UIMusicService());
 

@@ -196,7 +196,7 @@ namespace hp55games.Blockout.Rendering
         private PooledObject CreateFallbackCellPrefab()
         {
             var template = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            template.name = "WellCellRenderer Fallback Cell (TEMP)";
+            template.name = "WellCellRenderer Fallback Cell";
             template.transform.SetParent(transform, false);
 
             // The template itself is never shown - only clones of it are, via the pool.

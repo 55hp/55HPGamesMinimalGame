@@ -221,6 +221,7 @@ GameObject:
   - component: {fileID: 9134990495326709022}
   - component: {fileID: 8841981166169291340}
   - component: {fileID: 3700022127135586051}
+  - component: {fileID: 665716287451641550}
   m_Layer: 0
   m_Name: ActiveIndicator
   m_TagString: Untagged
@@ -285,6 +286,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &665716287451641550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3130832505777350677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_EffectColor: {r: 1, g: 0.8392157, b: 0.2, a: 1}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 1
 --- !u!1 &3306517110758694799
 GameObject:
   m_ObjectHideFlags: 0
@@ -501,4 +517,4 @@ MonoBehaviour:
   _elementColor: {fileID: 7345111482129981956}
   _symbolLabel: {fileID: 2297959574036905155}
   _lockedOverlay: {fileID: 2483688965189944945}
-  _activeIndicator: {fileID: 0}
+  _activeIndicator: {fileID: 3130832505777350677}

@@ -22,17 +22,9 @@ namespace hp55games.Blockout.InputSystem
         // half-unit each placeholder cube physically occupies around its integer grid position.
         private const float CellHalfExtent = 0.5f;
 
-        // Double tap must land within this window to count as one gesture; a lone tap only
-        // resolves into a move once this window passes without a second tap.
-        private const float DoubleTapWindowSeconds = 0.3f;
-
         private IInputService _input;
         private IEventBus _eventBus;
         private BlockoutSpawner _spawner;
-
-        private bool _tapPending;
-        private float _tapPendingSince;
-        private Vector2 _tapPendingScreenPosition;
 
         private void Awake()
         {
@@ -67,76 +59,49 @@ namespace hp55games.Blockout.InputSystem
             }
         }
 
-        private void Update()
-        {
-            // A pending tap resolves into a move only once the double-tap window has passed
-            // without a second tap - see HandleTap.
-            if (_tapPending && Time.unscaledTime - _tapPendingSince > DoubleTapWindowSeconds)
-            {
-                _tapPending = false;
-
-                // A tap has no directional delta to rotate by, so a tap landing on the piece's
-                // own footprint is simply consumed with no effect - only a miss resolves into a
-                // move. See 03_input_translation_raycast.md.
-                if (TryResolveGestureAgainstPiece(_tapPendingScreenPosition, out bool hitPiece, out var direction) && !hitPiece)
-                {
-                    _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
-                }
-            }
-        }
-
         private void HandleTap(Vector2 screenPosition)
         {
-            if (_tapPending && Time.unscaledTime - _tapPendingSince <= DoubleTapWindowSeconds)
+            // A tap has no directional delta to resolve a direction from, unlike a swipe - only a
+            // miss (raycast-resolved, see TryResolveTapAgainstPiece) turns into a move; a tap
+            // landing on the piece's own footprint is simply consumed with no effect. Hard drop no
+            // longer has a gesture of its own (the double-tap that used to buffer this resolution
+            // waiting for a follow-up tap is gone - hard drop is button-only now) - a tap resolves
+            // immediately.
+            if (TryResolveTapAgainstPiece(screenPosition, out bool hitPiece, out var direction) && !hitPiece)
             {
-                _tapPending = false;
-                _eventBus.Publish(new HardDropRequestedEvent());
-                return;
+                _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
             }
-
-            // Buffer this tap - it either becomes a move (if the window passes with no follow-up
-            // tap) or gets consumed as a hard drop above.
-            _tapPending = true;
-            _tapPendingSince = Time.unscaledTime;
-            _tapPendingScreenPosition = screenPosition;
         }
 
         private void HandleSwipe(Vector2 start, Vector2 end)
         {
-            // Raycast-gated per 03_input_translation_raycast.md: a swipe starting on the active
-            // piece rotates (existing logic below, unchanged); a swipe starting off the piece
-            // translates instead. If the raycast can't resolve at all (no active piece / no
-            // camera yet), fall back to the old unconditional-rotate behavior rather than
-            // dropping the input.
-            if (TryResolveGestureAgainstPiece(start, out bool hitPiece, out var direction) && !hitPiece)
-            {
-                _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
-                return;
-            }
-
+            // Direct screen-delta mapping, independent of the piece's on-screen position or the
+            // well's geometry: swipe up/right/down/left moves the piece in that same screen
+            // direction, always - on-piece and off-piece swipes behave identically (rotation is
+            // button-only now, BTN_RotateLeft/BTN_RotateRight - no gesture triggers it). No
+            // raycast needed for this anymore.
             var delta = end - start;
+            var direction = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
+                ? (delta.x >= 0f ? MoveDirection.Right : MoveDirection.Left)
+                : (delta.y >= 0f ? MoveDirection.Forward : MoveDirection.Back);
 
-            // Swipe left/right -> AxisA, swipe up/down -> AxisB (per spec). Which physical
-            // PolycubeShape axis each of AxisA/AxisB actually rotates is decided in
-            // PieceController (AxisAMapsTo / AxisBMapsTo) - a single swap point for Franci.
-            if (Mathf.Abs(delta.x) >= Mathf.Abs(delta.y))
-            {
-                _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = delta.x >= 0 ? 1 : -1 });
-            }
-            else
-            {
-                _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisB, Steps90 = delta.y >= 0 ? 1 : -1 });
-            }
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
         }
 
-        // Raycasts a screen point vertically (via the ground plane, camera-relative so it's
-        // correct regardless of camera angle) against the active piece's occupied cells. A hit
-        // means the point landed on the piece's own X/Z footprint; a miss returns the direction
-        // from the piece's pivot (GridPosition - the shape's local-space anchor, per
+        // Raycasts a screen point (camera-relative so it's correct regardless of camera
+        // position/angle) against the active piece's occupied cells, intersected at the piece's
+        // own height - not the well floor, since the camera isn't orthographic: the same screen
+        // ray hits different world X/Z depending on which height it's projected onto, so a
+        // floor-only intersection was systematically off for any piece not already on the floor
+        // (i.e. most of the time, since pieces start near the well's top and fall). A hit means
+        // the point landed on the piece's own X/Z footprint; a miss returns the direction from the
+        // piece's pivot (GridPosition - the shape's local-space anchor, per
         // PolycubeShape/PieceController) to the point instead - no dead zone, works from anywhere
-        // on screen including edges. Returns false only when there's nothing to resolve against
-        // (no camera, or no active piece - e.g. between spawns).
-        private bool TryResolveGestureAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
+        // on screen including edges. Only HandleTap uses this (a tap has no delta of its own to
+        // resolve a direction from) - HandleSwipe resolves its direction straight from the swipe's
+        // screen delta instead. Returns false only when there's nothing to resolve against (no
+        // camera, or no active piece - e.g. between spawns).
+        private bool TryResolveTapAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
         {
             hitPiece = false;
             direction = default;
@@ -144,17 +109,23 @@ namespace hp55games.Blockout.InputSystem
             var camera = _camera != null ? _camera : Camera.main;
             if (camera == null) return false;
 
-            if (_spawner == null) _spawner = FindObjectOfType<BlockoutSpawner>();
+            // Resolved lazily via ServiceRegistry (BlockoutSpawner.Awake registers itself), not
+            // FindObjectOfType (README §0 rule 2) - kept lazy (first raycast, not this
+            // component's own Awake()) since Awake() order between two scene-authored objects in
+            // the same scene load isn't guaranteed; by the time a gesture actually happens, both
+            // are long since initialized.
+            if (_spawner == null) ServiceRegistry.TryResolve(out _spawner);
             var piece = _spawner != null ? _spawner.CurrentPiece : null;
             if (piece == null) return false;
 
+            var gridPosition = piece.GridPosition;
             var origin = _wellOrigin != null ? _wellOrigin.position : Vector3.zero;
-            var plane = new Plane(Vector3.up, origin);
+            var pieceWorldPosition = new Vector3(origin.x, origin.y + gridPosition.y, origin.z);
+            var plane = new Plane(Vector3.up, pieceWorldPosition);
             var ray = camera.ScreenPointToRay(screenPosition);
             if (!plane.Raycast(ray, out float distance)) return false;
 
             var local = ray.GetPoint(distance) - origin;
-            var gridPosition = piece.GridPosition;
             IReadOnlyList<Vector3Int> cells = piece.Shape.Cells;
 
             foreach (var cell in cells)

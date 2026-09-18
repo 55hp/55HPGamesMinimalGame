@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ee679c5ca4b32e41938480405556584, type: 3}
+  m_Name: BlockoutShapeSelection
+  m_EditorClassIdentifier: 
+  _pieces:
+  - pieceName: Tetracube04
+    enabled: 0
+  - pieceName: Tetracube06
+    enabled: 0
+  - pieceName: Tetracube07
+    enabled: 0
+  - pieceName: Tetracube08
+    enabled: 0
+  - pieceName: Pentacube01
+    enabled: 0
+  - pieceName: Pentacube03
+    enabled: 0
+  - pieceName: Pentacube04
+    enabled: 0

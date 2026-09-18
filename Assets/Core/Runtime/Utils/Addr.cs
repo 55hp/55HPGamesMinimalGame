@@ -46,6 +46,7 @@ namespace hp55games
                 public static class Screens
                 {
                     public const string GameplayHUD = "content/ui/screens/gameplay_hud";
+                    public const string BlockoutHUD = "content/ui/screens/blockout_hud";
                 }
             }
 

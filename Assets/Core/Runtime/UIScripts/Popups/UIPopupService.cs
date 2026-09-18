@@ -95,6 +95,8 @@ namespace hp55games.Mobile.UI
             _ = ScrimFadeToAsync(0f, false);
         }
 
+        public bool HasOpenPopups => _opened.Count > 0;
+
         // -------- helpers --------
 
         private async Task EnsureUIRootAsync()

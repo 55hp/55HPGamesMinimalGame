@@ -121,16 +121,22 @@ namespace hp55games.Mobile.Core.InputSystem
                     if (distanceSqr <= TapMaxDistanceSqr && totalTime <= TapMaxDuration)
                     {
                         Tap?.Invoke(_lastPos);
+#if HP55_INPUT_DEBUG
                         Debug.Log($"[InputService] TAP detected at {_lastPos}, duration: {totalTime:F3}s, distance: {Mathf.Sqrt(distanceSqr):F1}px");
+#endif
                     }
                     else if (distanceSqr >= SwipeMinDistanceSqr)
                     {
                         Swipe?.Invoke(_downPos, _lastPos);
+#if HP55_INPUT_DEBUG
                         Debug.Log($"[InputService] SWIPE detected, distance: {Mathf.Sqrt(distanceSqr):F1}px");
+#endif
                     }
                     else
                     {
+#if HP55_INPUT_DEBUG
                         Debug.Log($"[InputService] Input IGNORED - duration: {totalTime:F3}s (max {TapMaxDuration}s), distance: {Mathf.Sqrt(distanceSqr):F1}px (max {Mathf.Sqrt(TapMaxDistanceSqr):F1}px for tap, min {Mathf.Sqrt(SwipeMinDistanceSqr):F1}px for swipe)");
+#endif
                     }
                 }
             }

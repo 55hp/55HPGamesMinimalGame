@@ -23,7 +23,6 @@ namespace hp55games.Blockout.Gameplay
 
         public PolycubeShape Shape { get; private set; }
         public Vector3Int GridPosition { get; private set; }
-        public int PhaseIndex { get; private set; }
         public float CurrentInterval { get; private set; }
         public bool IsLocked { get; private set; }
 
@@ -63,11 +62,11 @@ namespace hp55games.Blockout.Gameplay
             _hardDropSubscription?.Dispose();
         }
 
-        // fallCurve/grid are passed in rather than resolved here so the tick/phase/locking logic
-        // stays testable without needing IConfigCatalogService wired up (see PieceControllerTests).
-        // timeDifficulty is the same principle applied to the new time+clear based system - null
-        // is a valid "not wired up" value (tests that don't care about it simply omit it), in
-        // which case CurrentInterval is exactly the phase-based value, unmodified.
+        // fallCurve/grid are passed in rather than resolved here so the tick/locking logic stays
+        // testable without needing IConfigCatalogService wired up (see PieceControllerTests).
+        // timeDifficulty is the same principle applied to the step delay - null is a valid "not
+        // wired up" value (tests that don't care about it simply omit it), in which case
+        // CurrentInterval falls back to fallCurve.BaseInterval, unmodified.
         public void Initialize(PolycubeShape shape, Vector3Int startPosition, BlockoutFallCurveConfig fallCurve, VoxelGrid grid, BlockoutTimeDifficultyModifier timeDifficulty = null)
         {
             Shape = shape;
@@ -75,7 +74,6 @@ namespace hp55games.Blockout.Gameplay
             _fallCurve = fallCurve;
             _timeDifficulty = timeDifficulty;
             _grid = grid;
-            PhaseIndex = 0;
             CurrentInterval = ComputeCurrentInterval();
             _state = StepState.Waiting;
             _stateTimer = 0f;
@@ -93,9 +91,8 @@ namespace hp55games.Blockout.Gameplay
         {
             if (IsLocked) return;
 
-            // Re-checked every tick, not just on phase advance: the time-based modifier's own
-            // 15s timer can shift the combined interval independently of PhaseIndex, at any
-            // point during this piece's fall.
+            // Re-checked every tick, not just on a step transition: the time-based modifier's own
+            // decay timer can shift the interval at any point during this piece's fall.
             RefreshCurrentInterval();
 
             _stateTimer += deltaTime;
@@ -127,7 +124,7 @@ namespace hp55games.Blockout.Gameplay
                     {
                         _stateTimer -= _fallCurve.StepDuration;
                         _state = StepState.Waiting;
-                        AdvancePhase();
+                        RefreshCurrentInterval();
                     }
                     break;
             }
@@ -153,16 +150,10 @@ namespace hp55games.Blockout.Gameplay
             }
         }
 
-        private void AdvancePhase()
-        {
-            PhaseIndex++;
-            RefreshCurrentInterval();
-        }
-
-        // Recomputes CurrentInterval from the phase-based curve combined with the time-based
-        // modifier (if any) and fires FallIntervalChanged/FallIntervalChangedEvent only when the
-        // combined value actually moved. Called on every Tick (the modifier can change between
-        // phase advances) and on AdvancePhase (PhaseIndex changed).
+        // Recomputes CurrentInterval from the time-based step delay (if wired) and fires
+        // FallIntervalChanged/FallIntervalChangedEvent only when the value actually moved. Called
+        // on every Tick (the modifier's own decay can change the delay mid-piece) and right after
+        // finishing a Stepping animation.
         private void RefreshCurrentInterval()
         {
             float newInterval = ComputeCurrentInterval();
@@ -176,11 +167,8 @@ namespace hp55games.Blockout.Gameplay
             }
         }
 
-        private float ComputeCurrentInterval()
-        {
-            float phaseInterval = _fallCurve.IntervalForPhase(PhaseIndex);
-            return _timeDifficulty != null ? _timeDifficulty.ApplyTo(phaseInterval) : phaseInterval;
-        }
+        private float ComputeCurrentInterval() =>
+            _timeDifficulty != null ? _timeDifficulty.CurrentStepDelay : _fallCurve.BaseInterval;
 
         // Same discrete-check pattern as the fall step: attempt via CanPlaceAt, only commit if valid.
         private void HandleMoveRequested(PieceMoveRequestedEvent evt)
@@ -200,7 +188,11 @@ namespace hp55games.Blockout.Gameplay
 
             var axis = evt.Axis == RotateAxis.AxisA ? AxisAMapsTo : AxisBMapsTo;
             var rotated = Rotate(Shape, axis, evt.Steps90);
-            if (PlacementRules.CanPlaceAt(_grid, rotated, GridPosition))
+
+            // allowAboveTop: rotation is only ever blocked by the well's side walls and floor,
+            // never by its open top (no wireframe there) - unlike a fall step/move/hard drop,
+            // which all still use the strict, walls-and-ceiling CanPlaceAt overload.
+            if (PlacementRules.CanPlaceAt(_grid, rotated, GridPosition, allowAboveTop: true))
             {
                 Shape = rotated;
             }
