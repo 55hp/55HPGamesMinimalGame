@@ -25,6 +25,11 @@ namespace hp55games.Blockout.Gameplay
         public Vector3Int GridPosition { get; private set; }
         public float CurrentInterval { get; private set; }
         public bool IsLocked { get; private set; }
+        public bool IsStepping => _state == StepState.Stepping;
+        public float StepProgress => !IsStepping || _fallCurve == null || _fallCurve.StepDuration <= 0f
+            ? 1f
+            : Mathf.Clamp01(_stepElapsed / _fallCurve.StepDuration);
+        public float EvaluatedStepProgress => _fallCurve == null ? StepProgress : _fallCurve.EvaluateStepCurve(StepProgress);
 
         // Testable without going through Unity's frame loop or the event bus registration required by Awake().
         public event Action<float> FallIntervalChanged;
@@ -37,6 +42,7 @@ namespace hp55games.Blockout.Gameplay
 
         private StepState _state;
         private float _stateTimer;
+        private float _stepElapsed;
         private BlockoutFallCurveConfig _fallCurve;
         private BlockoutTimeDifficultyModifier _timeDifficulty;
         private VoxelGrid _grid;
@@ -77,6 +83,7 @@ namespace hp55games.Blockout.Gameplay
             CurrentInterval = ComputeCurrentInterval();
             _state = StepState.Waiting;
             _stateTimer = 0f;
+            _stepElapsed = 0f;
             IsLocked = false;
         }
 
@@ -108,6 +115,7 @@ namespace hp55games.Blockout.Gameplay
                         if (PlacementRules.CanPlaceAt(_grid, Shape, nextPosition))
                         {
                             _state = StepState.Stepping;
+                            _stepElapsed = 0f;
                             // Logical grid position updates at the START of Stepping, not at the end —
                             // avoids ambiguous state during the visual transition.
                             GridPosition = nextPosition;
@@ -120,9 +128,11 @@ namespace hp55games.Blockout.Gameplay
                     break;
 
                 case StepState.Stepping:
-                    if (_stateTimer >= _fallCurve.StepDuration)
+                    _stepElapsed += deltaTime;
+                    if (_stepElapsed >= _fallCurve.StepDuration)
                     {
                         _stateTimer -= _fallCurve.StepDuration;
+                        _stepElapsed = 0f;
                         _state = StepState.Waiting;
                         RefreshCurrentInterval();
                     }

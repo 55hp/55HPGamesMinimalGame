@@ -79,6 +79,34 @@ namespace hp55games.Polycubes.Tests
         }
 
         [Test]
+        public void LockInto_DoesNotThrow_WhenACellIsAboveTheCeiling()
+        {
+            // Regression: a rotation committed via CanPlaceAt(allowAboveTop: true) can leave a
+            // cell at Y >= Height. If the piece then has no room left to fall before it locks,
+            // LockInto used to call VoxelGrid.SetOccupied out of bounds and throw
+            // ArgumentOutOfRangeException on every subsequent lock attempt - looked like the game
+            // freezing (no piece ever locks, nothing new ever spawns).
+            var grid = new VoxelGrid(3, 1, 3);
+            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) }); // top cell at Y=1, Height=1
+
+            Assert.DoesNotThrow(() => PlacementRules.LockInto(grid, shape, new Vector3Int(0, 0, 0)));
+            Assert.IsTrue(grid.IsOccupied(0, 0, 0));   // the in-bounds cell still locks normally
+        }
+
+        [Test]
+        public void ClearFullLayersTouchedBy_DoesNotThrow_WhenATouchedLayerIsAboveTheCeiling()
+        {
+            var grid = new VoxelGrid(1, 1, 1); // width/depth=1 so the one in-bounds layer is trivially full
+            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) }); // top cell at Y=1, Height=1
+            var origin = new Vector3Int(0, 0, 0);
+            PlacementRules.LockInto(grid, shape, origin);
+
+            int cleared = 0;
+            Assert.DoesNotThrow(() => cleared = PlacementRules.ClearFullLayersTouchedBy(grid, shape, origin));
+            Assert.AreEqual(1, cleared); // only the real layer (Y=0) counted - the above-ceiling one is skipped
+        }
+
+        [Test]
         public void ClearFullLayersTouchedBy_ClearsLayer_AndCollapsesAbove()
         {
             var grid = new VoxelGrid(2, 3, 2);

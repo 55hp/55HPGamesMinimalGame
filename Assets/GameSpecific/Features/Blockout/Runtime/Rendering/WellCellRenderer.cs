@@ -68,7 +68,39 @@ namespace hp55games.Blockout.Rendering
             ApplyColor(renderer, color);
         }
 
-        // Resolves to Opaque both when materialCategory is null (every non-element skin - Default,
+        // Relocates all cells of the active piece in one transaction so vertical pieces can move
+        // through overlapping old/new grid coordinates without dictionary collisions. The pooled
+        // instances are re-keyed at the destination, while their transforms are placed at the
+        // interpolated visual positions supplied by the caller.
+        public void MoveCells(IReadOnlyList<Vector3Int> from, IReadOnlyList<Vector3Int> to, IReadOnlyList<Vector3> visualPositions)
+        {
+            if (!enabled || from == null || to == null || visualPositions == null ||
+                from.Count != to.Count || from.Count != visualPositions.Count) return;
+
+            var instances = new PooledObject[from.Count];
+            for (int i = 0; i < from.Count; i++)
+            {
+                if (!_shownCells.TryGetValue(from[i], out instances[i])) return;
+            }
+
+            for (int i = 0; i < from.Count; i++)
+                _shownCells.Remove(from[i]);
+
+            for (int i = 0; i < to.Count; i++)
+            {
+                instances[i].transform.position = visualPositions[i];
+                _shownCells[to[i]] = instances[i];
+            }
+        }
+
+        // Updates only the transform of an already-rekeyed active cell during interpolation.
+        // Locked cells never call this method and therefore remain static.
+        public void SetCellVisualPosition(Vector3Int gridPos, Vector3 visualPosition)
+        {
+            if (!_shownCells.TryGetValue(gridPos, out var instance)) return;
+            instance.transform.position = visualPosition;
+        }
+
         // Profondita, Juicy Clear - never had a category concept) and for Opaque itself, rather
         // than leaving the Renderer's material untouched: a pooled instance can be handed back by
         // IObjectPoolService after last being shown under a different skin's category (e.g. a

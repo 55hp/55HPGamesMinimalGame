@@ -69,6 +69,9 @@ namespace hp55games.Blockout.Gameplay
         // shows exactly the new one, instead of re-showing every cell every frame regardless of
         // whether anything actually moved. Null when there's no active (unlocked) piece.
         private Vector3Int[] _shownCells;
+        private Vector3Int[] _stepFromCells;
+        private Vector3Int[] _stepToCells;
+        private bool _visualStepActive;
         private Color _activeColor;
 
         private bool _spawningStopped;
@@ -115,6 +118,9 @@ namespace hp55games.Blockout.Gameplay
             _cellRenderer?.HideAll();
             _controller = null;
             _shownCells = null;
+            _stepFromCells = null;
+            _stepToCells = null;
+            _visualStepActive = false;
 
             _grid = grid;
             _fallCurve = fallCurve;
@@ -173,6 +179,14 @@ namespace hp55games.Blockout.Gameplay
                 newCells[i] = _controller.GridPosition + shapeCells[i];
             }
 
+            if (_controller.IsStepping && !_controller.IsLocked)
+            {
+                SyncVisualStep(newCells);
+                return;
+            }
+
+            FinishVisualStep();
+
             if (_shownCells != null && CellsEqual(_shownCells, newCells)) return;
 
             if (_shownCells != null)
@@ -182,6 +196,61 @@ namespace hp55games.Blockout.Gameplay
 
             foreach (var cell in newCells) _cellRenderer.ShowCell(cell, _activeColor, _materialCategory);
             _shownCells = newCells;
+        }
+
+        private void SyncVisualStep(Vector3Int[] targetCells)
+        {
+            if (_visualStepActive && !CellsEqual(_stepToCells, targetCells))
+            {
+                // A move or rotation during the interpolation changes the target shape. Finish the
+                // previous visual step cleanly, then apply the new input at the current grid cell.
+                FinishVisualStep();
+            }
+
+            if (!_visualStepActive)
+            {
+                if (_shownCells == null || _shownCells.Length != targetCells.Length)
+                {
+                    foreach (var cell in _shownCells ?? Array.Empty<Vector3Int>())
+                        _cellRenderer.HideCell(cell);
+
+                    foreach (var cell in targetCells)
+                        _cellRenderer.ShowCell(cell, _activeColor, _materialCategory);
+
+                    _shownCells = targetCells;
+                    return;
+                }
+
+                _stepFromCells = (Vector3Int[])_shownCells.Clone();
+                _stepToCells = (Vector3Int[])targetCells.Clone();
+                _visualStepActive = true;
+
+                var startPositions = new Vector3[_stepFromCells.Length];
+                for (int i = 0; i < startPositions.Length; i++)
+                    startPositions[i] = _stepFromCells[i];
+
+                _cellRenderer.MoveCells(_stepFromCells, _stepToCells, startPositions);
+                _shownCells = _stepToCells;
+            }
+
+            float easedProgress = _controller.EvaluatedStepProgress;
+            for (int i = 0; i < _stepToCells.Length; i++)
+            {
+                var visualPosition = Vector3.Lerp(_stepFromCells[i], _stepToCells[i], easedProgress);
+                _cellRenderer.SetCellVisualPosition(_stepToCells[i], visualPosition);
+            }
+        }
+
+        private void FinishVisualStep()
+        {
+            if (!_visualStepActive) return;
+
+            for (int i = 0; i < _stepToCells.Length; i++)
+                _cellRenderer.SetCellVisualPosition(_stepToCells[i], _stepToCells[i]);
+
+            _stepFromCells = null;
+            _stepToCells = null;
+            _visualStepActive = false;
         }
 
         private static bool CellsEqual(Vector3Int[] a, Vector3Int[] b)

@@ -37,6 +37,14 @@ namespace hp55games.Polycubes.Grid
             foreach (var cell in shape.Cells)
             {
                 var world = origin + cell;
+
+                // A cell can be sitting above the ceiling at lock time (rotation's allowAboveTop
+                // let it land there, and the piece then had no room left to fall back into
+                // bounds before locking) - CanPlaceAt already treats that space as "nothing is
+                // ever placed there" (see its allowAboveTop remarks); mirror that here instead of
+                // calling SetOccupied out of bounds.
+                if (world.y >= grid.Height) continue;
+
                 grid.SetOccupied(world.x, world.y, world.z, true);
             }
         }
@@ -59,6 +67,7 @@ namespace hp55games.Polycubes.Grid
             foreach (var cell in shape.Cells)
             {
                 int y = origin.y + cell.y;
+                if (y >= grid.Height) continue; // no such layer above the ceiling - see LockInto
                 if (!touchedLayers.Contains(y)) touchedLayers.Add(y);
             }
 
