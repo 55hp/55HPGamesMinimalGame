@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using hp55games.Mobile.Core.Config;
 using UnityEditor;
@@ -14,9 +15,59 @@ namespace hp55games.Mobile.Core.Config.EditorTools
     [CustomEditor(typeof(ConfigCatalog))]
     public sealed class ConfigCatalogEditor : UnityEditor.Editor
     {
+        // Groups above this size collapse behind a foldout by default (e.g. the 118+ per-element
+        // BlockoutSkin assets) so a handful of singleton configs aren't buried under them. Generic
+        // by type, not by name, so Core has no dependency on any GameSpecific config type.
+        private const int CollapseThreshold = 5;
+
+        private readonly Dictionary<Type, bool> _expanded = new();
+
         public override void OnInspectorGUI()
         {
-            DrawDefaultInspector();
+            serializedObject.Update();
+            var configsProp = serializedObject.FindProperty("_configs");
+
+            var byType = new Dictionary<Type, List<int>>();
+            for (int i = 0; i < configsProp.arraySize; i++)
+            {
+                var element = configsProp.GetArrayElementAtIndex(i).objectReferenceValue;
+                var type = element != null ? element.GetType() : typeof(ScriptableObject);
+                if (!byType.TryGetValue(type, out var indices))
+                    byType[type] = indices = new List<int>();
+                indices.Add(i);
+            }
+
+            var types = new List<Type>(byType.Keys);
+            types.Sort((a, b) => string.CompareOrdinal(a.Name, b.Name));
+
+            EditorGUILayout.LabelField($"{configsProp.arraySize} configs total", EditorStyles.boldLabel);
+            EditorGUILayout.Space(4);
+
+            foreach (var type in types)
+            {
+                var indices = byType[type];
+
+                if (indices.Count > CollapseThreshold)
+                {
+                    _expanded.TryGetValue(type, out bool isExpanded);
+                    isExpanded = EditorGUILayout.Foldout(isExpanded, $"{type.Name} ({indices.Count}) - collapsed", true);
+                    _expanded[type] = isExpanded;
+                    if (!isExpanded) continue;
+
+                    EditorGUI.indentLevel++;
+                    foreach (int i in indices)
+                        EditorGUILayout.PropertyField(configsProp.GetArrayElementAtIndex(i), GUIContent.none);
+                    EditorGUI.indentLevel--;
+                }
+                else
+                {
+                    EditorGUILayout.LabelField(type.Name, EditorStyles.miniBoldLabel);
+                    foreach (int i in indices)
+                        EditorGUILayout.PropertyField(configsProp.GetArrayElementAtIndex(i), GUIContent.none);
+                }
+            }
+
+            serializedObject.ApplyModifiedProperties();
 
             EditorGUILayout.Space(8);
             EditorGUILayout.HelpBox(
