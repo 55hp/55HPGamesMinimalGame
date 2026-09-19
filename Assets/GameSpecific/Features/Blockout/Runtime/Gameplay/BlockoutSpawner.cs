@@ -89,8 +89,9 @@ namespace hp55games.Blockout.Gameplay
         // seed always produces the same spawn sequence for a given shape set).
         public int CurrentSeed { get; private set; }
 
-        // Fired once, the moment SpawnNext refuses to spawn because the well is full - see
-        // SpawnBlockedWellFull. BlockoutGameplayState listens for this to publish
+        // Fired once: either SpawnNext refused to spawn because the well is full (see
+        // SpawnBlockedWellFull), or, after a lock and its clears, a locked cell remains at
+        // Y >= h + 1 (CheckGameOver). BlockoutGameplayState listens for this to publish
         // BlockoutGameOverEvent and drive the FSM to ResultState; no recovery happens here.
         public event Action WellFull;
 
@@ -361,8 +362,24 @@ namespace hp55games.Blockout.Gameplay
 
             Destroy(_controller.gameObject);
             _controller = null;
+
+            // Judged only now, after the lock AND the clear/collapse above have resolved: a piece
+            // can lock above h and be fine if the collapse brings everything back down.
+            if (CheckGameOver())
+            {
+                // Same game-over path as a blocked spawn: BlockoutGameplayState only listens for
+                // WellFull, it doesn't care which of the two triggers raised it.
+                SpawnBlockedWellFull = true;
+                _spawningStopped = true;
+                Debug.Log("[BlockoutSpawner] A locked cell remains above the well's game-over line (Y >= height + 1). Stopping spawns.", this);
+                WellFull?.Invoke();
+                return;
+            }
+
             SpawnNext();
         }
+
+        private bool CheckGameOver() => _grid.AnyOccupiedAtOrAbove(_wellHeight + 1);
 
         // Mirrors PlacementRules.ClearFullLayersTouchedBy's grid collapse in the pooled visuals
         // (WellCellRenderer has no way to hear about a clear on its own - VoxelGrid's occupancy
@@ -379,15 +396,15 @@ namespace hp55games.Blockout.Gameplay
 
             foreach (var y in clearedLayerYs)
             {
-                _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _wellHeight, clearedPositions, clearedColors);
+                _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _grid.StorageHeight, clearedPositions, clearedColors);
             }
 
             _clearBehaviour?.OnLayersCleared(new BlockoutClearContext(clearedPositions, clearedColors, clearedLayerYs.Length));
         }
 
-        // Centers the shape horizontally in the well and drops its topmost cell to the well's
-        // ceiling, so any shape from the set spawns fully in-bounds regardless of how its cells
-        // extend from (0,0,0).
+        // Centers the shape horizontally in the well and anchors its reference cell (the shape's
+        // local (0,0,0), i.e. GridPosition) at Y = h, the row just above the well's top layer.
+        // Cells with a positive local Y therefore start above h - expected, never a block.
         private Vector3Int CenteredTopStart(PolycubeShape shape)
         {
             int minX = int.MaxValue, maxX = int.MinValue;
@@ -406,7 +423,7 @@ namespace hp55games.Blockout.Gameplay
 
             int originX = (_wellWidth - (maxX - minX + 1)) / 2 - minX;
             int originZ = (_wellDepth - (maxZ - minZ + 1)) / 2 - minZ;
-            int originY = _wellHeight - 1 - maxY;
+            int originY = _wellHeight;
 
             return new Vector3Int(originX, originY, originZ);
         }

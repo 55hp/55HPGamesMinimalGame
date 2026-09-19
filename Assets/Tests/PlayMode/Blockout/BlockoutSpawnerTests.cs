@@ -54,14 +54,10 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Initialize_DoesNotSpawnPiece_WhenComputedStartPositionIsAlreadyOccupied()
         {
-            // Every cell occupied: guarantees the spawn position is blocked regardless of exactly
-            // where CenteredTopStart (private) places it - simulates the stack having reached the
-            // spawn point, without depending on that formula.
-            var grid = new VoxelGrid(2, 2, 2);
-            for (int x = 0; x < 2; x++)
-                for (int y = 0; y < 2; y++)
-                    for (int z = 0; z < 2; z++)
-                        grid.SetOccupied(x, y, z, true);
+            // Every storage cell occupied (headroom included - a piece's reference cell spawns at
+            // Y = h, above the well's own layers): simulates the stack having reached the spawn point.
+            var grid = TestGrid.Make(2, 2, 2);
+            TestGrid.Fill(grid);
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
@@ -81,7 +77,8 @@ namespace hp55games.Blockout.Tests
             bool wellFullFired = false;
             spawner.WellFull += () => wellFullFired = true;
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 2, 2, 2, null, null);
+            var tallShape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) });
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { tallShape }, 1, 2, 2, 2, null, null);
 
             Assert.IsTrue(spawner.SpawnBlockedWellFull);
             Assert.IsNull(spawner.CurrentPiece); // detected and reported, not a piece silently locked in place
@@ -93,7 +90,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Initialize_SpawnsPiece_WhenStartPositionIsFree()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
@@ -123,14 +120,14 @@ namespace hp55games.Blockout.Tests
 
             var go1 = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner1 = go1.AddComponent<BlockoutSpawner>();
-            spawner1.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColors, null);
+            spawner1.Initialize(TestGrid.Make(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColors, null);
             var color1 = cellRenderer.GetCellColor(spawner1.CurrentPiece.GridPosition);
 
             // spawner2.Initialize below hides spawner1's piece from cellRenderer (HideAll) as a
             // side effect - color1 is already captured, so that's fine.
             var go2 = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner2 = go2.AddComponent<BlockoutSpawner>();
-            spawner2.Initialize(new VoxelGrid(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColors, null);
+            spawner2.Initialize(TestGrid.Make(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColors, null);
             var color2 = cellRenderer.GetCellColor(spawner2.CurrentPiece.GridPosition);
 
             Assert.AreEqual(color1, color2); // shape index 0 in both -> same color every run
@@ -144,7 +141,7 @@ namespace hp55games.Blockout.Tests
         public void HardDrop_ShowsLockedCellAtFinalPosition_WithDimmedColor()
         {
             var cellRenderer = CreateCellRenderer();
-            var grid = new VoxelGrid(3, 5, 3);
+            var grid = TestGrid.Make(3, 5, 3);
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 
@@ -177,7 +174,7 @@ namespace hp55games.Blockout.Tests
             var cellRenderer = CreateCellRenderer();
             var metallic = new Material(Shader.Find("Sprites/Default"));
             typeof(WellCellRenderer).GetField("_metallicMaterial", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(cellRenderer, metallic);
-            var grid = new VoxelGrid(3, 5, 3);
+            var grid = TestGrid.Make(3, 5, 3);
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
@@ -206,7 +203,7 @@ namespace hp55games.Blockout.Tests
             // Needs a real frame (UnityTest): the visual sync only runs from
             // BlockoutSpawner.Update().
             var cellRenderer = CreateCellRenderer();
-            var grid = new VoxelGrid(7, 7, 7);
+            var grid = TestGrid.Make(7, 7, 7);
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 
@@ -270,7 +267,7 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
+            spawner.Initialize(TestGrid.Make(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
 
             var spawnPos = spawner.CurrentPiece.GridPosition;
             eventBus.Publish(new HardDropRequestedEvent()); // locks the first piece, spawns a second
@@ -278,12 +275,192 @@ namespace hp55games.Blockout.Tests
             Assert.IsTrue(cellRenderer.IsCellShown(lockedPos)); // still visible - "run 1"'s locked placeholder
 
             // Starting a new run should sweep away the previous one's locked cells.
-            spawner.Initialize(new VoxelGrid(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
+            spawner.Initialize(TestGrid.Make(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
 
             Assert.IsFalse(cellRenderer.IsCellShown(lockedPos));
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(cellRenderer.gameObject);
+        }
+
+        // ---- Game over: judged once, after the lock AND any clear/collapse, on locked cells at
+        // Y >= h + 1. The active piece is never blocked by the ceiling (see PieceControllerTests).
+
+        private static PolycubeShape Vertical(int length)
+        {
+            var cells = new Vector3Int[length];
+            for (int i = 0; i < length; i++) cells[i] = new Vector3Int(0, i, 0);
+            return new PolycubeShape(cells);
+        }
+
+        private static PolycubeShape Line5() => new PolycubeShape(new[]
+        {
+            Vector3Int.zero, new Vector3Int(1, 0, 0), new Vector3Int(2, 0, 0), new Vector3Int(3, 0, 0), new Vector3Int(4, 0, 0),
+        });
+
+        // Spawns `shape` (the only shape in the set) into a width x 3 x 1 well (h = 3); the piece's
+        // reference cell starts at Y = 3. wellFullFired[0] flips when WellFull is raised.
+        private BlockoutSpawner SpawnInto(VoxelGrid grid, int width, PolycubeShape shape, out EventBus eventBus, out bool[] wellFullFired)
+        {
+            eventBus = new EventBus();
+            ServiceRegistry.Register<IEventBus>(eventBus);
+
+            var go = new GameObject(nameof(BlockoutSpawnerTests));
+            var spawner = go.AddComponent<BlockoutSpawner>();
+
+            var fired = new bool[1];
+            spawner.WellFull += () => fired[0] = true;
+            wellFullFired = fired;
+
+            LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer")); // no renderer needed here
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 1, width, 3, 1, null, null);
+            Assert.IsNotNull(spawner.CurrentPiece);
+            Assert.AreEqual(3, spawner.CurrentPiece.GridPosition.y); // reference cell spawns at Y = h
+            return spawner;
+        }
+
+        // Occupies every x of layerY except exceptX, so a piece filling that x completes the layer.
+        private static void FillLayerExcept(VoxelGrid grid, int layerY, int exceptX)
+        {
+            for (int x = 0; x < grid.Width; x++)
+            {
+                if (x != exceptX) grid.SetOccupied(x, layerY, 0, true);
+            }
+        }
+
+        [Test]
+        public void GameOver_LockFullyBelowH_IsNotGameOver()
+        {
+            var grid = TestGrid.Make(3, 3, 1);
+            var spawner = SpawnInto(grid, 3, SingleCellShape(), out var eventBus, out var wellFullFired);
+
+            eventBus.Publish(new HardDropRequestedEvent()); // falls to the floor
+
+            Assert.IsFalse(wellFullFired[0]);
+            Assert.IsNotNull(spawner.CurrentPiece);
+            Assert.IsFalse(grid.AnyOccupiedAtOrAbove(1));
+
+            Object.DestroyImmediate(spawner.gameObject);
+        }
+
+        [Test]
+        public void GameOver_LockAtExactlyH_IsNotGameOver()
+        {
+            var grid = TestGrid.Make(3, 3, 1);
+            var spawner = SpawnInto(grid, 3, SingleCellShape(), out var eventBus, out var wellFullFired);
+            grid.SetOccupied(1, 2, 0, true); // stack right below the spawn cell: locks at Y = h
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(grid.IsOccupied(1, 3, 0)); // written above the well's top layer, not discarded
+            Assert.IsFalse(wellFullFired[0]);
+
+            Object.DestroyImmediate(spawner.gameObject);
+        }
+
+        [Test]
+        public void GameOver_LockAboveH_ResolvedByClearAndCollapse_IsNotGameOver()
+        {
+            var grid = TestGrid.Make(3, 3, 1);
+            var spawner = SpawnInto(grid, 3, Vertical(2), out var eventBus, out var wellFullFired); // piece at x = 1
+            grid.SetOccupied(1, 2, 0, true);  // blocks the piece at Y = 3 (cells Y = 3, 4)
+            FillLayerExcept(grid, 3, 1);      // the piece completes layer 3...
+            FillLayerExcept(grid, 4, 1);      // ...and layer 4 - both clear, nothing is left above h
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsFalse(grid.AnyOccupiedAtOrAbove(3));
+            Assert.IsFalse(wellFullFired[0]);
+            Assert.IsNotNull(spawner.CurrentPiece);
+
+            Object.DestroyImmediate(spawner.gameObject);
+        }
+
+        [Test]
+        public void GameOver_LockAboveH_WithNoClear_IsGameOver()
+        {
+            var grid = TestGrid.Make(3, 3, 1);
+            var spawner = SpawnInto(grid, 3, Vertical(2), out var eventBus, out var wellFullFired);
+            grid.SetOccupied(1, 2, 0, true); // locks with cells at Y = 3 and 4 (h + 1)
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(wellFullFired[0]);
+            Assert.IsTrue(spawner.SpawnBlockedWellFull);
+            Assert.IsNull(spawner.CurrentPiece);
+
+            Object.DestroyImmediate(spawner.gameObject);
+        }
+
+        [Test]
+        public void GameOver_LockAboveH_WithInsufficientClear_IsGameOver()
+        {
+            var grid = TestGrid.Make(3, 3, 1);
+            var spawner = SpawnInto(grid, 3, Vertical(3), out var eventBus, out var wellFullFired); // cells Y = 3, 4, 5
+            grid.SetOccupied(1, 2, 0, true);
+            FillLayerExcept(grid, 3, 1); // only layer 3 clears; the piece's other cells collapse to Y = 3, 4
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(grid.IsOccupied(1, 4, 0)); // still above h after the collapse
+            Assert.IsTrue(wellFullFired[0]);
+            Assert.IsNull(spawner.CurrentPiece);
+
+            Object.DestroyImmediate(spawner.gameObject);
+        }
+
+        [Test]
+        public void BlockoutShapeSet_IncludesTheStraightFiveCellPentacube()
+        {
+            bool found = false;
+            foreach (var shape in BlockoutShapeSet.AllShapes())
+            {
+                if (shape.Cells.Count != 5) continue;
+                var min = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
+                var max = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
+                foreach (var c in shape.Cells)
+                {
+                    min = Vector3Int.Min(min, c);
+                    max = Vector3Int.Max(max, c);
+                }
+                var span = max - min + Vector3Int.one;
+                if (span.x * span.y * span.z == 5) found = true; // 5x1x1 in some orientation
+            }
+            Assert.IsTrue(found);
+        }
+
+        [Test]
+        public void StraightPentacube_StoodUpAtTheCeiling_ClearingEnough_IsNotGameOver()
+        {
+            var grid = TestGrid.Make(5, 3, 1);
+            var spawner = SpawnInto(grid, 5, Line5(), out var eventBus, out var wellFullFired);
+            eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 }); // cells Y = 3..7
+            grid.SetOccupied(0, 2, 0, true); // blocks it right there
+            for (int y = 3; y <= 7; y++) FillLayerExcept(grid, y, 0); // the piece completes all five layers
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsFalse(grid.AnyOccupiedAtOrAbove(3));
+            Assert.IsFalse(wellFullFired[0]);
+
+            Object.DestroyImmediate(spawner.gameObject);
+        }
+
+        [Test]
+        public void StraightPentacube_StoodUpAtTheCeiling_ClearingTooLittle_IsGameOver()
+        {
+            var grid = TestGrid.Make(5, 3, 1);
+            var spawner = SpawnInto(grid, 5, Line5(), out var eventBus, out var wellFullFired);
+            eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 }); // cells Y = 3..7
+            grid.SetOccupied(0, 2, 0, true);
+            FillLayerExcept(grid, 3, 0); // only the bottom layer completes; four cells collapse to Y = 3..6
+
+            eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(wellFullFired[0]);
+            Assert.IsNull(spawner.CurrentPiece);
+
+            Object.DestroyImmediate(spawner.gameObject);
         }
 
         // Stand-in BlockoutClearBehaviour for assertions - see also
@@ -300,7 +477,7 @@ namespace hp55games.Blockout.Tests
             // width=1, depth=1: a single-cell piece landing on the floor always completes the
             // (only possible) layer, so this hard drop is guaranteed to trigger a clear.
             var cellRenderer = CreateCellRenderer();
-            var grid = new VoxelGrid(1, 3, 1);
+            var grid = TestGrid.Make(1, 3, 1);
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 
@@ -330,7 +507,7 @@ namespace hp55games.Blockout.Tests
             // just-shown cells down too. Must run before SpawnNext() instead (see
             // BlockoutSpawner.OnPieceLocked).
             var cellRenderer = CreateCellRenderer();
-            var grid = new VoxelGrid(1, 3, 1);
+            var grid = TestGrid.Make(1, 3, 1);
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 
@@ -338,7 +515,7 @@ namespace hp55games.Blockout.Tests
             var spawner = go.AddComponent<BlockoutSpawner>();
             spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 3, 1, null, null);
 
-            var spawnPos = spawner.CurrentPiece.GridPosition; // (0, 2, 0) - top of the well
+            var spawnPos = spawner.CurrentPiece.GridPosition; // (0, 3, 0) - Y = h, the spawn row
 
             eventBus.Publish(new HardDropRequestedEvent()); // locks at y=0, clears the only layer, spawns piece 2
 
@@ -361,7 +538,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(new VoxelGrid(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, null, null);
+            spawner.Initialize(TestGrid.Make(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, null, null);
 
             // Reach the private modifier directly (same pattern as the WellCellRenderer field
             // access above) to force decay without waiting DecayIntervalSeconds of real time.
@@ -372,7 +549,7 @@ namespace hp55games.Blockout.Tests
             spawner.CurrentPiece.Tick(0f); // refresh the snapshot without advancing any fall-state timer
             Assert.Less(spawner.CurrentPiece.CurrentInterval, _timeDifficultyConfig.StartStepDelay); // the decay reached this piece
 
-            spawner.Initialize(new VoxelGrid(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, null, null);
+            spawner.Initialize(TestGrid.Make(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, null, null);
 
             Assert.AreEqual(_timeDifficultyConfig.StartStepDelay, spawner.CurrentPiece.CurrentInterval, 0.0001f); // back to the start delay
 
@@ -435,7 +612,7 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            var grid = new VoxelGrid(3, spawnCount + 5, 3);
+            var grid = TestGrid.Make(3, spawnCount + 5, 3);
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 

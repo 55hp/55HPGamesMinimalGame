@@ -37,35 +37,31 @@ namespace hp55games.Polycubes.Tests
         }
 
         [Test]
-        public void CanPlaceAt_DefaultOverload_StillRejectsAboveHeight()
+        public void CanPlaceAt_RejectsCellsAboveStorage_WhenThereIsNoHeadroom()
         {
-            // The 3-arg overload must keep its original (allowAboveTop: false) behavior - every
-            // existing caller (fall step, move, hard drop, lock validation) relies on this.
             var grid = new VoxelGrid(3, 1, 3);
             Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, 1, 0)));
         }
 
         [Test]
-        public void CanPlaceAt_AllowAboveTop_ReturnsTrue_WhenOnlyYExceedsHeight()
+        public void CanPlaceAt_AllowsCellsAboveHeight_WhenInsideHeadroom()
         {
-            var grid = new VoxelGrid(3, 1, 3);
-            Assert.IsTrue(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, 1, 0), allowAboveTop: true));
+            var grid = new VoxelGrid(3, 1, 3, headroom: 4);
+            var tall = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0), new Vector3Int(0, 2, 0) });
+
+            Assert.IsTrue(PlacementRules.CanPlaceAt(grid, tall, new Vector3Int(0, 1, 0))); // Y = 1..3
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, tall, new Vector3Int(0, 3, 0))); // Y = 3..5, past storage (5 rows: 0..4)
         }
 
         [Test]
-        public void CanPlaceAt_AllowAboveTop_StillReturnsFalse_WhenXOrZExitBounds()
+        public void CanPlaceAt_InHeadroom_StillRejectsXZOutOfBounds_FloorAndOccupiedCells()
         {
-            var grid = new VoxelGrid(2, 1, 3);
-            // X=2 is out of bounds for Width=2 regardless of Y - the open-top exemption only ever
-            // relaxes the upper Y bound, never the side walls.
-            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(1, 1, 0), allowAboveTop: true));
-        }
+            var grid = new VoxelGrid(2, 1, 3, headroom: 4);
+            grid.SetOccupied(0, 2, 0, true); // a locked cell above the well's height
 
-        [Test]
-        public void CanPlaceAt_AllowAboveTop_StillReturnsFalse_WhenYIsBelowTheFloor()
-        {
-            var grid = new VoxelGrid(3, 3, 3);
-            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, -1, 0), allowAboveTop: true));
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(1, 2, 0))); // X = 2
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, -1, 0))); // floor
+            Assert.IsFalse(PlacementRules.CanPlaceAt(grid, TwoCellShape(), new Vector3Int(0, 2, 0))); // overlaps (0,2,0)
         }
 
         [Test]
@@ -79,31 +75,42 @@ namespace hp55games.Polycubes.Tests
         }
 
         [Test]
-        public void LockInto_DoesNotThrow_WhenACellIsAboveTheCeiling()
+        public void LockInto_WritesCellsAboveHeight_WhenInsideHeadroom()
         {
-            // Regression: a rotation committed via CanPlaceAt(allowAboveTop: true) can leave a
-            // cell at Y >= Height. If the piece then has no room left to fall before it locks,
-            // LockInto used to call VoxelGrid.SetOccupied out of bounds and throw
-            // ArgumentOutOfRangeException on every subsequent lock attempt - looked like the game
-            // freezing (no piece ever locks, nothing new ever spawns).
-            var grid = new VoxelGrid(3, 1, 3);
-            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) }); // top cell at Y=1, Height=1
+            var grid = new VoxelGrid(3, 1, 3, headroom: 2);
+            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) }); // top cell at Y = 1 = Height
 
-            Assert.DoesNotThrow(() => PlacementRules.LockInto(grid, shape, new Vector3Int(0, 0, 0)));
-            Assert.IsTrue(grid.IsOccupied(0, 0, 0));   // the in-bounds cell still locks normally
+            PlacementRules.LockInto(grid, shape, new Vector3Int(0, 0, 0));
+
+            Assert.IsTrue(grid.IsOccupied(0, 0, 0));
+            Assert.IsTrue(grid.IsOccupied(0, 1, 0)); // nothing discarded
         }
 
         [Test]
-        public void ClearFullLayersTouchedBy_DoesNotThrow_WhenATouchedLayerIsAboveTheCeiling()
+        public void ClearFullLayersTouchedBy_ClearsLayersAboveHeight()
         {
-            var grid = new VoxelGrid(1, 1, 1); // width/depth=1 so the one in-bounds layer is trivially full
-            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) }); // top cell at Y=1, Height=1
+            var grid = new VoxelGrid(1, 1, 1, headroom: 2); // width/depth=1: every occupied layer is full
+            var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) });
             var origin = new Vector3Int(0, 0, 0);
             PlacementRules.LockInto(grid, shape, origin);
 
-            int cleared = 0;
-            Assert.DoesNotThrow(() => cleared = PlacementRules.ClearFullLayersTouchedBy(grid, shape, origin));
-            Assert.AreEqual(1, cleared); // only the real layer (Y=0) counted - the above-ceiling one is skipped
+            int cleared = PlacementRules.ClearFullLayersTouchedBy(grid, shape, origin);
+
+            Assert.AreEqual(2, cleared); // the Y = 1 layer (above Height) counts too
+            Assert.IsFalse(grid.AnyOccupiedAtOrAbove(0));
+        }
+
+        [Test]
+        public void ClearLayerAndCollapse_ShiftsHeadroomCellsDown()
+        {
+            var grid = new VoxelGrid(1, 2, 1, headroom: 2);
+            grid.SetOccupied(0, 0, 0, true);
+            grid.SetOccupied(0, 3, 0, true); // top storage row
+
+            grid.ClearLayerAndCollapse(0);
+
+            Assert.IsTrue(grid.IsOccupied(0, 2, 0));
+            Assert.IsFalse(grid.IsOccupied(0, 3, 0));
         }
 
         [Test]

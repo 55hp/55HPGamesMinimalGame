@@ -71,8 +71,8 @@ namespace hp55games.Blockout.Tests
             // event directly (WellFull's invocation is restricted to BlockoutSpawner itself).
             var fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
             var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
-            var grid = new VoxelGrid(1, 1, 1);
-            grid.SetOccupied(0, 0, 0, true);
+            var grid = TestGrid.Make(1, 1, 1);
+            TestGrid.Fill(grid); // whole storage - the spawn point (Y = h) included
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
@@ -108,8 +108,8 @@ namespace hp55games.Blockout.Tests
 
             var fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
             var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
-            var grid = new VoxelGrid(1, 1, 1);
-            grid.SetOccupied(0, 0, 0, true);
+            var grid = TestGrid.Make(1, 1, 1);
+            TestGrid.Fill(grid); // whole storage - the spawn point (Y = h) included
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
@@ -145,8 +145,8 @@ namespace hp55games.Blockout.Tests
 
             var fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
             var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
-            var grid = new VoxelGrid(1, 1, 1);
-            grid.SetOccupied(0, 0, 0, true);
+            var grid = TestGrid.Make(1, 1, 1);
+            TestGrid.Fill(grid); // whole storage - the spawn point (Y = h) included
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
@@ -181,8 +181,8 @@ namespace hp55games.Blockout.Tests
 
             var fallCurve = ScriptableObject.CreateInstance<BlockoutFallCurveConfig>();
             var timeDifficultyConfig = ScriptableObject.CreateInstance<BlockoutTimeDifficultyConfig>();
-            var grid = new VoxelGrid(1, 1, 1);
-            grid.SetOccupied(0, 0, 0, true);
+            var grid = TestGrid.Make(1, 1, 1);
+            TestGrid.Fill(grid); // whole storage - the spawn point (Y = h) included
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));

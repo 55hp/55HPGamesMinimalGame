@@ -6,45 +6,28 @@ namespace hp55games.Polycubes.Grid
 {
     public static class PlacementRules
     {
+        // One unconditional check: every cell must be inside the grid's storage (walls, floor,
+        // and the headroom's top) and unoccupied. There's no "above the ceiling" exception - the
+        // ceiling only matters to the game layer, judging locked cells after the fact.
         public static bool CanPlaceAt(VoxelGrid grid, PolycubeShape shape, Vector3Int origin)
-            => CanPlaceAt(grid, shape, origin, allowAboveTop: false);
-
-        // allowAboveTop: a cell whose Y lands at or beyond the grid's ceiling (Height) is treated
-        // as valid/unoccupied, as if the grid extended infinitely upward, instead of rejected -
-        // X/Z bounds and the floor (Y < 0) are still enforced normally either way. Used for
-        // rotation, which should only ever be blocked by the well's side walls and floor, never
-        // by its open top (no wireframe there - see BlockoutWellWireframe/README §2).
-        public static bool CanPlaceAt(VoxelGrid grid, PolycubeShape shape, Vector3Int origin, bool allowAboveTop)
         {
             foreach (var cell in shape.Cells)
             {
                 var world = origin + cell;
 
-                if (allowAboveTop && world.y >= grid.Height)
-                {
-                    if (world.x < 0 || world.x >= grid.Width || world.z < 0 || world.z >= grid.Depth) return false;
-                    continue; // above the ceiling can't be occupied - nothing is ever placed there
-                }
-
-                if (!grid.IsInBounds(world.x, world.y, world.z)) return false;
+                if (!grid.IsInStorage(world.x, world.y, world.z)) return false;
                 if (grid.IsOccupied(world.x, world.y, world.z)) return false;
             }
             return true;
         }
 
+        // Writes every cell - nothing is discarded. Throws (via VoxelGrid) if a cell is outside
+        // storage, which CanPlaceAt already rules out for any position a piece can reach.
         public static void LockInto(VoxelGrid grid, PolycubeShape shape, Vector3Int origin)
         {
             foreach (var cell in shape.Cells)
             {
                 var world = origin + cell;
-
-                // A cell can be sitting above the ceiling at lock time (rotation's allowAboveTop
-                // let it land there, and the piece then had no room left to fall back into
-                // bounds before locking) - CanPlaceAt already treats that space as "nothing is
-                // ever placed there" (see its allowAboveTop remarks); mirror that here instead of
-                // calling SetOccupied out of bounds.
-                if (world.y >= grid.Height) continue;
-
                 grid.SetOccupied(world.x, world.y, world.z, true);
             }
         }
@@ -67,7 +50,6 @@ namespace hp55games.Polycubes.Grid
             foreach (var cell in shape.Cells)
             {
                 int y = origin.y + cell.y;
-                if (y >= grid.Height) continue; // no such layer above the ceiling - see LockInto
                 if (!touchedLayers.Contains(y)) touchedLayers.Add(y);
             }
 

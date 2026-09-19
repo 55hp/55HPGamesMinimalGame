@@ -199,10 +199,9 @@ namespace hp55games.Blockout.Gameplay
             var axis = evt.Axis == RotateAxis.AxisA ? AxisAMapsTo : AxisBMapsTo;
             var rotated = Rotate(Shape, axis, evt.Steps90);
 
-            // allowAboveTop: rotation is only ever blocked by the well's side walls and floor,
-            // never by its open top (no wireframe there) - unlike a fall step/move/hard drop,
-            // which all still use the strict, walls-and-ceiling CanPlaceAt overload.
-            if (PlacementRules.CanPlaceAt(_grid, rotated, GridPosition, allowAboveTop: true))
+            // Blocked only by side walls, the floor, and locked cells - the well's ceiling
+            // doesn't exist for the active piece.
+            if (PlacementRules.CanPlaceAt(_grid, rotated, GridPosition))
             {
                 Shape = rotated;
             }

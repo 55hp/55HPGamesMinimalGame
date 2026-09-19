@@ -54,7 +54,7 @@ namespace hp55games.Blockout.Tests
         // Spacious grid and a start position far from any wall: used by the timing tests below,
         // which only care about step/interval behavior and must never lock mid-test.
         private PieceController CreateController() =>
-            CreateController(SingleCellShape(), new Vector3Int(1, 5, 1), new VoxelGrid(3, 10, 3));
+            CreateController(SingleCellShape(), new Vector3Int(1, 5, 1), TestGrid.Make(3, 10, 3));
 
         private PieceController CreateController(PolycubeShape shape, Vector3Int start, VoxelGrid grid)
         {
@@ -106,7 +106,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(PieceControllerTests));
             var controller = go.AddComponent<PieceController>();
-            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
+            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, TestGrid.Make(3, 10, 3), modifier);
 
             Assert.AreEqual(modifier.CurrentStepDelay, controller.CurrentInterval, 0.0001f);
 
@@ -124,7 +124,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(PieceControllerTests));
             var controller = go.AddComponent<PieceController>();
-            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, new VoxelGrid(3, 10, 3), modifier);
+            controller.Initialize(SingleCellShape(), new Vector3Int(1, 5, 1), _fallCurve, TestGrid.Make(3, 10, 3), modifier);
 
             float intervalBeforeTimerTick = controller.CurrentInterval;
             int raiseCount = 0;
@@ -143,7 +143,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Tick_LocksPiece_WhenNextStepWouldGoBelowWellFloor()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             var start = new Vector3Int(1, 0, 1); // already resting on the floor (y = 0)
             var controller = CreateController(SingleCellShape(), start, grid);
 
@@ -159,7 +159,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Tick_LocksPiece_WhenNextStepWouldOverlapAlreadyLockedCell()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             grid.SetOccupied(1, 0, 1, true); // stand-in for a previously locked piece
 
             var start = new Vector3Int(1, 1, 1);
@@ -177,7 +177,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Tick_WritesEveryShapeCellIntoGrid_WhenLocked()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             var start = new Vector3Int(0, 0, 1); // resting on the floor
             var controller = CreateController(TwoCellShape(), start, grid);
 
@@ -193,7 +193,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Tick_PublishesLayersClearedEvent_WhenLockCompletesAFullLayer()
         {
-            var grid = new VoxelGrid(2, 3, 1);
+            var grid = TestGrid.Make(2, 3, 1);
             grid.SetOccupied(1, 0, 0, true); // layer 0 needs just one more cell to be full
 
             var start = new Vector3Int(0, 0, 0);
@@ -217,7 +217,7 @@ namespace hp55games.Blockout.Tests
         {
             // BlockoutSpawner needs the exact Y (not just the count) to mirror the collapse in
             // WellCellRenderer before spawning the next piece - see BlockoutSpawner.OnPieceLocked.
-            var grid = new VoxelGrid(2, 3, 1);
+            var grid = TestGrid.Make(2, 3, 1);
             grid.SetOccupied(1, 0, 0, true); // layer 0 needs just one more cell to be full
 
             var start = new Vector3Int(0, 0, 0);
@@ -237,7 +237,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void Locked_ReportsAnEmptyArray_WhenLockCompletesNoFullLayer()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             var start = new Vector3Int(1, 0, 1);
             var controller = CreateController(SingleCellShape(), start, grid);
 
@@ -256,7 +256,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void HandleMoveRequested_DoesNotMove_WhenTargetCellIsAlreadyLocked()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             grid.SetOccupied(2, 1, 1, true); // stand-in for a previously locked piece
 
             var start = new Vector3Int(1, 1, 1);
@@ -272,7 +272,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void HandleMoveRequested_Moves_WhenTargetCellIsFree()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             var start = new Vector3Int(1, 1, 1);
             var controller = CreateController(SingleCellShape(), start, grid);
 
@@ -288,11 +288,9 @@ namespace hp55games.Blockout.Tests
         {
             // LShape is flat (Y-extent 1) - rotating about either exposed axis preserves that
             // axis's own extent and swaps the other two, so the previously-flat dimension always
-            // becomes the one that grows (see PlacementRules.CanPlaceAt's allowAboveTop remarks -
-            // this is exactly the "piece stands up through the well's open top" case). A Height=1
-            // grid used to reject this; it's now allowed - only the side walls/floor still block
-            // rotation, see the two tests below.
-            var grid = new VoxelGrid(2, 1, 2);
+            // becomes the one that grows - the "piece stands up through the well's open top" case.
+            // Only the side walls/floor/locked cells block rotation, see the two tests below.
+            var grid = TestGrid.Make(2, 1, 2);
             var shape = LShape();
             var controller = CreateController(shape, Vector3Int.zero, grid);
 
@@ -310,7 +308,7 @@ namespace hp55games.Blockout.Tests
             // (RotatedZ: x' = -y), landing two cells at negative X - out of bounds regardless of
             // grid width, a genuine side-wall violation unrelated to the open-top exemption
             // (which only ever relaxes the upper Y bound).
-            var grid = new VoxelGrid(2, 3, 1);
+            var grid = TestGrid.Make(2, 3, 1);
             var shape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0), new Vector3Int(0, 2, 0) });
             var controller = CreateController(shape, Vector3Int.zero, grid);
 
@@ -327,7 +325,7 @@ namespace hp55games.Blockout.Tests
             // AxisB (X rotation) turns LShape's Z-extent into the new Y-extent with a sign flip -
             // one cell lands at Y = -1. The open-top exemption only ever relaxes the upper bound
             // (Y >= Height); Y < 0 (the floor) is still enforced.
-            var grid = new VoxelGrid(2, 3, 2);
+            var grid = TestGrid.Make(2, 3, 2);
             var shape = LShape();
             var controller = CreateController(shape, Vector3Int.zero, grid);
 
@@ -341,7 +339,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void HandleRotateRequested_Rotates_WhenTargetOrientationFits()
         {
-            var grid = new VoxelGrid(3, 3, 3);
+            var grid = TestGrid.Make(3, 3, 3);
             var shape = SingleCellShape();
             var controller = CreateController(shape, new Vector3Int(1, 1, 1), grid);
 
@@ -355,7 +353,7 @@ namespace hp55games.Blockout.Tests
         [Test]
         public void HandleHardDropRequested_DropsToFloorImmediately_AndLocks()
         {
-            var grid = new VoxelGrid(3, 5, 3);
+            var grid = TestGrid.Make(3, 5, 3);
             var start = new Vector3Int(1, 4, 1);
             var controller = CreateController(SingleCellShape(), start, grid);
 
@@ -364,6 +362,88 @@ namespace hp55games.Blockout.Tests
             Assert.IsTrue(controller.IsLocked);
             Assert.AreEqual(new Vector3Int(1, 0, 1), controller.GridPosition);
             Assert.IsTrue(grid.IsOccupied(1, 0, 1));
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        // The active piece is never blocked by the well's ceiling (h = 3 in these grids) - only by
+        // walls, floor and locked cells. Game-over is judged by BlockoutSpawner after the lock and
+        // any clear, see BlockoutSpawnerTests.
+
+        [Test]
+        public void Move_AboveH_IsNeverRejected()
+        {
+            var grid = TestGrid.Make(3, 3, 3);
+            var controller = CreateController(SingleCellShape(), new Vector3Int(1, 4, 1), grid); // h + 1
+
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = MoveDirection.Left });
+
+            Assert.AreEqual(new Vector3Int(0, 4, 1), controller.GridPosition);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Rotation_ReachingFarAboveH_IsNeverRejected()
+        {
+            var grid = TestGrid.Make(3, 3, 3);
+            var line = new PolycubeShape(new[]
+            {
+                Vector3Int.zero, new Vector3Int(1, 0, 0), new Vector3Int(2, 0, 0),
+            });
+            var controller = CreateController(line, new Vector3Int(0, 3, 1), grid);
+
+            // Standing up puts cells at Y = 3, 4, 5 - well past h; still a legal rotation.
+            _eventBus.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
+
+            Assert.AreNotSame(line, controller.Shape);
+            Assert.IsFalse(controller.IsLocked);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Tick_FallsFreely_WhileCellsAreAboveH()
+        {
+            var grid = TestGrid.Make(3, 3, 3);
+            var tall = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0), new Vector3Int(0, 2, 0) });
+            var controller = CreateController(tall, new Vector3Int(1, 4, 1), grid); // cells Y = 4..6
+
+            AdvanceBy(controller, _fallCurve.BaseInterval + 0.001f);
+
+            Assert.IsFalse(controller.IsLocked);
+            Assert.AreEqual(new Vector3Int(1, 3, 1), controller.GridPosition);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void HardDrop_FromAboveH_FallsToFloor()
+        {
+            var grid = TestGrid.Make(3, 3, 3);
+            var controller = CreateController(SingleCellShape(), new Vector3Int(1, 5, 1), grid);
+
+            _eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.AreEqual(new Vector3Int(1, 0, 1), controller.GridPosition);
+
+            Object.DestroyImmediate(controller.gameObject);
+        }
+
+        [Test]
+        public void Lock_AboveH_WritesEveryCell_NothingIsDiscarded()
+        {
+            var grid = TestGrid.Make(3, 3, 3);
+            grid.SetOccupied(1, 2, 1, true); // blocks a fall below Y = 3
+            var vertical = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) });
+            var controller = CreateController(vertical, new Vector3Int(1, 3, 1), grid); // cells Y = 3, 4
+
+            _eventBus.Publish(new HardDropRequestedEvent());
+
+            Assert.IsTrue(controller.IsLocked);
+            Assert.IsTrue(grid.IsOccupied(1, 3, 1));
+            Assert.IsTrue(grid.IsOccupied(1, 4, 1));
 
             Object.DestroyImmediate(controller.gameObject);
         }
@@ -378,6 +458,22 @@ namespace hp55games.Blockout.Tests
                 controller.Tick(dt);
                 remaining -= dt;
             }
+        }
+    }
+
+    // Grid with the same headroom BlockoutWell gives the real game, so tests can put pieces at
+    // Y >= h.
+    internal static class TestGrid
+    {
+        public static VoxelGrid Make(int width, int height, int depth) =>
+            new VoxelGrid(width, height, depth, BlockoutWell.HeadroomRows);
+
+        public static void Fill(VoxelGrid grid)
+        {
+            for (int x = 0; x < grid.Width; x++)
+                for (int y = 0; y < grid.StorageHeight; y++)
+                    for (int z = 0; z < grid.Depth; z++)
+                        grid.SetOccupied(x, y, z, true);
         }
     }
 }
