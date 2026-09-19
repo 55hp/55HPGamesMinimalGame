@@ -10,10 +10,10 @@ namespace hp55games.Blockout
         public int Depth { get; }
 
         // Rows stored above Height for locked cells that haven't been cleared/judged yet.
-        // A piece spawns with its reference cell at Y = Height and every polycube's cells lie
-        // within 4 of that cell (largest shape has 5 cells), so it can occupy up to
-        // Y = Height + 4 - 5 rows cover that.
-        public const int HeadroomRows = 5;
+        // A piece spawns with its reference cell at Y = Height - 1 (the top row) and every
+        // polycube's cells lie within 4 of that cell (largest shape has 5 cells), so it can
+        // occupy up to Y = Height + 3 - 4 rows cover that.
+        public const int HeadroomRows = 4;
 
         public VoxelGrid Grid { get; }
 

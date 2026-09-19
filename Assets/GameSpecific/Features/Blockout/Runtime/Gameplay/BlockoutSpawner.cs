@@ -91,7 +91,7 @@ namespace hp55games.Blockout.Gameplay
 
         // Fired once: either SpawnNext refused to spawn because the well is full (see
         // SpawnBlockedWellFull), or, after a lock and its clears, a locked cell remains at
-        // Y >= h + 1 (CheckGameOver). BlockoutGameplayState listens for this to publish
+        // Y >= h, i.e. outside the well (CheckGameOver). BlockoutGameplayState listens for this to publish
         // BlockoutGameOverEvent and drive the FSM to ResultState; no recovery happens here.
         public event Action WellFull;
 
@@ -371,7 +371,7 @@ namespace hp55games.Blockout.Gameplay
                 // WellFull, it doesn't care which of the two triggers raised it.
                 SpawnBlockedWellFull = true;
                 _spawningStopped = true;
-                Debug.Log("[BlockoutSpawner] A locked cell remains above the well's game-over line (Y >= height + 1). Stopping spawns.", this);
+                Debug.Log("[BlockoutSpawner] A locked cell remains above the well's game-over line (Y >= height). Stopping spawns.", this);
                 WellFull?.Invoke();
                 return;
             }
@@ -379,7 +379,7 @@ namespace hp55games.Blockout.Gameplay
             SpawnNext();
         }
 
-        private bool CheckGameOver() => _grid.AnyOccupiedAtOrAbove(_wellHeight + 1);
+        private bool CheckGameOver() => _grid.AnyOccupiedAtOrAbove(_wellHeight);
 
         // Mirrors PlacementRules.ClearFullLayersTouchedBy's grid collapse in the pooled visuals
         // (WellCellRenderer has no way to hear about a clear on its own - VoxelGrid's occupancy
@@ -403,7 +403,8 @@ namespace hp55games.Blockout.Gameplay
         }
 
         // Centers the shape horizontally in the well and anchors its reference cell (the shape's
-        // local (0,0,0), i.e. GridPosition) at Y = h, the row just above the well's top layer.
+        // local (0,0,0), i.e. GridPosition) at Y = h - 1, the well's top row.
+        // Game over is then any locked cell that ends up at Y >= h, outside the well.
         // Cells with a positive local Y therefore start above h - expected, never a block.
         private Vector3Int CenteredTopStart(PolycubeShape shape)
         {
@@ -423,7 +424,7 @@ namespace hp55games.Blockout.Gameplay
 
             int originX = (_wellWidth - (maxX - minX + 1)) / 2 - minX;
             int originZ = (_wellDepth - (maxZ - minZ + 1)) / 2 - minZ;
-            int originY = _wellHeight;
+            int originY = _wellHeight - 1;
 
             return new Vector3Int(originX, originY, originZ);
         }
