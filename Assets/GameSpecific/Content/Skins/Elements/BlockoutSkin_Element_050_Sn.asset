@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-50
   _displayName: Stagno
-  _costInCoins: -1
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.4, g: 0.5019608, b: 0.5019608, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _unlockMethod: 2
+  _unlockAchievementId: runs_completed_100
   _elementSymbol: Sn
   _atomicNumber: 50
   _materialCategory: 0
   _densityNormalized: 0.8679
-  _unlockMethod: 2
-  _unlockAchievementId: runs_completed_100

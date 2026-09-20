@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-91
   _displayName: Protoattinio
-  _costInCoins: 1917
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.6313726, b: 1, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1917
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Pa
   _atomicNumber: 91
   _materialCategory: 0
   _densityNormalized: 0.9252
-  _unlockMethod: 1
-  _unlockAchievementId: 

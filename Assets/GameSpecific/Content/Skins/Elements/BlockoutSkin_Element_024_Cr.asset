@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-24
   _displayName: Cromo
-  _costInCoins: 1797
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5411765, g: 0.6, b: 0.78039217, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1797
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Cr
   _atomicNumber: 24
   _materialCategory: 0
   _densityNormalized: 0.8665
-  _unlockMethod: 1
-  _unlockAchievementId: 

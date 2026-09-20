@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-18
   _displayName: Argon
-  _costInCoins: 1894
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5019608, g: 0.81960785, b: 0.8901961, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1894
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ar
   _atomicNumber: 18
   _materialCategory: 2
   _densityNormalized: 0.2294
-  _unlockMethod: 1
-  _unlockAchievementId: 

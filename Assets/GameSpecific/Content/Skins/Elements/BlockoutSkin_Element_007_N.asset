@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-7
   _displayName: Azoto
-  _costInCoins: 1772
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.1882353, g: 0.3137255, b: 0.972549, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1772
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: N
   _atomicNumber: 7
   _materialCategory: 2
   _densityNormalized: 0.2022
-  _unlockMethod: 1
-  _unlockAchievementId: 

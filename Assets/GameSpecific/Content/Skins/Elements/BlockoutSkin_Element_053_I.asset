@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-53
   _displayName: Iodio
-  _costInCoins: 1811
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.5803922, g: 0, b: 0.5803922, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1811
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: I
   _atomicNumber: 53
   _materialCategory: 1
   _densityNormalized: 0.8379
-  _unlockMethod: 1
-  _unlockAchievementId: 

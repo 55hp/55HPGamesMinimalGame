@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-52
   _displayName: Tellurio
-  _costInCoins: 1782
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.83137256, g: 0.47843137, b: 0, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1782
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Te
   _atomicNumber: 52
   _materialCategory: 1
   _densityNormalized: 0.8559
-  _unlockMethod: 1
-  _unlockAchievementId: 

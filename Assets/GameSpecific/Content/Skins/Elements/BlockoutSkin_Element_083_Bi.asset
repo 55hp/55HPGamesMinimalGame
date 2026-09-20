@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-83
   _displayName: Bismuto
-  _costInCoins: 1540
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.61960787, g: 0.30980393, b: 0.70980394, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1540
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Bi
   _atomicNumber: 83
   _materialCategory: 0
   _densityNormalized: 0.8907
-  _unlockMethod: 1
-  _unlockAchievementId: 

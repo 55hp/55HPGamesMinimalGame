@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-98
   _displayName: Californio
-  _costInCoins: 1950
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.6313726, g: 0.21176471, b: 0.83137256, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1950
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Cf
   _atomicNumber: 98
   _materialCategory: 0
   _densityNormalized: 0.9239
-  _unlockMethod: 1
-  _unlockAchievementId: 

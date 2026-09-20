@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-36
   _displayName: Krypton
-  _costInCoins: 1898
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.36078432, g: 0.72156864, b: 0.81960785, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1898
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Kr
   _atomicNumber: 36
   _materialCategory: 2
   _densityNormalized: 0.2861
-  _unlockMethod: 1
-  _unlockAchievementId: 

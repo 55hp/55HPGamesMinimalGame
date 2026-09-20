@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-42
   _displayName: Molibdeno
-  _costInCoins: 1778
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.32941177, g: 0.70980394, b: 0.70980394, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1778
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Mo
   _atomicNumber: 42
   _materialCategory: 0
   _densityNormalized: 0.8939
-  _unlockMethod: 1
-  _unlockAchievementId: 

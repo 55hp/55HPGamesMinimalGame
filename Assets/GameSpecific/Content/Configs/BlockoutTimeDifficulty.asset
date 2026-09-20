@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _startStepDelay: 3
   _decayIntervalSeconds: 20
-  _decayPercent: 0.1
+  _decayPercent: 0.2
   _minStepDelay: 0.5

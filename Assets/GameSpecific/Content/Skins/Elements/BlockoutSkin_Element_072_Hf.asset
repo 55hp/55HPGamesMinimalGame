@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-72
   _displayName: Afnio
-  _costInCoins: 1923
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.3019608, g: 0.7607843, b: 1, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1923
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Hf
   _atomicNumber: 72
   _materialCategory: 0
   _densityNormalized: 0.9142
-  _unlockMethod: 1
-  _unlockAchievementId: 

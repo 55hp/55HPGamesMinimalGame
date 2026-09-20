@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-46
   _displayName: Palladio
-  _costInCoins: 1803
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.4117647, b: 0.52156866, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1803
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Pd
   _atomicNumber: 46
   _materialCategory: 0
   _densityNormalized: 0.9063
-  _unlockMethod: 1
-  _unlockAchievementId: 

@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-58
   _displayName: Cerio
-  _costInCoins: 1803
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 1, g: 1, b: 0.78039217, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1803
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ce
   _atomicNumber: 58
   _materialCategory: 0
   _densityNormalized: 0.8623
-  _unlockMethod: 1
-  _unlockAchievementId: 

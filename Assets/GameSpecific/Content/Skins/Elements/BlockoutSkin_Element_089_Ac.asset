@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-89
   _displayName: Attinio
-  _costInCoins: 1899
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.4392157, g: 0.67058825, b: 0.98039216, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1899
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ac
   _atomicNumber: 89
   _materialCategory: 0
   _densityNormalized: 0.8928
-  _unlockMethod: 1
-  _unlockAchievementId: 

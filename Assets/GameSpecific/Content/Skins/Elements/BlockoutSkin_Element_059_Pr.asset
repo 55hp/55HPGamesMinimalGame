@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-59
   _displayName: Praseodimio
-  _costInCoins: 1895
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.8509804, g: 1, b: 0.78039217, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1895
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Pr
   _atomicNumber: 59
   _materialCategory: 0
   _densityNormalized: 0.8623
-  _unlockMethod: 1
-  _unlockAchievementId: 

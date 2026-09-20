@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-107
   _displayName: Bohrio
-  _costInCoins: 1976
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.8784314, g: 0, b: 0.21960784, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1976
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Bh
   _atomicNumber: 107
   _materialCategory: 0
   _densityNormalized: 0.9929
-  _unlockMethod: 1
-  _unlockAchievementId: 

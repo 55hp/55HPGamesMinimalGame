@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-63
   _displayName: Europio
-  _costInCoins: 1901
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.38039216, g: 1, b: 0.78039217, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1901
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Eu
   _atomicNumber: 63
   _materialCategory: 0
   _densityNormalized: 0.8426
-  _unlockMethod: 1
-  _unlockAchievementId: 

@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-74
   _displayName: Tungsteno
-  _costInCoins: 1783
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.12941177, g: 0.5803922, b: 0.8392157, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1783
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: W
   _atomicNumber: 74
   _materialCategory: 0
   _densityNormalized: 0.9425
-  _unlockMethod: 1
-  _unlockAchievementId: 

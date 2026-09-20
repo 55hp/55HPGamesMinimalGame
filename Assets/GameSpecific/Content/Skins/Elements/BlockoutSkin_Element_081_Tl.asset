@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-81
   _displayName: Tallio
-  _costInCoins: 1861
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.6509804, g: 0.32941177, b: 0.3019608, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1861
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Tl
   _atomicNumber: 81
   _materialCategory: 0
   _densityNormalized: 0.9053
-  _unlockMethod: 1
-  _unlockAchievementId: 

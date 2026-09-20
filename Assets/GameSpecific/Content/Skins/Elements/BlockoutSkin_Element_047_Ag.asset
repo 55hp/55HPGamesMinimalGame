@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-47
   _displayName: Argento
-  _costInCoins: -1
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7529412, g: 0.7529412, b: 0.7529412, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _unlockMethod: 2
+  _unlockAchievementId: login_streak_5
   _elementSymbol: Ag
   _atomicNumber: 47
   _materialCategory: 0
   _densityNormalized: 0.896
-  _unlockMethod: 2
-  _unlockAchievementId: login_streak_5

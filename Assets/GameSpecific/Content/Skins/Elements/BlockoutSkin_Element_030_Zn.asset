@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-30
   _displayName: Zinco
-  _costInCoins: -1
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.49019608, g: 0.5019608, b: 0.6901961, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _unlockMethod: 2
+  _unlockAchievementId: runs_completed_50
   _elementSymbol: Zn
   _atomicNumber: 30
   _materialCategory: 0
   _densityNormalized: 0.8663
-  _unlockMethod: 2
-  _unlockAchievementId: runs_completed_50

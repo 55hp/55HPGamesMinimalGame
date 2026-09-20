@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-79
   _displayName: Oro
-  _costInCoins: -1
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 1, g: 0.81960785, b: 0.13725491, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _unlockMethod: 2
+  _unlockAchievementId: login_streak_14
   _elementSymbol: Au
   _atomicNumber: 79
   _materialCategory: 0
   _densityNormalized: 0.9426
-  _unlockMethod: 2
-  _unlockAchievementId: login_streak_14

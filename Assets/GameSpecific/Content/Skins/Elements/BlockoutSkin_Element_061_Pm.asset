@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-61
   _displayName: Promezio
-  _costInCoins: 1945
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.6392157, g: 1, b: 0.78039217, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1945
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Pm
   _atomicNumber: 61
   _materialCategory: 0
   _densityNormalized: 0.8676
-  _unlockMethod: 1
-  _unlockAchievementId: 

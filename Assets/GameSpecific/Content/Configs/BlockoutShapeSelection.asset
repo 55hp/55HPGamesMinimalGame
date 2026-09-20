@@ -15,15 +15,13 @@ MonoBehaviour:
   _pieces:
   - pieceName: Tetracube04
     enabled: 0
-  - pieceName: Tetracube06
-    enabled: 0
-  - pieceName: Tetracube07
-    enabled: 0
   - pieceName: Tetracube08
+    enabled: 0
+  - pieceName: Pentacube02
     enabled: 0
   - pieceName: Pentacube01
     enabled: 0
-  - pieceName: Pentacube03
-    enabled: 0
   - pieceName: Pentacube04
+    enabled: 0
+  - pieceName: Pentacube03
     enabled: 0

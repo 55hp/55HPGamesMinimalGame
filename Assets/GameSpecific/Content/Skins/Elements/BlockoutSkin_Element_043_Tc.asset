@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-43
   _displayName: Tecnezio
-  _costInCoins: 1937
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.23137255, g: 0.61960787, b: 0.61960787, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1937
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Tc
   _atomicNumber: 43
   _materialCategory: 0
   _densityNormalized: 0.903
-  _unlockMethod: 1
-  _unlockAchievementId: 

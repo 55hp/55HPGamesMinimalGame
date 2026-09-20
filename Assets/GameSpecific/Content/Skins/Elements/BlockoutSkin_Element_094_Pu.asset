@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-94
   _displayName: Plutonio
-  _costInCoins: 1940
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0, g: 0.41960785, b: 1, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1940
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Pu
   _atomicNumber: 94
   _materialCategory: 0
   _densityNormalized: 0.9448
-  _unlockMethod: 1
-  _unlockAchievementId: 

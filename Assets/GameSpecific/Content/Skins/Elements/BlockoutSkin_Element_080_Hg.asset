@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-80
   _displayName: Mercurio
-  _costInCoins: -1
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.72156864, g: 0.72156864, b: 0.8156863, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _unlockMethod: 2
+  _unlockAchievementId: single_run_score_5000
   _elementSymbol: Hg
   _atomicNumber: 80
   _materialCategory: 0
   _densityNormalized: 0.9155
-  _unlockMethod: 2
-  _unlockAchievementId: single_run_score_5000

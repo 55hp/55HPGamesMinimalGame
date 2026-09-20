@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-110
   _displayName: Darmstadtio
-  _costInCoins: 1994
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.92156863, g: 0, b: 0.14901961, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1994
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ds
   _atomicNumber: 110
   _materialCategory: 0
   _densityNormalized: 0.988
-  _unlockMethod: 1
-  _unlockAchievementId: 

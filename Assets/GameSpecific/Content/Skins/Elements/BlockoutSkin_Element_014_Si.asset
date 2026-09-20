@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-14
   _displayName: Silicio
-  _costInCoins: 1824
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.9411765, g: 0.78431374, b: 0.627451, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1824
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Si
   _atomicNumber: 14
   _materialCategory: 1
   _densityNormalized: 0.7804
-  _unlockMethod: 1
-  _unlockAchievementId: 

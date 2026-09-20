@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-45
   _displayName: Rodio
-  _costInCoins: 1803
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.039215688, g: 0.49019608, b: 0.54901963, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1803
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Rh
   _atomicNumber: 45
   _materialCategory: 0
   _densityNormalized: 0.9088
-  _unlockMethod: 1
-  _unlockAchievementId: 

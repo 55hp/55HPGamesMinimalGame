@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-32
   _displayName: Germanio
-  _costInCoins: 1886
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.4, g: 0.56078434, b: 0.56078434, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1886
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ge
   _atomicNumber: 32
   _materialCategory: 1
   _densityNormalized: 0.8438
-  _unlockMethod: 1
-  _unlockAchievementId: 

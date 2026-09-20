@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-31
   _displayName: Gallio
-  _costInCoins: 1875
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7607843, g: 0.56078434, b: 0.56078434, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1875
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ga
   _atomicNumber: 31
   _materialCategory: 0
   _densityNormalized: 0.8518
-  _unlockMethod: 1
-  _unlockAchievementId: 

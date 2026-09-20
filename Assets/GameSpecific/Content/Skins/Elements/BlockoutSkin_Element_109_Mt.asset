@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-109
   _displayName: Meitnerio
-  _costInCoins: 1982
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.92156863, g: 0, b: 0.14901961, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1982
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Mt
   _atomicNumber: 109
   _materialCategory: 0
   _densityNormalized: 0.9935
-  _unlockMethod: 1
-  _unlockAchievementId: 

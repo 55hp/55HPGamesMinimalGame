@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-99
   _displayName: Einsteinio
-  _costInCoins: 1952
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.7019608, g: 0.12156863, b: 0.83137256, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1952
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Es
   _atomicNumber: 99
   _materialCategory: 0
   _densityNormalized: 0.8828
-  _unlockMethod: 1
-  _unlockAchievementId: 

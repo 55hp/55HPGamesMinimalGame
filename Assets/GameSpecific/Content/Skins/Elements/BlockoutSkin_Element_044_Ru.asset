@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-44
   _displayName: Rutenio
-  _costInCoins: 1844
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.14117648, g: 0.56078434, b: 0.56078434, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1844
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: Ru
   _atomicNumber: 44
   _materialCategory: 0
   _densityNormalized: 0.9086
-  _unlockMethod: 1
-  _unlockAchievementId: 

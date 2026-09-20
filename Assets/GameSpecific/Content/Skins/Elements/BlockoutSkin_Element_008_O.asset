@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-8
   _displayName: Ossigeno
-  _costInCoins: 1774
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 1, g: 0.050980393, b: 0.050980393, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: 1774
+  _unlockedByDefault: 0
+  _unlockMethod: 1
+  _unlockAchievementId: 
   _elementSymbol: O
   _atomicNumber: 8
   _materialCategory: 2
   _densityNormalized: 0.2124
-  _unlockMethod: 1
-  _unlockAchievementId: 

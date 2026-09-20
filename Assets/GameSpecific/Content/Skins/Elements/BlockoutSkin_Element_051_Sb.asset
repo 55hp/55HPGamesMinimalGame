@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _skinId: element-51
   _displayName: Antimonio
-  _costInCoins: -1
-  _unlockedByDefault: 0
   _pieceColors:
   - {r: 0.61960787, g: 0.3882353, b: 0.70980394, a: 1}
   _clearBehaviour: {fileID: 11400000, guid: e10d91d6aff55d84cbb1be96637cde30, type: 2}
+  _costInCoins: -1
+  _unlockedByDefault: 0
+  _unlockMethod: 2
+  _unlockAchievementId: single_run_score_15000
   _elementSymbol: Sb
   _atomicNumber: 51
   _materialCategory: 1
   _densityNormalized: 0.8613
-  _unlockMethod: 2
-  _unlockAchievementId: single_run_score_15000
