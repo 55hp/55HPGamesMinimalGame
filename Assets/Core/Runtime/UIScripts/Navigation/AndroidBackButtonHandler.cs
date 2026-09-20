@@ -1,6 +1,8 @@
 using UnityEngine;
 using hp55games.Mobile.Core;
 using hp55games.Mobile.Core.Architecture;
+using hp55games.Mobile.Core.Architecture.States;
+using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.Core.UI;
 
 namespace hp55games.Mobile.UI
@@ -10,12 +12,14 @@ namespace hp55games.Mobile.UI
     // test this without a device) through the existing navigation stack, instead of each screen
     // wiring its own back handling.
     //
-    // Priority, checked fresh every press (no per-screen special-casing):
-    // 1) A popup is open -> close the topmost one (same action UIScrimCatcher's tap-outside-to-
+    // Priority, checked fresh every press (see BackPressRouter, no per-screen special-casing):
+    // 1) Current state is PauseState -> ResumeFromPauseAsync (same path as the pause popup's
+    //    Resume button); before popup handling, since the pause UI is itself a popup.
+    // 2) A popup is open -> close the topmost one (same action UIScrimCatcher's tap-outside-to-
     //    dismiss already performs).
-    // 2) Otherwise, the page stack has somewhere to go back to -> pop it.
-    // 3) Otherwise (at the root, e.g. the main menu) -> no-op. Quit-on-back at the root is a
-    //    deliberate product decision, not implemented here - add it explicitly if wanted.
+    // 3) Otherwise, the page stack has somewhere to go back to -> pop it.
+    // 4) Otherwise (at the root) -> raise IBackAtRootService.BackAtRoot; no subscriber = no-op.
+    //    Quit-on-back is a deliberate product decision, not implemented here.
     //
     // Not scene/prefab-authored - has no [SerializeField] to wire. Bezi: attach this to any
     // persistent (DontDestroyOnLoad) GameObject that's always alive, e.g. GameBootstrap's, so it
@@ -49,15 +53,30 @@ namespace hp55games.Mobile.UI
             if (!_servicesResolved)
                 Debug.LogWarning("[AndroidBackButtonHandler] Back pressed but IUIPopupService and/or IUINavigationService is not registered yet.", this);
 
-            if (_popups != null && _popups.HasOpenPopups)
-            {
-                _popups.CloseTop();
-                return;
-            }
+            // Resolved per press: these are cheap lookups and may be registered late.
+            ServiceRegistry.TryResolve(out IGameStateMachine fsm);
+            ServiceRegistry.TryResolve(out ISceneFlowService sceneFlow);
+            bool isPaused = fsm != null && fsm.Current is PauseState && sceneFlow != null;
 
-            if (_navigation != null && _navigation.CanGoBack)
+            var action = BackPressRouter.Decide(
+                isPaused,
+                _popups != null && _popups.HasOpenPopups,
+                _navigation != null && _navigation.CanGoBack);
+
+            switch (action)
             {
-                AsyncUtils.FireAndForget(_navigation.PopAsync(), context: nameof(AndroidBackButtonHandler));
+                case BackAction.ResumeFromPause:
+                    AsyncUtils.FireAndForget(sceneFlow.ResumeFromPauseAsync(), context: nameof(AndroidBackButtonHandler));
+                    break;
+                case BackAction.CloseTopPopup:
+                    _popups.CloseTop();
+                    break;
+                case BackAction.PopPage:
+                    AsyncUtils.FireAndForget(_navigation.PopAsync(), context: nameof(AndroidBackButtonHandler));
+                    break;
+                case BackAction.BackAtRoot:
+                    if (ServiceRegistry.TryResolve(out IBackAtRootService backAtRoot)) backAtRoot.Raise();
+                    break;
             }
         }
     }

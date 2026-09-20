@@ -41,6 +41,8 @@ namespace hp55games.Mobile.Core.Architecture
             Register<IGameContextService>(new GameContextService());
             
             Register<IInputService>(new InputService());
+
+            Register<IBackAtRootService>(new BackAtRootService());
         }
 
         public static void Register<T>(T instance) => _map[typeof(T)] = instance!;

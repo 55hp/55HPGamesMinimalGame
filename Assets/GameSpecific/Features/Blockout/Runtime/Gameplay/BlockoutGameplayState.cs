@@ -7,6 +7,7 @@ using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Architecture.States;
 using hp55games.Mobile.Core.Context;
 using hp55games.Mobile.Core.Gameplay.Events;
+using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.Core.UI;
 using hp55games.Blockout.Achievements;
 using hp55games.Blockout.Config;
@@ -29,6 +30,8 @@ namespace hp55games.Blockout.Gameplay
         private IBlockoutAchievementService _achievements;
         private BlockoutSpawner _spawner;
         private IDisposable _layersClearedSubscription;
+        private IBackAtRootService _backAtRoot;
+        private ISceneFlowService _sceneFlow;
 
         // Technical Doc Phase 6 coins formula's bonus term (+5 x N per multi-layer clear event
         // during the run) - accumulated here rather than recomputed from anything persistent,
@@ -52,6 +55,11 @@ namespace hp55games.Blockout.Gameplay
             ServiceRegistry.TryResolve(out _achievements);
 
             _layersClearedSubscription = _eventBus?.Subscribe<LayersClearedEvent>(OnLayersCleared);
+
+            // Back at the navigation root during gameplay opens pause (Core just raises the hook).
+            ServiceRegistry.TryResolve(out _sceneFlow);
+            if (ServiceRegistry.TryResolve(out _backAtRoot))
+                _backAtRoot.BackAtRoot += OnBackAtRoot;
 
             // Re-acquired every Enter (including resume): the spawner is a scene object that
             // survives a pause, but this state instance does not (SceneFlowService constructs a
@@ -99,12 +107,24 @@ namespace hp55games.Blockout.Gameplay
             _layersClearedSubscription?.Dispose();
             _layersClearedSubscription = null;
 
+            if (_backAtRoot != null)
+            {
+                _backAtRoot.BackAtRoot -= OnBackAtRoot;
+                _backAtRoot = null;
+            }
+
             if (_spawner != null)
             {
                 _spawner.WellFull -= OnWellFull;
             }
 
             return Task.CompletedTask;
+        }
+
+        private void OnBackAtRoot()
+        {
+            if (_sceneFlow == null) return;
+            AsyncUtils.FireAndForget(_sceneFlow.GoToPauseAsync(), context: nameof(BlockoutGameplayState));
         }
 
         // Does what BlockoutSpawner.Start() used to do before Phase 4: resolve the well/fall-curve
