@@ -25,18 +25,29 @@ namespace hp55games.Mobile.UI
         private IUIPopupService _popups;
         private IUINavigationService _navigation;
 
-        private void Awake()
-        {
-            if (!ServiceRegistry.TryResolve(out _popups))
-                Debug.LogError("[AndroidBackButtonHandler] IUIPopupService is not registered.", this);
+        // Both services are registered after this component's Awake (UIServiceInstaller lives in
+        // the additively loaded UI root), so they're resolved lazily: retried each frame until both
+        // are available, then never again.
+        private bool _servicesResolved;
 
-            if (!ServiceRegistry.TryResolve(out _navigation))
-                Debug.LogError("[AndroidBackButtonHandler] IUINavigationService is not registered.", this);
+        private void TryResolveServices()
+        {
+            if (_servicesResolved) return;
+
+            if (_popups == null) ServiceRegistry.TryResolve(out _popups);
+            if (_navigation == null) ServiceRegistry.TryResolve(out _navigation);
+
+            _servicesResolved = _popups != null && _navigation != null;
         }
 
         private void Update()
         {
+            TryResolveServices();
+
             if (!Input.GetKeyDown(KeyCode.Escape)) return;
+
+            if (!_servicesResolved)
+                Debug.LogWarning("[AndroidBackButtonHandler] Back pressed but IUIPopupService and/or IUINavigationService is not registered yet.", this);
 
             if (_popups != null && _popups.HasOpenPopups)
             {

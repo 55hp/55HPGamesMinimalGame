@@ -40,6 +40,12 @@ namespace hp55games.Mobile.Core.InputSystem
         event Action<Vector2> Hold;
 
         /// <summary>
+        /// Fired once, as soon as the pointer has been held for the long-press threshold without
+        /// moving beyond tap distance (not on release). The gesture then produces no Tap/Swipe on release.
+        /// </summary>
+        event Action<Vector2> LongPress;
+
+        /// <summary>
         /// Called once per frame by the driver MonoBehaviour.
         /// You don't use this from gameplay code.
         /// </summary>

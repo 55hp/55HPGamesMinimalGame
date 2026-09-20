@@ -6,8 +6,8 @@ using hp55games.Blockout.Gameplay;
 
 namespace hp55games.Blockout.InputSystem
 {
-    // Turns raw IInputService gestures into Blockout gameplay-request events: swipe -> move,
-    // tap -> rotate (by touched quadrant relative to the piece). Not owned by
+    // Turns raw IInputService gestures into Blockout gameplay-request events: tap -> move
+    // (by touched quadrant relative to the piece), swipe -> rotate, long-press on the piece -> hard drop. Not owned by
     // BlockoutGameplayState (input should keep working independent of gameplay-state lifecycle),
     // but relies on the same GameBootstrap -> Menu -> BlockoutGameplayState path for its
     // dependencies to already be registered by the time it runs.
@@ -49,6 +49,7 @@ namespace hp55games.Blockout.InputSystem
 
             _input.Tap += HandleTap;
             _input.Swipe += HandleSwipe;
+            _input.LongPress += HandleLongPress;
         }
 
         private void OnDestroy()
@@ -57,18 +58,31 @@ namespace hp55games.Blockout.InputSystem
             {
                 _input.Tap -= HandleTap;
                 _input.Swipe -= HandleSwipe;
+                _input.LongPress -= HandleLongPress;
             }
         }
 
         private void HandleTap(Vector2 screenPosition)
         {
-            // A tap rotates the piece based on which side of it was touched (raycast-resolved, see
-            // TryResolveTapAgainstPiece): Right/Left -> AxisA +1/-1, Forward/Back -> AxisB +1/-1
-            // (same sign convention as swipe/buttons: positive screen direction -> positive
-            // Steps90). A tap landing on the piece's own footprint is simply consumed with no
-            // effect. Hard drop is button-only - a tap resolves immediately.
+            // A tap moves the piece toward the side of it that was touched (raycast-resolved, see
+            // TryResolveTapAgainstPiece). A tap landing on the piece's own footprint is simply
+            // consumed with no effect.
             if (!TryResolveTapAgainstPiece(screenPosition, out bool hitPiece, out var direction) || hitPiece)
                 return;
+
+            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
+        }
+
+        private void HandleSwipe(Vector2 start, Vector2 end)
+        {
+            // Direct screen-delta mapping, independent of the piece's on-screen position or the
+            // well's geometry: the swipe's dominant screen direction rotates the piece -
+            // Right/Left -> AxisA +1/-1, Forward/Back -> AxisB +1/-1 (same sign convention as the
+            // buttons: positive screen direction -> positive Steps90). No raycast needed.
+            var delta = end - start;
+            var direction = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
+                ? (delta.x >= 0f ? MoveDirection.Right : MoveDirection.Left)
+                : (delta.y >= 0f ? MoveDirection.Forward : MoveDirection.Back);
 
             var axis = direction == MoveDirection.Right || direction == MoveDirection.Left
                 ? RotateAxis.AxisA
@@ -78,19 +92,14 @@ namespace hp55games.Blockout.InputSystem
             _eventBus.Publish(new PieceRotateRequestedEvent { Axis = axis, Steps90 = steps });
         }
 
-        private void HandleSwipe(Vector2 start, Vector2 end)
+        private void HandleLongPress(Vector2 screenPosition)
         {
-            // Direct screen-delta mapping, independent of the piece's on-screen position or the
-            // well's geometry: swipe up/right/down/left moves the piece in that same screen
-            // direction, always - on-piece and off-piece swipes behave identically (rotation is
-            // triggered by tap or BTN_RotateLeft/BTN_RotateRight, never by a swipe). No raycast
-            // needed for this.
-            var delta = end - start;
-            var direction = Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)
-                ? (delta.x >= 0f ? MoveDirection.Right : MoveDirection.Left)
-                : (delta.y >= 0f ? MoveDirection.Forward : MoveDirection.Back);
+            // Hard drop only when the press is on the piece's footprint; same event as BTN_HardDrop.
+            // InputService already suppresses Tap/Swipe on release once a long-press has fired.
+            if (!TryResolveTapAgainstPiece(screenPosition, out bool hitPiece, out _) || !hitPiece)
+                return;
 
-            _eventBus.Publish(new PieceMoveRequestedEvent { Direction = direction });
+            _eventBus.Publish(new HardDropRequestedEvent());
         }
 
         // Raycasts a screen point (camera-relative so it's correct regardless of camera
@@ -102,10 +111,9 @@ namespace hp55games.Blockout.InputSystem
         // the point landed on the piece's own X/Z footprint; a miss returns the direction from the
         // piece's pivot (GridPosition - the shape's local-space anchor, per
         // PolycubeShape/PieceController) to the point instead - no dead zone, works from anywhere
-        // on screen including edges. Only HandleTap uses this (a tap has no delta of its own to
-        // resolve a rotation from; the resolved Right/Left/Forward/Back quadrant picks the
-        // rotation axis and sign) - HandleSwipe resolves its move direction straight from the
-        // swipe's screen delta instead. Returns false only when there's nothing to resolve against (no
+        // on screen including edges. HandleTap (a tap has no delta of its own to resolve a
+        // direction from) and HandleLongPress (on-piece hit test only) use this - HandleSwipe
+        // resolves its direction straight from the swipe's screen delta instead. Returns false only when there's nothing to resolve against (no
         // camera, or no active piece - e.g. between spawns).
         private bool TryResolveTapAgainstPiece(Vector2 screenPosition, out bool hitPiece, out MoveDirection direction)
         {

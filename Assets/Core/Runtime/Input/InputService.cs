@@ -1,12 +1,15 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.EventSystems;
+
+[assembly: InternalsVisibleTo("hp55games.Tests.PlayMode")]
 
 namespace hp55games.Mobile.Core.InputSystem
 {
     /// <summary>
     /// Default mobile/desktop implementation for IInputService.
-    /// It supports single-pointer gestures: tap, swipe, hold.
+    /// It supports single-pointer gestures: tap, swipe, hold, long-press.
     /// This class is ticked from a MonoBehaviour driver (InputServiceDriver).
     ///
     /// UI ownership: a press that BEGINS over a UI element (EventSystem.IsPointerOverGameObject
@@ -23,6 +26,7 @@ namespace hp55games.Mobile.Core.InputSystem
         public event Action<Vector2> Tap;
         public event Action<Vector2, Vector2> Swipe;
         public event Action<Vector2> Hold;
+        public event Action<Vector2> LongPress;
 
         public bool IsReady { get; private set; }
 
@@ -31,9 +35,11 @@ namespace hp55games.Mobile.Core.InputSystem
         const float TapMaxDistanceSqr  = 100f;   // pixels^2 (10 px, increased from 5 px)
         const float HoldMinDuration    = 0.5f;   // seconds
         const float SwipeMinDistanceSqr = 1600f; // pixels^2 (40 px)
+        const float LongPressMinDuration = 0.4f; // seconds
 
         bool   _isDown;
         bool   _holdFired;
+        bool   _longPressFired;
         bool   _suppressedByUI;
         float  _downTime;
         Vector2 _downPos;
@@ -65,6 +71,12 @@ namespace hp55games.Mobile.Core.InputSystem
                 currentPos = UnityEngine.Input.mousePosition;
             }
 
+            Process(isPressed, currentPos, touchId, Time.unscaledTime);
+        }
+
+        // Gesture state machine, split from Tick so tests can drive it with a fake pointer and clock.
+        internal void Process(bool isPressed, Vector2 currentPos, int touchId, float now)
+        {
             if (isPressed)
             {
                 if (!_isDown)
@@ -72,7 +84,8 @@ namespace hp55games.Mobile.Core.InputSystem
                     // Pointer just pressed
                     _isDown    = true;
                     _holdFired = false;
-                    _downTime  = Time.unscaledTime;
+                    _longPressFired = false;
+                    _downTime  = now;
                     _downPos   = currentPos;
                     _lastPos   = currentPos;
 
@@ -91,13 +104,19 @@ namespace hp55games.Mobile.Core.InputSystem
                     // Pointer is held
                     _lastPos = currentPos;
 
-                    var heldFor = Time.unscaledTime - _downTime;
+                    var heldFor = now - _downTime;
                     var distSqr = (currentPos - _downPos).sqrMagnitude;
 
                     if (!_holdFired && heldFor >= HoldMinDuration && distSqr <= TapMaxDistanceSqr)
                     {
                         _holdFired = true;
                         Hold?.Invoke(currentPos);
+                    }
+
+                    if (!_longPressFired && heldFor >= LongPressMinDuration && distSqr <= TapMaxDistanceSqr)
+                    {
+                        _longPressFired = true;
+                        LongPress?.Invoke(currentPos);
                     }
                 }
             }
@@ -115,7 +134,11 @@ namespace hp55games.Mobile.Core.InputSystem
 
                     PointerUp?.Invoke(_lastPos);
 
-                    var totalTime   = Time.unscaledTime - _downTime;
+                    // A fired long-press consumes the gesture: no Tap/Swipe on release.
+                    if (_longPressFired)
+                        return;
+
+                    var totalTime   = now - _downTime;
                     var distanceSqr = (_lastPos - _downPos).sqrMagnitude;
 
                     if (distanceSqr <= TapMaxDistanceSqr && totalTime <= TapMaxDuration)

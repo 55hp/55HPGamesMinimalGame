@@ -94,9 +94,10 @@ Registrati da `BlockoutGameplayStateInstaller`:
 - Se la camera non è centrata in X/Z, il frustum si allarga per tenere il pozzo in frame, ma non ricentra (impossibile con un frustum simmetrico senza lens shift).
 
 ### Input — gesti (`BlockoutInputHandler`)
-- **Swipe** (sul pezzo o fuori, posizione ignorata) → traslazione diretta nella direzione dello swipe sullo schermo: su/destra/giù/sinistra → pezzo su/destra/giù/sinistra. Nessun raycast, nessun gesto ruota più il pezzo (17/09) — la rotazione è solo bottoni, vedi sotto.
-- **Tap fuori dal pezzo** → traslazione, proiettata sul piano orizzontale **all'altezza del pezzo attivo** (raycast, a differenza dello swipe: un tap non ha un delta da cui ricavare la direzione).
+- **Tap fuori dal pezzo** → traslazione (`PieceMoveRequestedEvent`), direzione ricavata proiettando il tap sul piano orizzontale **all'altezza del pezzo attivo** (raycast: un tap non ha un delta da cui ricavare la direzione).
 - **Tap sul pezzo** → nessun effetto.
+- **Swipe** (sul pezzo o fuori, posizione ignorata) → rotazione (`PieceRotateRequestedEvent`) secondo la direzione dominante dello swipe sullo schermo: destra/sinistra → `AxisA` +1/−1, su/giù → `AxisB` +1/−1. Nessun raycast.
+- **Long-press sul pezzo** (soglia 0.4s, entro la distanza del tap) → hard drop (`HardDropRequestedEvent`, lo stesso del bottone), scatta al raggiungimento della soglia, non al rilascio; al rilascio non genera né Tap né Swipe. Long-press fuori dal pezzo → nessun effetto. La soglia (`LongPressMinDuration`) vive in `InputService` con le altre soglie di input.
 - **Doppio tap** → **rimosso**.
 
 ### Input — bottoni HUD
@@ -104,11 +105,11 @@ Barra inferiore in horizontal layout. Ogni bottone è alto 1/10 dello schermo e 
 
 | Bottone | Evento pubblicato |
 |---|---|
-| `BTN_RotateLeft` | `PieceRotateRequestedEvent(AxisA)` — **unico modo per ruotare** |
-| `BTN_HardDrop` | `HardDropRequestedEvent` (unico modo per l'hard drop) |
-| `BTN_RotateRight` | `PieceRotateRequestedEvent(AxisB)` — **unico modo per ruotare** |
+| `BTN_RotateLeft` | `PieceRotateRequestedEvent(AxisA)` |
+| `BTN_HardDrop` | `HardDropRequestedEvent` (anche long-press sul pezzo) |
+| `BTN_RotateRight` | `PieceRotateRequestedEvent(AxisB)` |
 
-- I bottoni si aggiungono ai gesti (traslazione), non li sostituiscono.
+- I bottoni si aggiungono ai gesti, non li sostituiscono.
 - Pubblicano gli stessi eventi dei gesti: non esiste un percorso di input parallelo.
 - In Editor c'è anche `BlockoutKeyboardInputHandler`.
 
