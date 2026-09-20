@@ -94,11 +94,8 @@ Registrati da `BlockoutGameplayStateInstaller`:
 - Se la camera non è centrata in X/Z, il frustum si allarga per tenere il pozzo in frame, ma non ricentra (impossibile con un frustum simmetrico senza lens shift).
 
 ### Input — gesti (`BlockoutInputHandler`)
-- **Tap fuori dal pezzo** → traslazione (`PieceMoveRequestedEvent`), direzione ricavata proiettando il tap sul piano orizzontale **all'altezza del pezzo attivo** (raycast: un tap non ha un delta da cui ricavare la direzione).
-- **Tap sul pezzo** → nessun effetto.
-- **Swipe** (sul pezzo o fuori, posizione ignorata) → rotazione (`PieceRotateRequestedEvent`) secondo la direzione dominante dello swipe sullo schermo: destra/sinistra → `AxisA` +1/−1, su/giù → `AxisB` +1/−1. Nessun raycast.
-- **Long-press sul pezzo** (soglia 0.4s, entro la distanza del tap) → hard drop (`HardDropRequestedEvent`, lo stesso del bottone), scatta al raggiungimento della soglia, non al rilascio; al rilascio non genera né Tap né Swipe. Long-press fuori dal pezzo → nessun effetto. La soglia (`LongPressMinDuration`) vive in `InputService` con le altre soglie di input.
-- **Doppio tap** → **rimosso**.
+- **Swipe** (sul pezzo o fuori, posizione ignorata) → traslazione (`PieceMoveRequestedEvent`) direttamente dal delta schermo: su/destra/giù/sinistra → pezzo su/destra/giù/sinistra. Nessun raycast.
+- **Tap, long-press, doppio tap** → **non usati**: nessun effetto, ovunque. Schema di input congelato (20/09): swipe = traslazione; rotazioni e hard drop = solo bottoni HUD. `InputService` continua a esporre Tap/Swipe/Hold/LongPress come eventi Core generici, ma Blockout ascolta solo Swipe.
 
 ### Input — bottoni HUD
 Barra inferiore in horizontal layout. Ogni bottone è alto 1/10 dello schermo e largo 1/4, con un piccolo padding dal bordo.
@@ -106,11 +103,11 @@ Barra inferiore in horizontal layout. Ogni bottone è alto 1/10 dello schermo e 
 | Bottone | Evento pubblicato |
 |---|---|
 | `BTN_RotateLeft` | `PieceRotateRequestedEvent(AxisA)` |
-| `BTN_HardDrop` | `HardDropRequestedEvent` (anche long-press sul pezzo) |
+| `BTN_HardDrop` | `HardDropRequestedEvent` |
 | `BTN_RotateRight` | `PieceRotateRequestedEvent(AxisB)` |
 
-- I bottoni si aggiungono ai gesti, non li sostituiscono.
-- Pubblicano gli stessi eventi dei gesti: non esiste un percorso di input parallelo.
+- Rotazioni e hard drop passano **solo** da questi bottoni (nessun gesto); lo swipe fa solo la traslazione.
+- Pubblicano gli stessi eventi usati dal resto del gioco (`BlockoutKeyboardInputHandler` compreso): non esiste un percorso di input parallelo.
 - In Editor c'è anche `BlockoutKeyboardInputHandler`.
 
 ### Rotazione — vincoli (`PlacementRules.CanPlaceAt`)
