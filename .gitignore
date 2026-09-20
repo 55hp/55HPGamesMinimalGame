@@ -12,6 +12,7 @@ sysinfo.txt
 *.sln
 *.user
 *.unityproj
+/Assets/AddressableAssetsData/link.xml*
 
 # Platform
 *.apk
