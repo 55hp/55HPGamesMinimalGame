@@ -38,6 +38,7 @@ ui.opt.sfx	SFX Volume	Volume Effetti	Volumen SFX	Volume Effets	SFX-Lautstärke	�
 ui.opt.mute_music	Mute Music	Muta Musica	Silenciar Música	Mute Musique	Musik stummschalten	音楽ミュート	음악 음소거	静音音乐	Silenciar Música
 ui.opt.mute_sfx	Mute SFX	Muta SFX	Silenciar SFX	Mute Effets	SFX stummschalten	SFXミュート	SFX 음소거	静音音效	Silenciar Efeitos
 ui.opt.haptics	Haptics	Vibrazione	Hápticos	Haptique	Haptik	触覚フィードバック	햅틱	触觉	Hápticos
+ui.opt.left_handed	Left-handed controls	Comandi per mancini	Controles para zurdos	Commandes pour gauchers	Steuerung für Linkshänder	左利きモード	왼손잡이 모드	左手模式	Controles para canhotos
 ui.opt.language	Language	Lingua	Idioma	Langue	Sprache	言語	언어	语言	Idioma
 ui.opt.graphics	Graphics	Grafica	Gráficos	Graphismes	Grafik	グラフィック	그래픽	图像	Gráficos
 ui.opt.vibration	Vibration	Vibrazione	Vibración	Vibration	Vibration	振動	진동	震动	Vibração
