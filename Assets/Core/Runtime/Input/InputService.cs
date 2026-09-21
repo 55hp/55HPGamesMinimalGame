@@ -35,7 +35,7 @@ namespace hp55games.Mobile.Core.InputSystem
         const float TapMaxDistanceSqr  = 100f;   // pixels^2 (10 px, increased from 5 px)
         const float HoldMinDuration    = 0.5f;   // seconds
         const float SwipeMinDistanceSqr = 1600f; // pixels^2 (40 px)
-        const float LongPressMinDuration = 0.8f; // seconds
+        internal const float LongPressMinDuration = 0.8f; // seconds
 
         bool   _isDown;
         bool   _holdFired;

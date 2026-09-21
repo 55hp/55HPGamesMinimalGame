@@ -59,7 +59,12 @@ Tetris 3D con policubi in un pozzo, mobile portrait, sessione infinita. Costruit
 - **FSM**: `IGameStateMachine`. `BlockoutGameplayState` prende il posto di `GameplayState` via `IGameplayStateFactory`. Il fine partita usa `ResultState` del template.
 - **Navigazione**: `IUINavigationService`. Push, Replace e Pop sono serializzati da un semaforo, quindi sicuri anche se chiamati in concorrenza.
 - **Overlay**: `IUIOverlayService`. Il fade è precaricato (`PrewarmAsync`) in `UIServiceInstaller.Awake`; le chiamate concorrenti condividono lo stesso task di istanziazione.
-- **Back button (Android)**: `AndroidBackButtonHandler` (`KeyCode.Escape`, anche il tasto Escape in Editor/desktop) chiude il popup in cima allo stack se `IUIPopupService.HasOpenPopups`, altrimenti fa `PopAsync()` sulla pagina corrente se `IUINavigationService.CanGoBack`. Nessuna gestione per-schermata. ⏳ Non è ancora attaccato a nessun GameObject — va messo su un oggetto persistente (es. `GameBootstrap`), Bezi.
+- **Back button (Android)**: `AndroidBackButtonHandler` (`KeyCode.Escape`, anche il tasto Escape in Editor/desktop), attaccato su `00_Bootstrap`. Priorità decisa da `BackPressRouter.Decide`, valutata a ogni pressione, senza gestione per-schermata:
+  1. stato corrente `PauseState` → `ISceneFlowService.ResumeFromPauseAsync()` (stesso percorso del bottone Resume del popup di pausa). Prima dei popup: il popup di pausa appartiene a `PauseState`, chiuderlo direttamente lascerebbe l'FSM in pausa con `timeScale` 0 e nessuna UI;
+  2. `IUIPopupService.HasOpenPopups` → chiude il popup in cima;
+  3. `IUINavigationService.CanGoBack` → `PopAsync()`;
+  4. root → `IBackAtRootService.Raise()` (evento `BackAtRoot`, Core, nessun riferimento a Blockout). Senza sottoscrittori non fa nulla. `BlockoutGameplayState` si sottoscrive in `EnterAsync` e si disiscrive in `ExitAsync`, e lo instrada a `GoToPauseAsync()`.
+  I servizi `IUIPopupService`/`IUINavigationService` sono risolti in modo lazy (ritentati a ogni frame finché disponibili: `UIServiceInstaller` li registra dopo l'`Awake` del bootstrap); un solo warning se una pressione li trova ancora mancanti.
 - **Input**: `IInputService`. Un press che inizia sopra un elemento UI appartiene alla UI e non genera gesti di gioco.
 - **Bootstrap**: `00_Bootstrap` → `ServiceRegistry.InstallDefaults()`. Scene: `01_Menu`, `02_Gameplay`, `03_Results`. In Editor si fa Play sempre da `00_Bootstrap`.
 - **Gap noto del template**: `IConfigCatalogService` non è in `InstallDefaults()` e richiede un `ConfigCatalogInstaller` in scena. La correzione va fatta nel template.
@@ -91,6 +96,7 @@ Registrati da `BlockoutGameplayStateInstaller`:
 - ⏳ Componente autorato sulla Main Camera di `02_Gameplay` (da verificare/completare in Editor, §9). La posizione è solo il Transform in scena, centrato sul pozzo: `(2, 20, 2)` con origine a zero — nessun offset da codice (`CameraPositionOffset` rimosso il 17/09, §9).
 - Il FOV viene ricalcolato a runtime da: dimensioni del pozzo, aspect ratio, safe area, spazio HUD.
 - Il padding orizzontale è `BlockoutWellConfig.HorizontalPaddingScreenFraction`: frazione della larghezza schermo **per lato** (default 0.1), costante su qualsiasi aspect ratio.
+- Lo spazio riservato all'HUD è configurabile in unità di riferimento del `CanvasScaler`: `_hudTopReservedCanvasUnits` (header, default 100) e `_hudBottomReservedCanvasUnits` (cluster azioni in basso, default 0 finché Bezi non lo imposta). Il frustum è simmetrico, quindi vale il maggiore tra i due bordi (safe area inclusa).
 - Se la camera non è centrata in X/Z, il frustum si allarga per tenere il pozzo in frame, ma non ricentra (impossibile con un frustum simmetrico senza lens shift).
 
 ### Input — gesti (`BlockoutInputHandler`)
@@ -133,6 +139,7 @@ Due componenti che si moltiplicano:
 - **Prefab**: `Assets/GameSpecific/Content/UI/BlockoutHUD.prefab`
 - **Chiave Addressables**: `content/ui/screens/blockout_hud`
 - **Contenuto**: score, bottone pausa, barra inferiore con `BTN_RotateLeft` / `BTN_HardDrop` / `BTN_RotateRight`. **Niente Lives.**
+- **Mano sinistra**: opzione `IUIOptionsService.LeftHanded` (salvata in `OptionsData.leftHanded`, toggle `Toggle_LeftHanded` in `UIOptionsPage`, raggiungibile anche dal popup di pausa; notifica via `Changed`). `HudHandednessMirror` (`_cluster`) specchia il cluster e i suoi figli diretti (anchor, pivot, `anchoredPosition.x`) partendo dai valori autorati catturati una volta, quindi l'alternanza è senza perdite. Matematica in `HudMirrorMath`.
 - **Riferimenti**: tutti `[SerializeField]`, collegati da Bezi.
 - **Comportamento**: aggiorna lo score su `ScoreChangedEvent`; i bottoni pubblicano gli eventi di input.
 - **Navigazione**: `BlockoutGameplayState` ci arriva con `ReplaceAsync` e non gli attacca nulla.
@@ -236,7 +243,7 @@ Le soglie sono placeholder, non ancora bilanciate.
 ## 8. Test
 
 Test PlayMode, uno per sistema:
-- **Blockout**: ScoreCalculator, FallCurve, TimeDifficultyModifier, Well, ShapeSet, Spawner, PieceController, WellCellRenderer, ClearBehaviour, JuicyClear, PeriodicMeltClear, PeriodicTableLayout, SkinService, AchievementService, GameplayState.
+- **Blockout**: HudMirrorMath, ScoreCalculator, FallCurve, TimeDifficultyModifier, Well, ShapeSet, Spawner, PieceController, WellCellRenderer, ClearBehaviour, JuicyClear, PeriodicMeltClear, PeriodicTableLayout, SkinService, AchievementService, GameplayState.
 - **Polycubes**: VoxelGrid, PlacementRules, PolycubeGenerator, PhasedIntervalCurve.
 - **Core**: UINavigationService, UIOverlayService.
 
