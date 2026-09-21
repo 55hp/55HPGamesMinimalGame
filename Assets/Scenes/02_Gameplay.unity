@@ -471,8 +471,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4054a01662134532a2b91a4cb4eb1377, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _camera: {fileID: 2133809960}
-  _wellOrigin: {fileID: 1964997803}
 --- !u!1 &900000013
 GameObject:
   m_ObjectHideFlags: 0
@@ -841,6 +839,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _wellOrigin: {fileID: 1964997803}
   _hudTopReservedCanvasUnits: 100
+  _hudBottomReservedCanvasUnits: 520
 --- !u!114 &50645981432557583
 MonoBehaviour:
   m_ObjectHideFlags: 0
