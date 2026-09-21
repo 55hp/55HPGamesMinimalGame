@@ -11,6 +11,7 @@ namespace hp55games.Mobile.Core.UI
         string Language   { get; set; }   // "en", "it", ...
         bool  MusicMute   { get; set; }
         bool  SfxMute     { get; set; }
+        bool  LeftHanded  { get; set; }   // mirrors gameplay HUD controls; observe via Changed
         
         event Action Changed;
 

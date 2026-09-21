@@ -27,6 +27,7 @@ namespace hp55games.Mobile.UI
         [SerializeField] private Button resetButton;   // Ripristina default
         [SerializeField] private Toggle musicMuteToggle;
         [SerializeField] private Toggle sfxMuteToggle;
+        [SerializeField] private Toggle leftHandedToggle;
         
         [Header("Data Reset")]
         [SerializeField] private Button resetDataButton;  // Reset record e progressi
@@ -87,6 +88,7 @@ namespace hp55games.Mobile.UI
                 if (languageDropdown) languageDropdown.onValueChanged.AddListener(_ => ApplyFromUI());
                 if (musicMuteToggle)  musicMuteToggle.onValueChanged.AddListener(_ => ApplyFromUI());
                 if (sfxMuteToggle)    sfxMuteToggle.onValueChanged.AddListener(_ => ApplyFromUI());
+                if (leftHandedToggle) leftHandedToggle.onValueChanged.AddListener(_ => ApplyFromUI());
             }
         }
 
@@ -112,6 +114,7 @@ namespace hp55games.Mobile.UI
 
             if (musicMuteToggle) musicMuteToggle.SetIsOnWithoutNotify(_opt.MusicMute);
             if (sfxMuteToggle)   sfxMuteToggle.SetIsOnWithoutNotify(_opt.SfxMute);
+            if (leftHandedToggle) leftHandedToggle.SetIsOnWithoutNotify(_opt.LeftHanded);
 
             if (languageDropdown)
             {
@@ -133,6 +136,7 @@ namespace hp55games.Mobile.UI
 
                 if (musicMuteToggle) _opt.MusicMute = musicMuteToggle.isOn;
                 if (sfxMuteToggle)   _opt.SfxMute   = sfxMuteToggle.isOn;
+                if (leftHandedToggle) _opt.LeftHanded = leftHandedToggle.isOn;
 
                 if (languageDropdown)
                 {

@@ -11,5 +11,6 @@ namespace hp55games.Mobile.Core.Save
         public string lang = "en";
         public bool  musicMute = false;
         public bool  sfxMute   = false;
+        public bool  leftHanded = false;
     }
 }

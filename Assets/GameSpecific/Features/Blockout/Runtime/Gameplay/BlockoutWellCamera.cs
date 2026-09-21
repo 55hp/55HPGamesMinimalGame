@@ -34,6 +34,9 @@ namespace hp55games.Blockout.Gameplay
         [Tooltip("UIGameHUD.prefab's Header RectTransform sizeDelta.y, in CanvasScaler reference-resolution units - currently the only screen space the gameplay HUD reserves (score/lives/pause all live inside that one top bar). Keep this in sync if Header's height ever changes.")]
         [SerializeField] private float _hudTopReservedCanvasUnits = 100f;
 
+        [Tooltip("Height of the HUD's bottom action cluster, in CanvasScaler reference-resolution units, reserved the same way as the top header so the well isn't covered by it. 0 = nothing reserved. Keep this in sync with the cluster's height.")]
+        [SerializeField] private float _hudBottomReservedCanvasUnits = 0f;
+
         private Camera _camera;
         private int _lastScreenWidth;
         private int _lastScreenHeight;
@@ -146,14 +149,16 @@ namespace hp55games.Blockout.Gameplay
             float safeTopFrac = 1f - safe.yMax / Screen.height;
 
             float hudTopFrac = 0f;
+            float hudBottomFrac = 0f;
             if (TryGetCanvasScaleFactor(out float scaleFactor))
             {
                 hudTopFrac = (_hudTopReservedCanvasUnits * scaleFactor) / Screen.height;
+                hudBottomFrac = (_hudBottomReservedCanvasUnits * scaleFactor) / Screen.height;
             }
 
             // Symmetric frustum: an inset on only one edge still costs both, so the binding
             // constraint per axis is whichever opposing inset is larger - see class remarks.
-            float usableHeightFrac = Mathf.Clamp01(1f - 2f * Mathf.Max(safeTopFrac + hudTopFrac, safeBottomFrac));
+            float usableHeightFrac = Mathf.Clamp01(1f - 2f * Mathf.Max(safeTopFrac + hudTopFrac, safeBottomFrac + hudBottomFrac));
             float usableWidthFrac = Mathf.Clamp01(1f - 2f * Mathf.Max(safeLeftFrac, safeRightFrac));
 
             usableHeightFrac = Mathf.Max(usableHeightFrac, 0.05f);

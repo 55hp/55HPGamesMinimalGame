@@ -54,12 +54,19 @@ namespace hp55games.Mobile.Core.UI
             set { _sfxMute = value; Changed?.Invoke(); }
         }
 
+        public bool LeftHanded
+        {
+            get => _leftHanded;
+            set { _leftHanded = value; Changed?.Invoke(); }
+        }
+
         float _music = 0.8f;
         float _sfx   = 0.8f;
         bool  _hapt  = true;
         string _lang = "en";
         bool _musicMute = false;
         bool _sfxMute   = false;
+        bool _leftHanded = false;
 
         readonly ISaveService _save;
 
@@ -85,6 +92,7 @@ namespace hp55games.Mobile.Core.UI
             _lang      = string.IsNullOrEmpty(opt.lang) ? "en" : opt.lang;
             _musicMute = opt.musicMute;
             _sfxMute   = opt.sfxMute;
+            _leftHanded = opt.leftHanded;
 
             // Fallback per Haptics da Config (se esiste)
             if (ServiceRegistry.TryResolve<IConfigService>(out var cfg) && cfg.Current != null)
@@ -114,6 +122,7 @@ namespace hp55games.Mobile.Core.UI
             opt.lang      = _lang;
             opt.musicMute = _musicMute;
             opt.sfxMute   = _sfxMute;
+            opt.leftHanded = _leftHanded;
 
             _save.Data.options = opt;
             _save.Save();
@@ -133,6 +142,7 @@ namespace hp55games.Mobile.Core.UI
             _lang      = "en";
             _musicMute = false;
             _sfxMute   = false;
+            _leftHanded = false;
 
             Changed?.Invoke();
         }
