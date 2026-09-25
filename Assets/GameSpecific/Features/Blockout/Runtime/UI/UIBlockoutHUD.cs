@@ -11,16 +11,16 @@ using hp55games.Blockout.InputSystem;
 
 namespace hp55games.Blockout.UI
 {
-    // Blockout's own gameplay HUD (README §3/§9) - replaces the template's generic UIGameplayHUD
+    // Blockout's own gameplay HUD (Documentation/README.md §2) - replaces the template's generic UIGameplayHUD
     // for 02_Gameplay. BlockoutGameplayState.EnterAsync reaches it with ReplaceAsync alone and
     // attaches nothing to it (no AddComponent). No Lives label - Blockout has no lives concept.
     //
     // The 3 bottom-action-bar buttons publish the exact same IEventBus events
     // BlockoutInputHandler already publishes for swipe/tap gestures - not a parallel input path,
-    // see README §2.
+    // see Documentation/README.md §2 (Input).
     //
-    // Every reference below is [SerializeField], wired by Bezi in BlockoutHUD.prefab (README §0
-    // rule 1) - see the checklist in the commit/report for exactly what to assign. A missing
+    // Every reference below is [SerializeField], wired by Bezi in BlockoutHUD.prefab (CLAUDE.md
+    // Ownership) - see the checklist in the commit/report for exactly what to assign. A missing
     // reference logs an error and that one feature (score / pause / that button) simply does
     // nothing; nothing here is reconstructed from code.
     public sealed class UIBlockoutHUD : MonoBehaviour
@@ -99,7 +99,7 @@ namespace hp55games.Blockout.UI
         // Fixed 90-degree steps, not direction-sensitive like the swipe gesture (which derives its
         // sign from swipe delta) - Steps90 = 1 for both by default, same physical step size either
         // way. Flip the sign here if Franci wants the opposite rotation direction after
-        // playtesting (README §9: open design item).
+        // playtesting (Documentation/README.md §10: open design item).
         private void OnRotateLeftClicked() =>
             _eventBus?.Publish(new PieceRotateRequestedEvent { Axis = RotateAxis.AxisA, Steps90 = 1 });
 

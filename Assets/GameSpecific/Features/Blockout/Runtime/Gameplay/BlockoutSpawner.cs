@@ -16,7 +16,7 @@ namespace hp55games.Blockout.Gameplay
     // directly.
     //
     // Registers itself into ServiceRegistry (Awake/OnDestroy) rather than being found via
-    // FindObjectOfType (README §0 rule 2) - BlockoutGameplayState and BlockoutInputHandler both
+    // FindObjectOfType (CLAUDE.md rule 1) - BlockoutGameplayState and BlockoutInputHandler both
     // need to reach the active spawner, and neither can hold a scene-authored [SerializeField] to
     // it (the state is a plain C# class constructed outside this scene; the input handler's
     // Awake() has no ordering guarantee relative to this one's within the same scene load).

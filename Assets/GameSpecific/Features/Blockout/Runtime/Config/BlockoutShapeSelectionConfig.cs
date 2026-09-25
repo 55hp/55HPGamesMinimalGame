@@ -6,7 +6,7 @@ using hp55games.Mobile.Core.Config;
 namespace hp55games.Blockout.Config
 {
     // Editor-authorable override list for which of the 12 canonical pieces BlockoutShapeSet
-    // actually includes (README §0 rule 1/4 - the enabled flags live here, not hardcoded in
+    // actually includes (CLAUDE.md rule 3 - the enabled flags live here, not hardcoded in
     // code). Any of the 12 not listed here defaults to enabled - see
     // BlockoutShapeSet.AllPieceNames for the exact names to use (Tetracube01..08,
     // Pentacube01..04, assigned by generation/selection order, not hand-picked letter shapes).

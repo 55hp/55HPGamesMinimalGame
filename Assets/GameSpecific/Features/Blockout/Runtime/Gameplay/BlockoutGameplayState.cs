@@ -67,7 +67,7 @@ namespace hp55games.Blockout.Gameplay
             // fresh one via CreateGameplayState(isResuming: true) rather than reusing the old one,
             // mirroring the template's own GameplayState/ResumeFromPauseAsync behavior).
             // Resolved via ServiceRegistry (BlockoutSpawner.Awake registers itself) rather than
-            // FindObjectOfType (README §0 rule 2) - this state is a plain C# class, not a
+            // FindObjectOfType (CLAUDE.md rule 1) - this state is a plain C# class, not a
             // MonoBehaviour, so it can't hold a [SerializeField] of its own, and BlockoutSpawner
             // lives in 02_Gameplay while whatever constructs this state (SceneFlowService) doesn't,
             // ruling out a scene-authored reference passed in from outside too.
@@ -88,7 +88,7 @@ namespace hp55games.Blockout.Gameplay
                 _achievements?.RecordLoginForToday(); // Shop GDD login-streak family - once per fresh session, not on resume
 
                 // BlockoutWellCamera (FOV fit) and UIBlockoutHUD's buttons are scene/prefab-authored
-                // now (README §2/§3/§9) - nothing to attach here, just navigate to the HUD.
+                // now (Documentation/README.md §2) - nothing to attach here, just navigate to the HUD.
                 if (ServiceRegistry.TryResolve<IUINavigationService>(out var navigation))
                 {
                     await navigation.ReplaceAsync(hp55games.Addr.Content.UI.Screens.BlockoutHUD);
