@@ -37,10 +37,9 @@ namespace hp55games.Blockout.Tests
 
         private static PolycubeShape SingleCellShape() => new PolycubeShape(new[] { Vector3Int.zero });
 
-        // Stand-in for a real skin's PieceColors (Technical Doc Phase 3 - BlockoutSpawner no
-        // longer has a fixed palette of its own) for tests that actually check color content;
-        // tests that don't care pass null and get BlockoutSpawner's Color.white fallback instead.
-        private static readonly Color[] TestPieceColors = { Color.red, Color.blue, Color.green };
+        // Stand-in for a real skin's BaseColor for tests that actually check color content;
+        // tests that don't care just pass Color.white.
+        private static readonly Color TestPieceColor = Color.red;
 
         // Only needed by tests that verify visuals: BlockoutSpawner finds this via
         // FindObjectOfType, same as BlockoutGameplayState finds BlockoutSpawner itself.
@@ -78,7 +77,7 @@ namespace hp55games.Blockout.Tests
             spawner.WellFull += () => wellFullFired = true;
 
             var tallShape = new PolycubeShape(new[] { Vector3Int.zero, new Vector3Int(0, 1, 0) });
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { tallShape }, 1, 2, 2, 2, null, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { tallShape }, 1, 2, 2, 2, Color.white, null);
 
             Assert.IsTrue(spawner.SpawnBlockedWellFull);
             Assert.IsNull(spawner.CurrentPiece); // detected and reported, not a piece silently locked in place
@@ -101,7 +100,7 @@ namespace hp55games.Blockout.Tests
             // comment in Initialize_DoesNotSpawnPiece_WhenComputedStartPositionIsAlreadyOccupied.
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, Color.white, null);
 
             Assert.IsFalse(spawner.SpawnBlockedWellFull);
             Assert.IsNotNull(spawner.CurrentPiece);
@@ -120,17 +119,17 @@ namespace hp55games.Blockout.Tests
 
             var go1 = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner1 = go1.AddComponent<BlockoutSpawner>();
-            spawner1.Initialize(TestGrid.Make(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColors, null);
+            spawner1.Initialize(TestGrid.Make(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColor, null);
             var color1 = cellRenderer.GetCellColor(spawner1.CurrentPiece.GridPosition);
 
             // spawner2.Initialize below hides spawner1's piece from cellRenderer (HideAll) as a
             // side effect - color1 is already captured, so that's fine.
             var go2 = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner2 = go2.AddComponent<BlockoutSpawner>();
-            spawner2.Initialize(TestGrid.Make(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColors, null);
+            spawner2.Initialize(TestGrid.Make(5, 10, 5), _fallCurve, _timeDifficultyConfig, shapes, 1, 5, 10, 5, TestPieceColor, null);
             var color2 = cellRenderer.GetCellColor(spawner2.CurrentPiece.GridPosition);
 
-            Assert.AreEqual(color1, color2); // shape index 0 in both -> same color every run
+            Assert.AreEqual(color1, color2); // the skin's single base colour, every run
 
             Object.DestroyImmediate(go1);
             Object.DestroyImmediate(go2);
@@ -138,17 +137,20 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
-        public void HardDrop_ShowsLockedCellAtFinalPosition_WithDimmedColor()
+        public void HardDrop_ShowsLockedCellAtFinalPosition_WithItsLevelColor()
         {
             var cellRenderer = CreateCellRenderer();
             var grid = TestGrid.Make(3, 5, 3);
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
+            var wellConfig = ScriptableObject.CreateInstance<BlockoutWellConfig>();
+            typeof(BlockoutWellConfig).GetField("_levelColors", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(wellConfig, new[] { Color.cyan, Color.magenta });
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 5, 3, TestPieceColors, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 5, 3, TestPieceColor, null, null, wellConfig);
 
             var activeColor = cellRenderer.GetCellColor(spawner.CurrentPiece.GridPosition);
 
@@ -159,27 +161,29 @@ namespace hp55games.Blockout.Tests
             var finalPos = new Vector3Int(1, 0, 1);
             Assert.IsTrue(cellRenderer.IsCellShown(finalPos));
 
-            var lockedColor = cellRenderer.GetCellColor(finalPos);
-            Assert.AreNotEqual(activeColor, lockedColor); // dimmed in place, not left at the bright active color
+            Assert.AreEqual(TestPieceColor, activeColor); // falling: the skin's base colour
+            Assert.AreEqual(Color.cyan, cellRenderer.GetCellColor(finalPos)); // locked: level 0's colour
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(cellRenderer.gameObject);
+            Object.DestroyImmediate(wellConfig);
         }
 
         [Test]
-        public void Initialize_ForwardsMaterialCategory_ToEveryShownCell()
+        public void Initialize_ForwardsCellSurface_ToEveryShownCell()
         {
-            // Periodic Table GDD: BlockoutGameplayState.StartSpawning computes this from the
-            // active skin (null for a non-element skin) and passes it straight through.
+            // Periodic Table GDD: BlockoutGameplayState.StartSpawning derives this from the
+            // active skin (null for a non-element skin) and passes it straight through. An
+            // emissive surface is used so the forwarding is observable as a material swap.
             var cellRenderer = CreateCellRenderer();
-            var metallic = new Material(Shader.Find("Sprites/Default"));
-            typeof(WellCellRenderer).GetField("_metallicMaterial", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(cellRenderer, metallic);
+            var emissive = new Material(Shader.Find("Sprites/Default"));
+            typeof(WellCellRenderer).GetField("_emissiveMaterial", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(cellRenderer, emissive);
             var grid = TestGrid.Make(3, 5, 3);
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 5, 3, TestPieceColors, null, PieceMaterialCategory.Metallic);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 5, 3, TestPieceColor, null, new CellSurface(0f, 0.5f, Color.red));
 
             var shownAt = spawner.CurrentPiece.GridPosition;
             var shownCells = (Dictionary<Vector3Int, PooledObject>)typeof(WellCellRenderer)
@@ -187,11 +191,11 @@ namespace hp55games.Blockout.Tests
                 .GetValue(cellRenderer);
             var actualMaterial = shownCells[shownAt].GetComponent<Renderer>().sharedMaterial;
 
-            Assert.AreEqual(metallic, actualMaterial);
+            Assert.AreEqual(emissive, actualMaterial);
 
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(cellRenderer.gameObject);
-            Object.DestroyImmediate(metallic);
+            Object.DestroyImmediate(emissive);
         }
 
         [UnityTest]
@@ -219,7 +223,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 1, 7, 7, 7, null, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 1, 7, 7, 7, Color.white, null);
 
             var controller = spawner.CurrentPiece;
             var originalCells = new Vector3Int[shape.Cells.Count];
@@ -267,7 +271,7 @@ namespace hp55games.Blockout.Tests
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
 
-            spawner.Initialize(TestGrid.Make(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
+            spawner.Initialize(TestGrid.Make(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, Color.white, null);
 
             var spawnPos = spawner.CurrentPiece.GridPosition;
             eventBus.Publish(new HardDropRequestedEvent()); // locks the first piece, spawns a second
@@ -275,7 +279,7 @@ namespace hp55games.Blockout.Tests
             Assert.IsTrue(cellRenderer.IsCellShown(lockedPos)); // still visible - "run 1"'s locked placeholder
 
             // Starting a new run should sweep away the previous one's locked cells.
-            spawner.Initialize(TestGrid.Make(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, null, null);
+            spawner.Initialize(TestGrid.Make(3, 3, 3), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 3, 3, 3, Color.white, null);
 
             Assert.IsFalse(cellRenderer.IsCellShown(lockedPos));
 
@@ -313,7 +317,7 @@ namespace hp55games.Blockout.Tests
             wellFullFired = fired;
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer")); // no renderer needed here
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 1, width, 3, 1, null, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { shape }, 1, width, 3, 1, Color.white, null);
             Assert.IsNotNull(spawner.CurrentPiece);
             Assert.AreEqual(2, spawner.CurrentPiece.GridPosition.y); // reference cell spawns at Y = h - 1
             return spawner;
@@ -484,7 +488,7 @@ namespace hp55games.Blockout.Tests
             var behaviour = ScriptableObject.CreateInstance<RecordingClearBehaviour>();
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 3, 1, null, behaviour);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 3, 1, Color.white, behaviour);
 
             eventBus.Publish(new HardDropRequestedEvent());
 
@@ -513,7 +517,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 3, 1, null, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 3, 1, Color.white, null);
 
             var spawnPos = spawner.CurrentPiece.GridPosition; // (0, 2, 0) - Y = h - 1, the top row
 
@@ -538,7 +542,7 @@ namespace hp55games.Blockout.Tests
 
             var go = new GameObject(nameof(BlockoutSpawnerTests));
             var spawner = go.AddComponent<BlockoutSpawner>();
-            spawner.Initialize(TestGrid.Make(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, null, null);
+            spawner.Initialize(TestGrid.Make(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, Color.white, null);
 
             // Reach the private modifier directly (same pattern as the WellCellRenderer field
             // access above) to force decay without waiting DecayIntervalSeconds of real time.
@@ -549,7 +553,7 @@ namespace hp55games.Blockout.Tests
             spawner.CurrentPiece.Tick(0f); // refresh the snapshot without advancing any fall-state timer
             Assert.Less(spawner.CurrentPiece.CurrentInterval, _timeDifficultyConfig.StartStepDelay); // the decay reached this piece
 
-            spawner.Initialize(TestGrid.Make(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, null, null);
+            spawner.Initialize(TestGrid.Make(1, 5, 1), _fallCurve, _timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 5, 1, Color.white, null);
 
             Assert.AreEqual(_timeDifficultyConfig.StartStepDelay, spawner.CurrentPiece.CurrentInterval, 0.0001f); // back to the start delay
 
@@ -616,7 +620,7 @@ namespace hp55games.Blockout.Tests
             var eventBus = new EventBus();
             ServiceRegistry.Register<IEventBus>(eventBus);
 
-            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, shapes, seed, 3, spawnCount + 5, 3, null, null);
+            spawner.Initialize(grid, _fallCurve, _timeDifficultyConfig, shapes, seed, 3, spawnCount + 5, 3, Color.white, null);
 
             var sequence = new List<string>();
             for (int i = 0; i < spawnCount; i++)

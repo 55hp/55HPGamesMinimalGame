@@ -74,6 +74,7 @@ namespace hp55games.Blockout.Config.EditorTools
                     atomicNumber: element.atomicNumber,
                     materialCategory: ParseCategory(element.shaderCategory),
                     densityNormalized: element.densityNormalized,
+                    isRadioactive: element.isRadioactive,
                     unlockMethod: unlockMethod,
                     unlockAchievementId: unlockMethod == BlockoutSkinUnlockMethod.Achievement ? element.unlockAchievementId : string.Empty);
 
@@ -176,6 +177,7 @@ namespace hp55games.Blockout.Config.EditorTools
             public string symbol;
             public string nameIt;
             public float densityNormalized;
+            public bool isRadioactive;
             public string shaderCategory;
             public string colorHex;
             public int unlockCostCoins;

@@ -25,3 +25,4 @@ MonoBehaviour:
   _atomicNumber: 100
   _materialCategory: 0
   _densityNormalized: 0.8899
+  _isRadioactive: 1

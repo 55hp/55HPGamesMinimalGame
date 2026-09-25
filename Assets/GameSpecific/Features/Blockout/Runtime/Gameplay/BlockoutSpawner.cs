@@ -48,21 +48,18 @@ namespace hp55games.Blockout.Gameplay
 
         private PieceController _controller;
 
-        // Both sourced from the active skin (Technical Doc Phase 3 - BlockoutGameplayState reads
-        // IBlockoutSkinService.ActiveSkin and passes its PieceColors/ClearBehaviour into
-        // Initialize) instead of being fixed on this component. Same shape always gets the same
-        // color within a run (indexed by the shape's position in the set passed to Initialize,
-        // wrapping if there are ever more shapes than colors) - distinct from each other and from
-        // the wireframe's green (BlockoutWellWireframe). Locked cells are dimmed from whichever of
-        // these was used, at lock time (OnPieceLocked), independent of WellCellRenderer's own
-        // rendering mechanism.
-        private IReadOnlyList<Color> _pieceColors;
+        // All sourced from the active skin (BlockoutGameplayState reads
+        // IBlockoutSkinService.ActiveSkin and passes them into Initialize) instead of being fixed
+        // on this component: every falling piece uses the skin's single base colour and surface
+        // params (metallic/smoothness/emission, see CellSurface).
+        private Color _pieceColor = Color.white;
         private IBlockoutClearBehaviour _clearBehaviour;
+        private CellSurface? _cellSurface;
 
-        // Null for every non-element skin (Default, Profondita, Juicy Clear never had a material
-        // category) - WellCellRenderer.ShowCell treats null the same as Opaque. Sourced from
-        // BlockoutGameplayState.StartSpawning alongside pieceColors/clearBehaviour.
-        private PieceMaterialCategory? _materialCategory;
+        // Source of the per-level colours: a locked cube takes its level's colour
+        // (GetLevelColor(cell.y)), both at lock time and again whenever a clear shifts it down a
+        // level. Null in tests that don't pass one - locked cubes then keep the piece colour.
+        private BlockoutWellConfig _wellConfig;
 
         // The active piece's currently-shown cell positions and color: tracked so a change in
         // GridPosition/Shape (fall step, move, rotate, hard drop) hides exactly the old set and
@@ -75,9 +72,6 @@ namespace hp55games.Blockout.Gameplay
         private Color _activeColor;
 
         private bool _spawningStopped;
-
-        private const float LockedSaturationFactor = 0.35f;
-        private const float LockedValueFactor = 0.55f;
 
         // True once SpawnNext refused to spawn because the well is already full at the computed
         // spawn position (see SpawnNext). Public so PlayMode tests can read this instead of a
@@ -95,16 +89,17 @@ namespace hp55games.Blockout.Gameplay
         // BlockoutGameOverEvent and drive the FSM to ResultState; no recovery happens here.
         public event Action WellFull;
 
-        // grid/fallCurve/shapes/dimensions/pieceColors/clearBehaviour are passed in rather than
+        // grid/fallCurve/shapes/dimensions/skin look/wellConfig are passed in rather than
         // resolved here so the spawn validation logic stays testable without needing
         // IConfigCatalogService/IBlockoutSkinService wired up (mirrors PieceController.Initialize).
         // Called by BlockoutGameplayState.EnterAsync, which is the sole entry point - this class
         // doesn't self-start.
-        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int seed, int wellWidth, int wellHeight, int wellDepth, IReadOnlyList<Color> pieceColors, IBlockoutClearBehaviour clearBehaviour, PieceMaterialCategory? materialCategory = null)
+        public void Initialize(VoxelGrid grid, BlockoutFallCurveConfig fallCurve, BlockoutTimeDifficultyConfig timeDifficultyConfig, IReadOnlyList<PolycubeShape> shapes, int seed, int wellWidth, int wellHeight, int wellDepth, Color pieceColor, IBlockoutClearBehaviour clearBehaviour, CellSurface? cellSurface = null, BlockoutWellConfig wellConfig = null)
         {
-            _pieceColors = pieceColors;
+            _pieceColor = pieceColor;
+            _wellConfig = wellConfig;
             _clearBehaviour = clearBehaviour;
-            _materialCategory = materialCategory;
+            _cellSurface = cellSurface;
 
             // Fresh per run, per spec: the step delay restarts from StartStepDelay every new game.
             _timeDifficulty = new BlockoutTimeDifficultyModifier(timeDifficultyConfig);
@@ -195,7 +190,7 @@ namespace hp55games.Blockout.Gameplay
                 foreach (var cell in _shownCells) _cellRenderer.HideCell(cell);
             }
 
-            foreach (var cell in newCells) _cellRenderer.ShowCell(cell, _activeColor, _materialCategory);
+            foreach (var cell in newCells) _cellRenderer.ShowCell(cell, _activeColor, _cellSurface);
             _shownCells = newCells;
         }
 
@@ -216,7 +211,7 @@ namespace hp55games.Blockout.Gameplay
                         _cellRenderer.HideCell(cell);
 
                     foreach (var cell in targetCells)
-                        _cellRenderer.ShowCell(cell, _activeColor, _materialCategory);
+                        _cellRenderer.ShowCell(cell, _activeColor, _cellSurface);
 
                     _shownCells = targetCells;
                     return;
@@ -285,9 +280,7 @@ namespace hp55games.Blockout.Gameplay
                 return;
             }
 
-            _activeColor = _pieceColors != null && _pieceColors.Count > 0
-                ? _pieceColors[shapeIndex % _pieceColors.Count]
-                : Color.white;
+            _activeColor = _pieceColor;
 
             var pieceObject = new GameObject("BlockoutPieceController");
             _controller = pieceObject.AddComponent<PieceController>();
@@ -342,12 +335,14 @@ namespace hp55games.Blockout.Gameplay
 
             if (_cellRenderer != null && _shownCells != null)
             {
-                Color.RGBToHSV(_activeColor, out float h, out float s, out float v);
-                var lockedColor = Color.HSVToRGB(h, s * LockedSaturationFactor, v * LockedValueFactor);
-
                 // Recolors the already-shown cells in place (ShowCell again at the same position),
-                // rather than hiding and re-showing them - that's the "locked cell" placeholder.
-                foreach (var cell in _shownCells) _cellRenderer.ShowCell(cell, lockedColor, _materialCategory);
+                // rather than hiding and re-showing them. Per cell, not per piece: a piece
+                // spanning two levels ends up in two colours.
+                foreach (var cell in _shownCells)
+                {
+                    var levelColor = _wellConfig != null ? _wellConfig.GetLevelColor(cell.y) : _activeColor;
+                    _cellRenderer.ShowCell(cell, levelColor, _cellSurface);
+                }
             }
 
             // These cells are now permanent (locked), not "the active piece" anymore - nothing
@@ -396,7 +391,8 @@ namespace hp55games.Blockout.Gameplay
 
             foreach (var y in clearedLayerYs)
             {
-                _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _grid.StorageHeight, clearedPositions, clearedColors);
+                _cellRenderer.CollapseLayer(y, _wellWidth, _wellDepth, _grid.StorageHeight, clearedPositions, clearedColors,
+                    _wellConfig != null ? _wellConfig.GetLevelColor : null);
             }
 
             _clearBehaviour?.OnLayersCleared(new BlockoutClearContext(clearedPositions, clearedColors, clearedLayerYs.Length));

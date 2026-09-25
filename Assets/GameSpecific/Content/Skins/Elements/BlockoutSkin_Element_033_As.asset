@@ -25,3 +25,4 @@ MonoBehaviour:
   _atomicNumber: 33
   _materialCategory: 1
   _densityNormalized: 0.8501
+  _isRadioactive: 0

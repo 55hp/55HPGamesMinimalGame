@@ -76,7 +76,7 @@ namespace hp55games.Blockout.Tests
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
-            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, null, null);
+            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, Color.white, null);
 
             Assert.AreEqual(1000, context.Score); // 900 + 100
             Assert.AreEqual(1, saveService.SaveCallCount);
@@ -113,7 +113,7 @@ namespace hp55games.Blockout.Tests
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
-            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, null, null);
+            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, Color.white, null);
 
             Assert.AreEqual(1, saveService.Data.coins); // floor(100/100) + 0 bonus
 
@@ -150,7 +150,7 @@ namespace hp55games.Blockout.Tests
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
-            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, null, null);
+            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, Color.white, null);
 
             Assert.AreEqual(250, context.Score);
             Assert.AreEqual(2, saveService.Data.coins); // floor(2.5) = 2, not 3
@@ -186,7 +186,7 @@ namespace hp55games.Blockout.Tests
 
             LogAssert.Expect(LogType.Error, new Regex("(?i)WellCellRenderer"));
             LogAssert.Expect(LogType.Error, new Regex("(?i)well is full"));
-            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, null, null);
+            spawner.Initialize(grid, fallCurve, timeDifficultyConfig, new List<PolycubeShape> { SingleCellShape() }, 1, 1, 1, 1, Color.white, null);
 
             Assert.AreEqual(1300, context.Score); // 400 + 900
             Assert.AreEqual(38, saveService.Data.coins); // floor(1300/100)=13 base + (10+15)=25 bonus

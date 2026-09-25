@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "description": "Skin dei pezzi in caduta per Blockout. Ogni skin definisce SOLO l'aspetto del pezzo mentre cade: colore base e parametri di superficie (metallic, smoothness, emission). I cubi, una volta bloccati, assumono il colore del loro livello nel pozzo (12 colori, uno per livello) e non l'aspetto della skin. Sostituisce il sistema skin 'Tavola Periodica' a 118 elementi.",
+  "notes": "baseColor = colore del pezzo in caduta. metallic/smoothness = workflow PBR Metallic di URP Lit, range 0-1. emissionIntensity = moltiplicatore sul baseColor per l'emissione, 0 = nessuna emissione. unlockCostCoins = costo in coins; la skin 'terra' e' sbloccata di default (costo 0). Valori economici da bilanciare, sono placeholder.",
+  "levelColorsNote": "I 12 colori per livello NON stanno qui: sono una proprieta' del pozzo, condivisa da tutte le skin.",
+  "skins": [
+    {
+      "skinId": "terra",
+      "displayName": "Terra",
+      "baseColorHex": "#8B6B4A",
+      "metallic": 0.0,
+      "smoothness": 0.2,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 0,
+      "unlockMethod": "default",
+      "unlockedByDefault": true
+    },
+    {
+      "skinId": "erba",
+      "displayName": "Erba",
+      "baseColorHex": "#6FBF4A",
+      "metallic": 0.0,
+      "smoothness": 0.3,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 150,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "pietra",
+      "displayName": "Pietra",
+      "baseColorHex": "#9AA0A6",
+      "metallic": 0.0,
+      "smoothness": 0.25,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 150,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "sabbia",
+      "displayName": "Sabbia",
+      "baseColorHex": "#E3CFA1",
+      "metallic": 0.0,
+      "smoothness": 0.18,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 200,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "legno",
+      "displayName": "Legno",
+      "baseColorHex": "#A9764B",
+      "metallic": 0.0,
+      "smoothness": 0.28,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 200,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "acqua",
+      "displayName": "Acqua",
+      "baseColorHex": "#4AB8E8",
+      "metallic": 0.0,
+      "smoothness": 0.85,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 250,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "ghiaccio",
+      "displayName": "Ghiaccio",
+      "baseColorHex": "#BFE9F5",
+      "metallic": 0.0,
+      "smoothness": 0.9,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 300,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "neve",
+      "displayName": "Neve",
+      "baseColorHex": "#F2F7FA",
+      "metallic": 0.0,
+      "smoothness": 0.35,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 300,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "fuoco",
+      "displayName": "Fuoco",
+      "baseColorHex": "#FF6B28",
+      "metallic": 0.0,
+      "smoothness": 0.45,
+      "emissionIntensity": 0.55,
+      "unlockCostCoins": 400,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "lava",
+      "displayName": "Lava",
+      "baseColorHex": "#D93A15",
+      "metallic": 0.0,
+      "smoothness": 0.4,
+      "emissionIntensity": 0.7,
+      "unlockCostCoins": 450,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "fumo",
+      "displayName": "Fumo",
+      "baseColorHex": "#6E6E73",
+      "metallic": 0.0,
+      "smoothness": 0.3,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 350,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "ferro",
+      "displayName": "Ferro",
+      "baseColorHex": "#8C9196",
+      "metallic": 0.95,
+      "smoothness": 0.55,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 400,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "rame",
+      "displayName": "Rame",
+      "baseColorHex": "#C87533",
+      "metallic": 0.95,
+      "smoothness": 0.7,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 450,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "oro",
+      "displayName": "Oro",
+      "baseColorHex": "#E6B422",
+      "metallic": 1.0,
+      "smoothness": 0.85,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 800,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "cromo",
+      "displayName": "Cromo",
+      "baseColorHex": "#D6DBE0",
+      "metallic": 1.0,
+      "smoothness": 0.95,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 750,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "cristallo",
+      "displayName": "Cristallo",
+      "baseColorHex": "#D8E8F0",
+      "metallic": 0.1,
+      "smoothness": 0.95,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 600,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "ossidiana",
+      "displayName": "Ossidiana",
+      "baseColorHex": "#1C1B22",
+      "metallic": 0.2,
+      "smoothness": 0.88,
+      "emissionIntensity": 0.0,
+      "unlockCostCoins": 650,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "neon",
+      "displayName": "Neon",
+      "baseColorHex": "#33F0D0",
+      "metallic": 0.0,
+      "smoothness": 0.75,
+      "emissionIntensity": 0.9,
+      "unlockCostCoins": 900,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "cosmo",
+      "displayName": "Cosmo",
+      "baseColorHex": "#3A2E6E",
+      "metallic": 0.15,
+      "smoothness": 0.65,
+      "emissionIntensity": 0.35,
+      "unlockCostCoins": 1000,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    },
+    {
+      "skinId": "stella",
+      "displayName": "Stella",
+      "baseColorHex": "#FFF1B8",
+      "metallic": 0.0,
+      "smoothness": 0.6,
+      "emissionIntensity": 1.0,
+      "unlockCostCoins": 1200,
+      "unlockMethod": "coins",
+      "unlockedByDefault": false
+    }
+  ]
+}

@@ -11,6 +11,7 @@ using hp55games.Mobile.Core.SceneFlow;
 using hp55games.Mobile.Core.UI;
 using hp55games.Blockout.Achievements;
 using hp55games.Blockout.Config;
+using hp55games.Blockout.Rendering;
 using hp55games.Blockout.Gameplay.Events;
 
 namespace hp55games.Blockout.Gameplay
@@ -166,10 +167,7 @@ namespace hp55games.Blockout.Gameplay
                 return;
             }
 
-            // Null for a non-element skin (Default, Profondita, Juicy Clear): AtomicNumber == 0
-            // for those, and MaterialCategory would otherwise silently read as Metallic (enum
-            // default 0) - see WellCellRenderer.ShowCell, which treats null the same as Opaque.
-            PieceMaterialCategory? materialCategory = activeSkin.AtomicNumber > 0 ? activeSkin.MaterialCategory : null;
+            var cellSurface = CellSurface.FromSkin(activeSkin);
 
             var well = new BlockoutWell(wellConfig);
 
@@ -177,7 +175,7 @@ namespace hp55games.Blockout.Gameplay
             // still being fully deterministic and reproducible for a given seed (see
             // BlockoutSpawner.CurrentSeed for logging/repro).
             int spawnSeed = new System.Random().Next();
-            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), spawnSeed, well.Width, well.Height, well.Depth, activeSkin.PieceColors, activeSkin.ClearBehaviour, materialCategory);
+            _spawner.Initialize(well.Grid, fallCurve, timeDifficultyConfig, BlockoutShapeSet.BuildDefault(), spawnSeed, well.Width, well.Height, well.Depth, activeSkin.BaseColor, activeSkin.ClearBehaviour, cellSurface, wellConfig);
         }
 
         // Reuses the template's existing score infrastructure (IGameContextService.Score,

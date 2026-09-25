@@ -16,7 +16,8 @@
       "unlockCostCoins": 1766,
       "discoveryYear": 1766,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 2,
@@ -31,7 +32,8 @@
       "unlockCostCoins": 1895,
       "discoveryYear": 1895,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 3,
@@ -46,7 +48,8 @@
       "unlockCostCoins": 1817,
       "discoveryYear": 1817,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 4,
@@ -61,7 +64,8 @@
       "unlockCostCoins": 1797,
       "discoveryYear": 1797,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 5,
@@ -76,7 +80,8 @@
       "unlockCostCoins": 1808,
       "discoveryYear": 1808,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 6,
@@ -91,7 +96,8 @@
       "unlockCostCoins": 0,
       "discoveryYear": null,
       "knownSinceAntiquity": true,
-      "unlockMethod": "default"
+      "unlockMethod": "default",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 7,
@@ -106,7 +112,8 @@
       "unlockCostCoins": 1772,
       "discoveryYear": 1772,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 8,
@@ -121,7 +128,8 @@
       "unlockCostCoins": 1774,
       "discoveryYear": 1774,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 9,
@@ -136,7 +144,8 @@
       "unlockCostCoins": 1886,
       "discoveryYear": 1886,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 10,
@@ -151,7 +160,8 @@
       "unlockCostCoins": 1898,
       "discoveryYear": 1898,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 11,
@@ -166,7 +176,8 @@
       "unlockCostCoins": 1807,
       "discoveryYear": 1807,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 12,
@@ -181,7 +192,8 @@
       "unlockCostCoins": 1755,
       "discoveryYear": 1755,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 13,
@@ -196,7 +208,8 @@
       "unlockCostCoins": 1825,
       "discoveryYear": 1825,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 14,
@@ -211,7 +224,8 @@
       "unlockCostCoins": 1824,
       "discoveryYear": 1824,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 15,
@@ -226,7 +240,8 @@
       "unlockCostCoins": 1669,
       "discoveryYear": 1669,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 16,
@@ -242,7 +257,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "elements_unlocked_20"
+      "unlockAchievementId": "elements_unlocked_20",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 17,
@@ -257,7 +273,8 @@
       "unlockCostCoins": 1774,
       "discoveryYear": 1774,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 18,
@@ -272,7 +289,8 @@
       "unlockCostCoins": 1894,
       "discoveryYear": 1894,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 19,
@@ -287,7 +305,8 @@
       "unlockCostCoins": 1807,
       "discoveryYear": 1807,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 20,
@@ -302,7 +321,8 @@
       "unlockCostCoins": 1808,
       "discoveryYear": 1808,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 21,
@@ -317,7 +337,8 @@
       "unlockCostCoins": 1879,
       "discoveryYear": 1879,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 22,
@@ -332,7 +353,8 @@
       "unlockCostCoins": 1791,
       "discoveryYear": 1791,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 23,
@@ -347,7 +369,8 @@
       "unlockCostCoins": 1801,
       "discoveryYear": 1801,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 24,
@@ -362,7 +385,8 @@
       "unlockCostCoins": 1797,
       "discoveryYear": 1797,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 25,
@@ -377,7 +401,8 @@
       "unlockCostCoins": 1774,
       "discoveryYear": 1774,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 26,
@@ -393,7 +418,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "first_run_completed"
+      "unlockAchievementId": "first_run_completed",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 27,
@@ -408,7 +434,8 @@
       "unlockCostCoins": 1735,
       "discoveryYear": 1735,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 28,
@@ -423,7 +450,8 @@
       "unlockCostCoins": 1751,
       "discoveryYear": 1751,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 29,
@@ -439,7 +467,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "runs_completed_10"
+      "unlockAchievementId": "runs_completed_10",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 30,
@@ -455,7 +484,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "runs_completed_50"
+      "unlockAchievementId": "runs_completed_50",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 31,
@@ -470,7 +500,8 @@
       "unlockCostCoins": 1875,
       "discoveryYear": 1875,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 32,
@@ -485,7 +516,8 @@
       "unlockCostCoins": 1886,
       "discoveryYear": 1886,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 33,
@@ -501,7 +533,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "multi_clear_3plus"
+      "unlockAchievementId": "multi_clear_3plus",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 34,
@@ -516,7 +549,8 @@
       "unlockCostCoins": 1817,
       "discoveryYear": 1817,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 35,
@@ -531,7 +565,8 @@
       "unlockCostCoins": 1826,
       "discoveryYear": 1826,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 36,
@@ -546,7 +581,8 @@
       "unlockCostCoins": 1898,
       "discoveryYear": 1898,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 37,
@@ -561,7 +597,8 @@
       "unlockCostCoins": 1861,
       "discoveryYear": 1861,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 38,
@@ -576,7 +613,8 @@
       "unlockCostCoins": 1790,
       "discoveryYear": 1790,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 39,
@@ -591,7 +629,8 @@
       "unlockCostCoins": 1794,
       "discoveryYear": 1794,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 40,
@@ -606,7 +645,8 @@
       "unlockCostCoins": 1789,
       "discoveryYear": 1789,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 41,
@@ -621,7 +661,8 @@
       "unlockCostCoins": 1801,
       "discoveryYear": 1801,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 42,
@@ -636,7 +677,8 @@
       "unlockCostCoins": 1778,
       "discoveryYear": 1778,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 43,
@@ -651,7 +693,8 @@
       "unlockCostCoins": 1937,
       "discoveryYear": 1937,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 44,
@@ -666,7 +709,8 @@
       "unlockCostCoins": 1844,
       "discoveryYear": 1844,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 45,
@@ -681,7 +725,8 @@
       "unlockCostCoins": 1803,
       "discoveryYear": 1803,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 46,
@@ -696,7 +741,8 @@
       "unlockCostCoins": 1803,
       "discoveryYear": 1803,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 47,
@@ -712,7 +758,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "login_streak_5"
+      "unlockAchievementId": "login_streak_5",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 48,
@@ -727,7 +774,8 @@
       "unlockCostCoins": 1817,
       "discoveryYear": 1817,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 49,
@@ -742,7 +790,8 @@
       "unlockCostCoins": 1863,
       "discoveryYear": 1863,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 50,
@@ -758,7 +807,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "runs_completed_100"
+      "unlockAchievementId": "runs_completed_100",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 51,
@@ -774,7 +824,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "single_run_score_15000"
+      "unlockAchievementId": "single_run_score_15000",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 52,
@@ -789,7 +840,8 @@
       "unlockCostCoins": 1782,
       "discoveryYear": 1782,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 53,
@@ -804,7 +856,8 @@
       "unlockCostCoins": 1811,
       "discoveryYear": 1811,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 54,
@@ -819,7 +872,8 @@
       "unlockCostCoins": 1898,
       "discoveryYear": 1898,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 55,
@@ -834,7 +888,8 @@
       "unlockCostCoins": 1860,
       "discoveryYear": 1860,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 56,
@@ -849,7 +904,8 @@
       "unlockCostCoins": 1808,
       "discoveryYear": 1808,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 57,
@@ -864,7 +920,8 @@
       "unlockCostCoins": 1839,
       "discoveryYear": 1839,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 58,
@@ -879,7 +936,8 @@
       "unlockCostCoins": 1803,
       "discoveryYear": 1803,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 59,
@@ -894,7 +952,8 @@
       "unlockCostCoins": 1895,
       "discoveryYear": 1895,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 60,
@@ -909,7 +968,8 @@
       "unlockCostCoins": 1895,
       "discoveryYear": 1895,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 61,
@@ -924,7 +984,8 @@
       "unlockCostCoins": 1945,
       "discoveryYear": 1945,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 62,
@@ -939,7 +1000,8 @@
       "unlockCostCoins": 1879,
       "discoveryYear": 1879,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 63,
@@ -954,7 +1016,8 @@
       "unlockCostCoins": 1901,
       "discoveryYear": 1901,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 64,
@@ -969,7 +1032,8 @@
       "unlockCostCoins": 1880,
       "discoveryYear": 1880,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 65,
@@ -984,7 +1048,8 @@
       "unlockCostCoins": 1843,
       "discoveryYear": 1843,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 66,
@@ -999,7 +1064,8 @@
       "unlockCostCoins": 1886,
       "discoveryYear": 1886,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 67,
@@ -1014,7 +1080,8 @@
       "unlockCostCoins": 1878,
       "discoveryYear": 1878,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 68,
@@ -1029,7 +1096,8 @@
       "unlockCostCoins": 1842,
       "discoveryYear": 1842,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 69,
@@ -1044,7 +1112,8 @@
       "unlockCostCoins": 1879,
       "discoveryYear": 1879,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 70,
@@ -1059,7 +1128,8 @@
       "unlockCostCoins": 1878,
       "discoveryYear": 1878,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 71,
@@ -1074,7 +1144,8 @@
       "unlockCostCoins": 1907,
       "discoveryYear": 1907,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 72,
@@ -1089,7 +1160,8 @@
       "unlockCostCoins": 1923,
       "discoveryYear": 1923,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 73,
@@ -1104,7 +1176,8 @@
       "unlockCostCoins": 1802,
       "discoveryYear": 1802,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 74,
@@ -1119,7 +1192,8 @@
       "unlockCostCoins": 1783,
       "discoveryYear": 1783,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 75,
@@ -1134,7 +1208,8 @@
       "unlockCostCoins": 1925,
       "discoveryYear": 1925,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 76,
@@ -1149,7 +1224,8 @@
       "unlockCostCoins": 1803,
       "discoveryYear": 1803,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 77,
@@ -1164,7 +1240,8 @@
       "unlockCostCoins": 1803,
       "discoveryYear": 1803,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 78,
@@ -1179,7 +1256,8 @@
       "unlockCostCoins": 1557,
       "discoveryYear": 1557,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 79,
@@ -1195,7 +1273,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "login_streak_14"
+      "unlockAchievementId": "login_streak_14",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 80,
@@ -1211,7 +1290,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "single_run_score_5000"
+      "unlockAchievementId": "single_run_score_5000",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 81,
@@ -1226,7 +1306,8 @@
       "unlockCostCoins": 1861,
       "discoveryYear": 1861,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 82,
@@ -1242,7 +1323,8 @@
       "discoveryYear": null,
       "knownSinceAntiquity": true,
       "unlockMethod": "achievement",
-      "unlockAchievementId": "login_streak_2"
+      "unlockAchievementId": "login_streak_2",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 83,
@@ -1257,7 +1339,8 @@
       "unlockCostCoins": 1540,
       "discoveryYear": 1540,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": false
     },
     {
       "atomicNumber": 84,
@@ -1272,7 +1355,8 @@
       "unlockCostCoins": 1898,
       "discoveryYear": 1898,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 85,
@@ -1287,7 +1371,8 @@
       "unlockCostCoins": 1940,
       "discoveryYear": 1940,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 86,
@@ -1302,7 +1387,8 @@
       "unlockCostCoins": 1900,
       "discoveryYear": 1900,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 87,
@@ -1317,7 +1403,8 @@
       "unlockCostCoins": 1939,
       "discoveryYear": 1939,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 88,
@@ -1332,7 +1419,8 @@
       "unlockCostCoins": 1898,
       "discoveryYear": 1898,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 89,
@@ -1347,7 +1435,8 @@
       "unlockCostCoins": 1899,
       "discoveryYear": 1899,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 90,
@@ -1362,7 +1451,8 @@
       "unlockCostCoins": 1829,
       "discoveryYear": 1829,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 91,
@@ -1377,7 +1467,8 @@
       "unlockCostCoins": 1917,
       "discoveryYear": 1917,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 92,
@@ -1392,7 +1483,8 @@
       "unlockCostCoins": 1789,
       "discoveryYear": 1789,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 93,
@@ -1407,7 +1499,8 @@
       "unlockCostCoins": 1940,
       "discoveryYear": 1940,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 94,
@@ -1422,7 +1515,8 @@
       "unlockCostCoins": 1940,
       "discoveryYear": 1940,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 95,
@@ -1437,7 +1531,8 @@
       "unlockCostCoins": 1944,
       "discoveryYear": 1944,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 96,
@@ -1452,7 +1547,8 @@
       "unlockCostCoins": 1944,
       "discoveryYear": 1944,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 97,
@@ -1467,7 +1563,8 @@
       "unlockCostCoins": 1949,
       "discoveryYear": 1949,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 98,
@@ -1482,7 +1579,8 @@
       "unlockCostCoins": 1950,
       "discoveryYear": 1950,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 99,
@@ -1497,7 +1595,8 @@
       "unlockCostCoins": 1952,
       "discoveryYear": 1952,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 100,
@@ -1512,7 +1611,8 @@
       "unlockCostCoins": 1952,
       "discoveryYear": 1952,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 101,
@@ -1527,7 +1627,8 @@
       "unlockCostCoins": 1955,
       "discoveryYear": 1955,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 102,
@@ -1542,7 +1643,8 @@
       "unlockCostCoins": 1958,
       "discoveryYear": 1958,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 103,
@@ -1557,7 +1659,8 @@
       "unlockCostCoins": 1961,
       "discoveryYear": 1961,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 104,
@@ -1572,7 +1675,8 @@
       "unlockCostCoins": 1964,
       "discoveryYear": 1964,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 105,
@@ -1587,7 +1691,8 @@
       "unlockCostCoins": 1967,
       "discoveryYear": 1967,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 106,
@@ -1602,7 +1707,8 @@
       "unlockCostCoins": 1974,
       "discoveryYear": 1974,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 107,
@@ -1617,7 +1723,8 @@
       "unlockCostCoins": 1976,
       "discoveryYear": 1976,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 108,
@@ -1632,7 +1739,8 @@
       "unlockCostCoins": 1984,
       "discoveryYear": 1984,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 109,
@@ -1647,7 +1755,8 @@
       "unlockCostCoins": 1982,
       "discoveryYear": 1982,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 110,
@@ -1662,7 +1771,8 @@
       "unlockCostCoins": 1994,
       "discoveryYear": 1994,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 111,
@@ -1677,7 +1787,8 @@
       "unlockCostCoins": 1994,
       "discoveryYear": 1994,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 112,
@@ -1692,7 +1803,8 @@
       "unlockCostCoins": 1996,
       "discoveryYear": 1996,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 113,
@@ -1707,7 +1819,8 @@
       "unlockCostCoins": 2004,
       "discoveryYear": 2004,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 114,
@@ -1722,7 +1835,8 @@
       "unlockCostCoins": 2011,
       "discoveryYear": 2011,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 115,
@@ -1737,7 +1851,8 @@
       "unlockCostCoins": 2004,
       "discoveryYear": 2004,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 116,
@@ -1752,7 +1867,8 @@
       "unlockCostCoins": 2011,
       "discoveryYear": 2011,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 117,
@@ -1767,7 +1883,8 @@
       "unlockCostCoins": 2010,
       "discoveryYear": 2010,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     },
     {
       "atomicNumber": 118,
@@ -1782,7 +1899,8 @@
       "unlockCostCoins": 2002,
       "discoveryYear": 2002,
       "knownSinceAntiquity": false,
-      "unlockMethod": "coins"
+      "unlockMethod": "coins",
+      "isRadioactive": true
     }
   ]
 }

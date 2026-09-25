@@ -146,6 +146,27 @@ namespace hp55games.Blockout.Tests
         }
 
         [Test]
+        public void CollapseLayer_RecolorsShiftedCellsToTheirNewLevel_KeepingTheirSurface()
+        {
+            var renderer = CreateRenderer();
+            var surface = new CellSurface(0.7f, 0.4f, new Color(0.2f, 0f, 0f));
+            renderer.ShowCell(new Vector3Int(0, 0, 0), Color.red, surface); // cleared layer
+            renderer.ShowCell(new Vector3Int(0, 1, 0), Color.green, surface); // ends up at y=0
+            Color[] levelColors = { Color.cyan, Color.magenta };
+
+            renderer.CollapseLayer(0, width: 1, depth: 1, height: 2, new List<Vector3Int>(), new List<Color>(), level => levelColors[level]);
+
+            var pos = new Vector3Int(0, 0, 0);
+            Assert.AreEqual(Color.cyan, renderer.GetCellColor(pos)); // level 0's colour now, not level 1's
+            var block = RendererBlock(renderer, pos);
+            Assert.AreEqual(surface.Metallic, block.GetFloat("_Metallic"), 1e-5f);
+            Assert.AreEqual(surface.Smoothness, block.GetFloat("_Smoothness"), 1e-5f);
+            Assert.AreEqual((Vector4)surface.Emission, block.GetVector("_EmissionColor"));
+
+            Object.DestroyImmediate(renderer.gameObject);
+        }
+
+        [Test]
         public void CollapseLayer_LeavesUntouchedCellsAtOtherXZColumnsInPlace()
         {
             var renderer = CreateRenderer();
@@ -176,74 +197,126 @@ namespace hp55games.Blockout.Tests
             return instance[pos].GetComponent<Renderer>().sharedMaterial;
         }
 
+        private static MaterialPropertyBlock RendererBlock(WellCellRenderer renderer, Vector3Int pos)
+        {
+            var instance = (Dictionary<Vector3Int, PooledObject>)typeof(WellCellRenderer)
+                .GetField("_shownCells", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(renderer);
+            var block = new MaterialPropertyBlock();
+            instance[pos].GetComponent<Renderer>().GetPropertyBlock(block);
+            return block;
+        }
+
+        private static readonly CellSurface NonEmissiveSurface = new CellSurface(0.9f, 0.8f, Color.black);
+        private static readonly CellSurface EmissiveSurface = new CellSurface(0.05f, 0.3f, new Color(0.3f, 0.1f, 0f));
+
         [Test]
-        public void ShowCell_SwapsToTheMetallicMaterial_WhenGivenTheMetallicCategory()
+        public void ShowCell_UsesTheBaseMaterial_ForANonEmissiveSurface()
         {
             var renderer = CreateRenderer();
-            var metallic = new Material(Shader.Find("Sprites/Default"));
-            SetMaterial(renderer, "_metallicMaterial", metallic);
+            var baseMaterial = new Material(Shader.Find("Sprites/Default"));
+            var emissive = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_baseMaterial", baseMaterial);
+            SetMaterial(renderer, "_emissiveMaterial", emissive);
             var pos = new Vector3Int(0, 0, 0);
 
-            renderer.ShowCell(pos, Color.white, PieceMaterialCategory.Metallic);
+            renderer.ShowCell(pos, Color.white, NonEmissiveSurface);
 
-            Assert.AreEqual(metallic, RendererMaterial(renderer, pos));
+            Assert.AreEqual(baseMaterial, RendererMaterial(renderer, pos));
 
             Object.DestroyImmediate(renderer.gameObject);
-            Object.DestroyImmediate(metallic);
+            Object.DestroyImmediate(baseMaterial);
+            Object.DestroyImmediate(emissive);
         }
 
         [Test]
-        public void ShowCell_FallsBackToTheOpaqueMaterial_WhenNoCategoryIsGiven()
+        public void ShowCell_UsesTheEmissiveMaterial_ForAnEmissiveSurface()
+        {
+            var renderer = CreateRenderer();
+            var baseMaterial = new Material(Shader.Find("Sprites/Default"));
+            var emissive = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_baseMaterial", baseMaterial);
+            SetMaterial(renderer, "_emissiveMaterial", emissive);
+            var pos = new Vector3Int(0, 0, 0);
+
+            renderer.ShowCell(pos, Color.white, EmissiveSurface);
+
+            Assert.AreEqual(emissive, RendererMaterial(renderer, pos));
+
+            Object.DestroyImmediate(renderer.gameObject);
+            Object.DestroyImmediate(baseMaterial);
+            Object.DestroyImmediate(emissive);
+        }
+
+        [Test]
+        public void ShowCell_FallsBackToTheBaseMaterial_WhenNoSurfaceIsGiven()
         {
             // Every non-element skin (Default, Profondita, Juicy Clear) calls ShowCell with no
-            // category at all - see BlockoutSpawner._materialCategory.
+            // surface at all - see BlockoutSpawner._cellSurface.
             var renderer = CreateRenderer();
-            var opaque = new Material(Shader.Find("Sprites/Default"));
-            SetMaterial(renderer, "_opaqueMaterial", opaque);
+            var baseMaterial = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_baseMaterial", baseMaterial);
             var pos = new Vector3Int(0, 0, 0);
 
             renderer.ShowCell(pos, Color.white);
 
-            Assert.AreEqual(opaque, RendererMaterial(renderer, pos));
+            Assert.AreEqual(baseMaterial, RendererMaterial(renderer, pos));
 
             Object.DestroyImmediate(renderer.gameObject);
-            Object.DestroyImmediate(opaque);
+            Object.DestroyImmediate(baseMaterial);
         }
 
         [Test]
-        public void ShowCell_SwapsMaterial_WhenAPooledInstanceIsReusedUnderADifferentCategory()
+        public void ShowCell_WritesTheSurfaceValues_IntoThePropertyBlock()
         {
-            // Regression coverage for the exact bug the Opaque fallback (rather than a no-op)
-            // avoids: IObjectPoolService can hand back an instance last shown under a different
-            // skin's category (e.g. Translucent from a previous run), so a later ShowCell for a
-            // non-element skin (no category) must actively reset it, not leave it stale.
             var renderer = CreateRenderer();
-            var translucent = new Material(Shader.Find("Sprites/Default"));
-            var opaque = new Material(Shader.Find("Sprites/Default"));
-            SetMaterial(renderer, "_translucentMaterial", translucent);
-            SetMaterial(renderer, "_opaqueMaterial", opaque);
             var pos = new Vector3Int(0, 0, 0);
 
-            renderer.ShowCell(pos, Color.white, PieceMaterialCategory.Translucent);
-            renderer.HideCell(pos);
-            renderer.ShowCell(pos, Color.white); // reuses the pooled instance, no category this time
+            renderer.ShowCell(pos, Color.red, EmissiveSurface);
 
-            Assert.AreEqual(opaque, RendererMaterial(renderer, pos));
+            var block = RendererBlock(renderer, pos);
+            Assert.AreEqual(EmissiveSurface.Metallic, block.GetFloat("_Metallic"), 1e-5f);
+            Assert.AreEqual(EmissiveSurface.Smoothness, block.GetFloat("_Smoothness"), 1e-5f);
+            Assert.AreEqual((Vector4)EmissiveSurface.Emission, block.GetVector("_EmissionColor"));
 
             Object.DestroyImmediate(renderer.gameObject);
-            Object.DestroyImmediate(translucent);
-            Object.DestroyImmediate(opaque);
         }
 
         [Test]
-        public void ShowCell_LeavesTheExistingMaterialUntouched_WhenTheResolvedCategorysSlotIsUnassigned()
+        public void ShowCell_ResetsMaterialAndSurface_WhenAPooledInstanceIsReusedWithoutASurface()
+        {
+            // IObjectPoolService can hand back an instance last shown under a different skin
+            // (e.g. an emissive element from a previous run), so a later ShowCell for a
+            // non-element skin (no surface) must actively reset both the material and the
+            // per-cell PBR overrides, not leave them stale.
+            var renderer = CreateRenderer();
+            var baseMaterial = new Material(Shader.Find("Sprites/Default"));
+            var emissive = new Material(Shader.Find("Sprites/Default"));
+            SetMaterial(renderer, "_baseMaterial", baseMaterial);
+            SetMaterial(renderer, "_emissiveMaterial", emissive);
+            var pos = new Vector3Int(0, 0, 0);
+
+            renderer.ShowCell(pos, Color.white, EmissiveSurface);
+            renderer.HideCell(pos);
+            renderer.ShowCell(pos, Color.white); // reuses the pooled instance, no surface this time
+
+            Assert.AreEqual(baseMaterial, RendererMaterial(renderer, pos));
+            Assert.IsFalse(RendererBlock(renderer, pos).HasFloat("_Metallic"));
+
+            Object.DestroyImmediate(renderer.gameObject);
+            Object.DestroyImmediate(baseMaterial);
+            Object.DestroyImmediate(emissive);
+        }
+
+        [Test]
+        public void ShowCell_LeavesTheExistingMaterialUntouched_WhenTheBaseSlotIsUnassigned()
         {
             var renderer = CreateRenderer();
             var pos = new Vector3Int(0, 0, 0);
             renderer.ShowCell(pos, Color.white); // establishes whatever the fallback prefab's default material is
             var before = RendererMaterial(renderer, pos);
 
-            renderer.ShowCell(pos, Color.white, PieceMaterialCategory.Translucent); // _translucentMaterial never assigned
+            renderer.ShowCell(pos, Color.white, EmissiveSurface); // neither slot assigned
 
             Assert.AreEqual(before, RendererMaterial(renderer, pos));
 

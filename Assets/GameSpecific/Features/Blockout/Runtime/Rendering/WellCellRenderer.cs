@@ -1,8 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using hp55games.Mobile.Core.Architecture;
 using hp55games.Mobile.Core.Pooling;
-using hp55games.Blockout.Config;
 
 namespace hp55games.Blockout.Rendering
 {
@@ -16,19 +16,33 @@ namespace hp55games.Blockout.Rendering
         [Tooltip("Prefab shown per occupied cell (needs, or will get, a PooledObject component). If left empty, a plain temporary cube is created at runtime - assign a real prefab here once one exists (materials/mesh are Franci's manual job per Phase 5).")]
         [SerializeField] private PooledObject _cellPrefab;
 
-        [Tooltip("Periodic Table GDD Phase 2 (Bezi): the 3 candy-shader material variants, swapped onto a cell's Renderer per ShowCell's materialCategory argument. Opaque also doubles as the fallback for every non-element skin (materialCategory == null) and for Opaque itself, so it should always be assigned once these exist - Metallic/Translucent only matter for element skins.")]
-        [SerializeField] private Material _metallicMaterial;
-        [SerializeField] private Material _opaqueMaterial;
-        [SerializeField] private Material _translucentMaterial;
+        // Two slots rather than one only because shader keywords can't be set per renderer via
+        // MaterialPropertyBlock: _EMISSION has to be baked into a material. Everything else
+        // (colour, metallic, smoothness, emission colour) is per cell via the property block.
+        [Tooltip("URP Lit material for every cell whose skin has no emission. Per-skin metallic/smoothness come from CellSurface via MaterialPropertyBlock.")]
+        [SerializeField] private Material _baseMaterial;
+        [Tooltip("URP Lit material with Emission enabled (_EMISSION keyword), used only for skins with emission (Emission Intensity > 0). The actual glow colour is set per cell. Falls back to Base Material if unassigned.")]
+        [SerializeField] private Material _emissiveMaterial;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int MetallicId = Shader.PropertyToID("_Metallic");
+        private static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         private IObjectPoolService _pool;
+
+        // "Well" layer, set on every cell taken from the pool so the well's dedicated lights/probe
+        // (culling mask Well only) reach it regardless of the prefab's own layer. -1 if the layer
+        // doesn't exist (cells then keep whatever layer they already had).
+        private int _wellLayer = -1;
+
         private readonly Dictionary<Vector3Int, PooledObject> _shownCells = new();
 
         private void Awake()
         {
+            _wellLayer = LayerMask.NameToLayer("Well");
+
             if (!ServiceRegistry.TryResolve(out _pool))
             {
                 Debug.LogError("[WellCellRenderer] IObjectPoolService is not registered.", this);
@@ -45,7 +59,8 @@ namespace hp55games.Blockout.Rendering
         // Shows (or, if already shown, just re-colors) a cube at gridPos. Position is applied
         // every call since ShowCell also doubles as "move the piece to its new position" for the
         // active piece - callers hide the old position and show the new one on every change.
-        public void ShowCell(Vector3Int gridPos, Color color, PieceMaterialCategory? materialCategory = null)
+        // surface: null for non-element skins (base material's own PBR values).
+        public void ShowCell(Vector3Int gridPos, Color color, CellSurface? surface = null)
         {
             if (!enabled) return;
 
@@ -54,6 +69,7 @@ namespace hp55games.Blockout.Rendering
                 var go = _pool.Get(_cellPrefab, transform);
                 go.SetActive(true); // IObjectPoolService.Get doesn't guarantee this for a
                                      // never-before-pooled instance of this prefab
+                if (_wellLayer >= 0) go.layer = _wellLayer;
                 instance = go.GetComponent<PooledObject>();
                 _shownCells[gridPos] = instance;
             }
@@ -64,8 +80,7 @@ namespace hp55games.Blockout.Rendering
             if (renderer == null) return;
 
             renderer.enabled = true;
-            ApplyMaterialCategory(renderer, materialCategory);
-            ApplyColor(renderer, color);
+            ApplyAppearance(renderer, color, surface);
         }
 
         // Relocates all cells of the active piece in one transaction so vertical pieces can move
@@ -101,26 +116,6 @@ namespace hp55games.Blockout.Rendering
             instance.transform.position = visualPosition;
         }
 
-        // Profondita, Juicy Clear - never had a category concept) and for Opaque itself, rather
-        // than leaving the Renderer's material untouched: a pooled instance can be handed back by
-        // IObjectPoolService after last being shown under a different skin's category (e.g. a
-        // Translucent element), so "untouched" would mean stale, not "prefab default". Only skips
-        // the swap if the resolved slot itself isn't assigned yet (materials not authored yet -
-        // same "log nothing, just don't crash" fallback WellCellRenderer already uses for
-        // _cellPrefab).
-        private void ApplyMaterialCategory(Renderer renderer, PieceMaterialCategory? materialCategory)
-        {
-            var material = ResolveMaterial(materialCategory ?? PieceMaterialCategory.Opaque);
-            if (material != null) renderer.sharedMaterial = material;
-        }
-
-        private Material ResolveMaterial(PieceMaterialCategory category) => category switch
-        {
-            PieceMaterialCategory.Metallic => _metallicMaterial,
-            PieceMaterialCategory.Translucent => _translucentMaterial,
-            _ => _opaqueMaterial
-        };
-
         public void HideCell(Vector3Int gridPos)
         {
             if (!_shownCells.TryGetValue(gridPos, out var instance)) return;
@@ -137,8 +132,10 @@ namespace hp55games.Blockout.Rendering
         // sync with the logical grid after the very first clear. width/depth/height are passed
         // in (this class doesn't own well dimensions); y must be processed in the same
         // highest-first order PlacementRules.ClearFullLayersTouchedBy cleared the grid in, when
-        // more than one layer clears at once.
-        public void CollapseLayer(int y, int width, int depth, int height, IList<Vector3Int> outClearedPositions, IList<Color> outClearedColors)
+        // more than one layer clears at once. levelColor (optional): colour for a given level -
+        // every shifted cell is recoloured to its new level's colour, so locked cubes keep
+        // matching their actual level after a clear.
+        public void CollapseLayer(int y, int width, int depth, int height, IList<Vector3Int> outClearedPositions, IList<Color> outClearedColors, Func<int, Color> levelColor = null)
         {
             for (int x = 0; x < width; x++)
             {
@@ -159,7 +156,7 @@ namespace hp55games.Blockout.Rendering
                 {
                     for (int z = 0; z < depth; z++)
                     {
-                        MoveCellDown(new Vector3Int(x, layer + 1, z), new Vector3Int(x, layer, z));
+                        MoveCellDown(new Vector3Int(x, layer + 1, z), new Vector3Int(x, layer, z), levelColor);
                     }
                 }
             }
@@ -170,13 +167,31 @@ namespace hp55games.Blockout.Rendering
         // (CollapseLayer processes layers bottom-up from y, so whatever was shown at `to` was
         // already moved out, or hidden, in the previous iteration), exactly mirroring
         // VoxelGrid's own per-cell overwrite.
-        private void MoveCellDown(Vector3Int from, Vector3Int to)
+        private void MoveCellDown(Vector3Int from, Vector3Int to, Func<int, Color> levelColor)
         {
             if (!_shownCells.TryGetValue(from, out var instance)) return;
 
             _shownCells.Remove(from);
             instance.transform.position = (Vector3)to;
             _shownCells[to] = instance;
+
+            if (levelColor != null)
+            {
+                var renderer = instance.GetComponent<Renderer>();
+                if (renderer != null) RecolorKeepingSurface(renderer, levelColor(to.y));
+            }
+        }
+
+        // Changes only the colour, merging into the cell's existing property block - unlike
+        // ApplyAppearance, which rewrites the block from scratch - so the metallic/smoothness/
+        // emission set when the cell was shown survive the recolour.
+        private static void RecolorKeepingSurface(Renderer renderer, Color color)
+        {
+            var block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            block.SetColor(BaseColorId, color);
+            block.SetColor(ColorId, color);
+            renderer.SetPropertyBlock(block);
         }
 
         // Read-only introspection for tests/debug tooling - not used by the show/hide mechanism
@@ -208,17 +223,34 @@ namespace hp55games.Blockout.Rendering
             _shownCells.Clear();
         }
 
-        private static void ApplyColor(Renderer renderer, Color color)
+        // Always swaps the material (rather than leaving it untouched) and always writes a fresh
+        // property block (rather than merging into the existing one): IObjectPoolService can
+        // hand back an instance last shown under a different skin - e.g. an emissive, highly
+        // metallic element - so anything not reset here would leak into this skin's cells. Only
+        // skips the swap if the slot itself isn't assigned yet.
+        private void ApplyAppearance(Renderer renderer, Color color, CellSurface? surface)
         {
+            var material = surface is { IsEmissive: true } && _emissiveMaterial != null ? _emissiveMaterial : _baseMaterial;
+            if (material != null) renderer.sharedMaterial = material;
+
             // MaterialPropertyBlock, not renderer.material: many pooled instances share one
             // material, so setting .material.color here would instantiate a unique material per
-            // cube again - exactly the leak Phase 4's cleanup fixed. Sets both property names
-            // since CreatePrimitive's default material differs between URP (_BaseColor) and the
-            // legacy/Standard shader (_Color).
+            // cube again - exactly the leak Phase 4's cleanup fixed. Sets both colour property
+            // names since CreatePrimitive's default material differs between URP (_BaseColor)
+            // and the legacy/Standard shader (_Color).
             var block = new MaterialPropertyBlock();
-            renderer.GetPropertyBlock(block);
             block.SetColor(BaseColorId, color);
             block.SetColor(ColorId, color);
+
+            if (surface is { } s)
+            {
+                block.SetFloat(MetallicId, s.Metallic);
+                block.SetFloat(SmoothnessId, s.Smoothness);
+                // SetVector, not SetColor: Emission is already linear HDR, and SetColor would
+                // gamma-convert it again in a linear-colour-space project.
+                block.SetVector(EmissionColorId, s.Emission);
+            }
+
             renderer.SetPropertyBlock(block);
         }
 
